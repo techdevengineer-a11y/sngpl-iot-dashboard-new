@@ -1,0 +1,81 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "🚀 Starting deployment..."
+
+            # Navigate to project directory
+            cd /var/www/sngpl-dashboard
+
+            # Backend deployment
+            echo "📦 Deploying backend..."
+            cd backend
+
+            # Pull latest code
+            git pull origin main || {
+              echo "⚠️ Git pull failed, initializing repository..."
+              git init
+              git remote add origin https://github.com/techdevengineer-a11y/sngpl-iot-dashboard.git
+              git fetch
+              git checkout -b main origin/main
+            }
+
+            # Install Python dependencies
+            source venv/bin/activate
+            pip install -r requirements.txt
+
+            # Restart backend services
+            sudo systemctl restart sngpl-backend
+            sudo systemctl restart mqtt-listener
+            echo "✅ Backend deployed and restarted"
+
+            # Frontend deployment
+            echo "📦 Deploying frontend..."
+            cd /var/www/sngpl-dashboard/frontend
+
+            # Pull latest code
+            git pull origin main || {
+              echo "⚠️ Git pull failed, initializing repository..."
+              git init
+              git remote add origin https://github.com/techdevengineer-a11y/sngpl-iot-dashboard.git
+              git fetch
+              git checkout -b main origin/main
+            }
+
+            # Install dependencies and build
+            npm install
+            npm run build
+            echo "✅ Frontend built successfully"
+
+            # Reload nginx
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "✅ Nginx reloaded"
+
+            echo "🎉 Deployment complete!"
+
+      - name: Deployment Status
+        if: success()
+        run: echo "✅ Successfully deployed to EC2 server!"
+
+      - name: Deployment Failed
+        if: failure()
+        run: echo "❌ Deployment failed! Check the logs above."
