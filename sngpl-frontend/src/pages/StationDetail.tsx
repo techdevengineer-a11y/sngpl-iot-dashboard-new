@@ -1219,7 +1219,7 @@ const StationDetail = () => {
       {/* Fullscreen Temperature Chart Modal */}
       {isChartFullscreen && (
         <div
-          className="fixed inset-0 z-[9999] bg-white flex"
+          className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-white to-orange-50 flex"
           onMouseMove={(e) => {
             if (isResizing) {
               const newWidth = window.innerWidth - e.clientX;
@@ -1232,21 +1232,23 @@ const StationDetail = () => {
         >
           {/* Main Chart Area */}
           <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
-            {/* Header */}
-            <div className="bg-gray-100 border-b border-gray-300 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Thermometer className="w-6 h-6 text-orange-600" />
+            {/* Header with Gradient */}
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Thermometer className="w-7 h-7 text-white" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Temperature History</h2>
-                  <p className="text-sm text-gray-600">{deviceData.device_name} - {deviceData.location}</p>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md">Temperature History</h2>
+                  <p className="text-sm text-orange-100 mt-0.5">{deviceData.device_name} • {deviceData.location}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsChartFullscreen(false)}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm group"
                 title="Exit Fullscreen"
               >
-                <X className="w-6 h-6 text-gray-700" />
+                <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
 
