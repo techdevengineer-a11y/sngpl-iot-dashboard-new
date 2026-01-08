@@ -1,0 +1,1488 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  ArrowLeft,
+  Thermometer,
+  Gauge,
+  Wind,
+  Droplets,
+  TrendingUp,
+  Battery,
+  AlertTriangle,
+  MapPin,
+  Clock,
+  Download,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+import { AreaChart, Area, LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import Layout from '../components/Layout';
+import ExportModal from '../components/ExportModal';
+
+interface DeviceReading {
+  timestamp: string;
+  // T18-T114 Analytics parameters
+  last_hour_flow_time?: number;
+  last_hour_diff_pressure?: number;
+  last_hour_static_pressure?: number;
+  last_hour_temperature?: number;
+  last_hour_volume?: number;
+  last_hour_energy?: number;
+  specific_gravity?: number;
+}
+
+interface Device {
+  id: number;
+  client_id: string;
+  device_name: string;
+  location: string;
+  is_active: boolean;
+  last_seen: string | null;
+  latest_reading: DeviceReading | null;
+}
+
+const StationDetail = () => {
+  const { stationId } = useParams<{ stationId: string }>();
+  const navigate = useNavigate();
+  const [deviceData, setDeviceData] = useState<Device | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [historyData, setHistoryData] = useState<DeviceReading[]>([]);
+  const [latestReading, setLatestReading] = useState<DeviceReading | null>(null);
+  const [batteryHistory, setBatteryHistory] = useState<any[]>([]);
+  const [isObserved, setIsObserved] = useState(false);
+
+  // Custom date range states for each parameter
+  const getDefaultStartDate = () => {
+    const date = new Date();
+    date.setHours(date.getHours() - 24); // Default to last 24 hours
+    return date.toISOString().slice(0, 16); // Format for datetime-local input
+  };
+
+  const getDefaultEndDate = () => {
+    return new Date().toISOString().slice(0, 16);
+  };
+
+  // Date ranges for T18-T114 Analytics parameters
+  const [flowTimeStartDate, setFlowTimeStartDate] = useState(getDefaultStartDate());
+  const [flowTimeEndDate, setFlowTimeEndDate] = useState(getDefaultEndDate());
+
+  const [diffPressureStartDate, setDiffPressureStartDate] = useState(getDefaultStartDate());
+  const [diffPressureEndDate, setDiffPressureEndDate] = useState(getDefaultEndDate());
+
+  const [staticPressureStartDate, setStaticPressureStartDate] = useState(getDefaultStartDate());
+  const [staticPressureEndDate, setStaticPressureEndDate] = useState(getDefaultEndDate());
+
+  const [temperatureStartDate, setTemperatureStartDate] = useState(getDefaultStartDate());
+  const [temperatureEndDate, setTemperatureEndDate] = useState(getDefaultEndDate());
+
+  const [volumeStartDate, setVolumeStartDate] = useState(getDefaultStartDate());
+  const [volumeEndDate, setVolumeEndDate] = useState(getDefaultEndDate());
+
+  const [energyStartDate, setEnergyStartDate] = useState(getDefaultStartDate());
+  const [energyEndDate, setEnergyEndDate] = useState(getDefaultEndDate());
+
+  const [gravityStartDate, setGravityStartDate] = useState(getDefaultStartDate());
+  const [gravityEndDate, setGravityEndDate] = useState(getDefaultEndDate());
+
+  const [historyLogStartDate, setHistoryLogStartDate] = useState(getDefaultStartDate());
+  const [historyLogEndDate, setHistoryLogEndDate] = useState(getDefaultEndDate());
+
+  // Export modal state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // Check if device is being observed
+  useEffect(() => {
+    if (!stationId) return;
+
+    const saved = localStorage.getItem('observed_devices');
+    if (saved) {
+      try {
+        const devices = JSON.parse(saved);
+        const observed = devices.some((d: any) => d.id === parseInt(stationId));
+        setIsObserved(observed);
+      } catch (e) {
+        console.error('Error checking observation status:', e);
+      }
+    }
+  }, [stationId, deviceData]); // Re-check when device data changes
+
+  useEffect(() => {
+    fetchDeviceData();
+    fetchHistoricalData();
+
+    // Auto-refresh every 60 seconds for better performance
+    const dataInterval = setInterval(() => {
+      fetchDeviceData();
+      fetchHistoricalData();
+
+      // Auto-update end dates to current time to include new incoming data
+      const now = new Date().toISOString().slice(0, 16);
+      setFlowTimeEndDate(now);
+      setDiffPressureEndDate(now);
+      setStaticPressureEndDate(now);
+      setTemperatureEndDate(now);
+      setVolumeEndDate(now);
+      setEnergyEndDate(now);
+      setGravityEndDate(now);
+    }, 60000);
+
+    return () => {
+      clearInterval(dataInterval);
+    };
+  }, [stationId]);
+
+  const fetchDeviceData = async () => {
+    try {
+      // Fetch all devices (backend doesn't support single device endpoint yet)
+      const response = await fetch(`/api/devices/`);
+      if (response.ok) {
+        const devices = await response.json();
+        const device = devices.find((d: any) => d.id === parseInt(stationId || '0'));
+
+        if (device) {
+          setDeviceData(device);
+        } else {
+          if (!deviceData) {
+            generateDummyDeviceData();
+          }
+        }
+      } else {
+        // Keep existing data if API fails (offline mode)
+        if (!deviceData) {
+          generateDummyDeviceData();
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching device data (possibly offline):', error);
+      // Keep existing data when offline - don't replace with dummy data
+      if (!deviceData) {
+        generateDummyDeviceData();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchHistoricalData = async () => {
+    try {
+      // Fetch only 500 readings (max needed: 300 for battery chart) for faster initial load
+      const response = await fetch(`/api/analytics/readings?device_id=${stationId}&page_size=500&page=1`);
+      if (response.ok) {
+        const result = await response.json();
+        let readings = result.data || [];
+
+        if (readings && readings.length > 0) {
+          // Sort readings by timestamp descending (most recent first)
+          const sortedReadings = readings.sort((a: any, b: any) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+
+          setHistoryData(sortedReadings);
+
+          // Set the latest reading (first item in the sorted array is most recent)
+          setLatestReading(sortedReadings[0]);
+
+          // Generate battery history from readings
+          const battHist = sortedReadings.map((reading: any) => ({
+            timestamp: new Date(reading.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            battery: reading.battery || 12.5,  // Voltage (V)
+            color: (reading.battery || 12.5) >= 12.5 ? '#16a34a' : (reading.battery || 12.5) >= 11.8 ? '#eab308' : '#dc2626'
+          }));
+          setBatteryHistory(battHist);
+        } else {
+          // No data available, generate mock data
+          generateMockHistory();
+        }
+      } else {
+        console.error('[StationDetail] API failed with status:', response.status);
+        // API failed, generate mock data
+        generateMockHistory();
+      }
+    } catch (error) {
+      console.error('Error fetching historical data:', error);
+      // Generate mock data on error
+      generateMockHistory();
+    }
+  };
+
+  const generateDummyDeviceData = () => {
+    const dummyDevice: Device = {
+      id: parseInt(stationId || '1'),
+      client_id: `SMS-${stationId}`,
+      device_name: `Station ${stationId}`,
+      location: `Section ${Math.ceil((parseInt(stationId || '1') / 80))} - Location ${stationId}`,
+      is_active: Math.random() > 0.2, // 80% online
+      last_seen: new Date(Date.now() - Math.random() * 3600000).toISOString(), // Within last hour
+      latest_reading: {
+        timestamp: new Date().toISOString(),
+        temperature: 60 + Math.random() * 50, // -10 to 150°F range
+        static_pressure: 40 + Math.random() * 60, // 0 to 150 PSI range
+        differential_pressure: 50 + Math.random() * 200, // 0 to 500 IWC range
+        volume: 5000 + Math.random() * 10000, // 0 to 25000 MCF range
+        total_volume_flow: 10000 + Math.random() * 15000, // 0 to 40000 MCF/day range
+        battery: 60 + Math.random() * 40
+      }
+    };
+    setDeviceData(dummyDevice);
+  };
+
+  // Generate mock historical data (7 days)
+  const generateMockHistory = () => {
+    const now = new Date();
+    const history: DeviceReading[] = [];
+    const battHist: any[] = [];
+
+    // Generate 7 days of hourly data
+    for (let i = 167; i >= 0; i--) {
+      const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+      const batteryLevel = 60 + Math.random() * 40; // 60-100%
+
+      history.push({
+        timestamp: time.toISOString(),
+        temperature: 60 + Math.random() * 50, // -10 to 150°F range (centered around 60-110)
+        static_pressure: 40 + Math.random() * 60, // 0 to 150 PSI range (centered around 40-100)
+        differential_pressure: 50 + Math.random() * 200, // 0 to 500 IWC range (centered around 50-250)
+        volume: 5000 + Math.random() * 10000, // 0 to 25000 MCF range (centered around 5000-15000)
+        total_volume_flow: 10000 + Math.random() * 15000, // 0 to 40000 MCF/day range (centered around 10000-25000)
+        battery: batteryLevel
+      });
+
+      battHist.push({
+        timestamp: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        voltage: batteryLevel,
+        color: batteryLevel > 75 ? '#16a34a' : batteryLevel > 40 ? '#eab308' : '#dc2626'
+      });
+    }
+
+    setHistoryData(history);
+    setBatteryHistory(battHist);
+
+    // Set the latest reading as the most recent one
+    if (history.length > 0) {
+      setLatestReading(history[0]);
+    }
+  };
+
+  const formatTimestamp = (timestamp: string | null) => {
+    if (!timestamp) return 'Never';
+    return new Date(timestamp).toLocaleString();
+  };
+
+  // Toggle device observation
+  const toggleObservation = () => {
+    if (!deviceData || !stationId) return;
+
+    const saved = localStorage.getItem('observed_devices');
+    let devices = [];
+
+    try {
+      devices = saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error('Error parsing observed devices:', e);
+      devices = [];
+    }
+
+    const deviceId = parseInt(stationId);
+    const isCurrentlyObserved = devices.some((d: any) => d.id === deviceId);
+
+    if (isCurrentlyObserved) {
+      // Remove from observation
+      devices = devices.filter((d: any) => d.id !== deviceId);
+      setIsObserved(false);
+    } else {
+      // Add to observation - get section ID from URL or device data
+      const urlParts = window.location.pathname.split('/');
+      const sectionIndex = urlParts.findIndex(p => p === 'sections');
+      const sectionId = sectionIndex !== -1 ? urlParts[sectionIndex + 1] : 'OTHER';
+
+      const deviceToSave = {
+        id: deviceId,
+        section_id: sectionId,
+        client_id: deviceData.client_id,
+        device_name: deviceData.device_name,
+        location: deviceData.location,
+        is_active: deviceData.is_active,
+        temperature: latest?.temperature,
+        static_pressure: latest?.static_pressure,
+        differential_pressure: latest?.differential_pressure,
+        battery: latest?.battery
+      };
+      devices.push(deviceToSave);
+      setIsObserved(true);
+    }
+
+    localStorage.setItem('observed_devices', JSON.stringify(devices));
+  };
+
+  // Mock alarm data
+  const hasAlarm = (parameter: string) => Math.random() > 0.7;
+
+  // Get color based on value thresholds (4-color alarm system)
+  const getValueColor = (value: number, type: string) => {
+    switch (type) {
+      case 'temperature':
+        // Temperature: Red (Very Low) < 0, Light Red (Low) 0-10, Green (Normal) 10-120, Yellow (High) > 120
+        if (value < 0) return '#dc2626'; // red - very low
+        if (value < 10) return '#f87171'; // light red - low
+        if (value <= 120) return '#16a34a'; // green - normal
+        return '#eab308'; // yellow - high
+
+      case 'static_pressure':
+        // Static Pressure: Yellow (Very Low) < 0, Green (Normal) 10-90, Light Red (High) 90-140, Red (Very High) > 140
+        if (value < 0) return '#eab308'; // yellow - very low
+        if (value < 10) return '#eab308'; // yellow - very low
+        if (value <= 90) return '#16a34a'; // green - normal
+        if (value <= 140) return '#f87171'; // light red - high
+        return '#dc2626'; // red - very high
+
+      case 'differential_pressure':
+        // Differential Pressure: Yellow (Very Low) -1 to 0, Green (Normal) 0-300, Light Red (High) 300-400, Red (Very High) > 400
+        if (value < 0) return '#eab308'; // yellow - very low
+        if (value <= 300) return '#16a34a'; // green - normal
+        if (value <= 400) return '#f87171'; // light red - high
+        return '#dc2626'; // red - very high
+
+      case 'battery':
+        // Battery: Red (Very Low) < 10, Light Red (Low) 10-10.5, Green (Normal) 10.5-14, Yellow (High) > 14
+        if (value < 10) return '#dc2626'; // red - very low
+        if (value < 10.5) return '#f87171'; // light red - low
+        if (value <= 14) return '#16a34a'; // green - normal
+        return '#eab308'; // yellow - high
+
+      case 'volume':
+        // Volume: 0 to 25000 MCF
+        if (value < 3000) return '#dc2626';
+        if (value < 4000) return '#eab308';
+        return '#16a34a'; // green - normal (>4000 MCF)
+
+      case 'flow':
+        // Flow: 0 to 40000 MCF/day
+        if (value < 5000) return '#dc2626';
+        if (value < 8000) return '#eab308';
+        return '#16a34a'; // green - normal (>8000 MCF/day)
+
+      default:
+        return '#16a34a';
+    }
+  };
+
+  const getColorClass = (value: number, type: string) => {
+    const color = getValueColor(value, type);
+    // Map hex colors to Tailwind classes
+    switch (color) {
+      case '#dc2626': return 'text-red-600 font-semibold'; // Red
+      case '#f87171': return 'text-red-400 font-semibold'; // Light Red
+      case '#16a34a': return 'text-green-600 font-semibold'; // Green
+      case '#eab308': return 'text-yellow-600 font-semibold'; // Yellow
+      default: return 'text-gray-900';
+    }
+  };
+
+  const getStatusIndicator = (value: number, type: string) => {
+    switch (type) {
+      case 'temperature':
+        if (value < 0) {
+          return { text: 'Very Low - Critical', color: 'bg-red-600', textColor: 'text-red-600', borderColor: 'border-red-600' };
+        } else if (value < 10) {
+          return { text: 'Low', color: 'bg-red-400', textColor: 'text-red-400', borderColor: 'border-red-400' };
+        } else if (value <= 120) {
+          return { text: 'Normal', color: 'bg-green-600', textColor: 'text-green-600', borderColor: 'border-green-600' };
+        } else {
+          return { text: 'High', color: 'bg-yellow-600', textColor: 'text-yellow-600', borderColor: 'border-yellow-600' };
+        }
+
+      case 'static_pressure':
+        if (value < 10) {
+          return { text: 'Very Low', color: 'bg-yellow-600', textColor: 'text-yellow-600', borderColor: 'border-yellow-600' };
+        } else if (value <= 90) {
+          return { text: 'Normal', color: 'bg-green-600', textColor: 'text-green-600', borderColor: 'border-green-600' };
+        } else if (value <= 140) {
+          return { text: 'High', color: 'bg-red-400', textColor: 'text-red-400', borderColor: 'border-red-400' };
+        } else {
+          return { text: 'Very High - Critical', color: 'bg-red-600', textColor: 'text-red-600', borderColor: 'border-red-600' };
+        }
+
+      case 'differential_pressure':
+        if (value < 0) {
+          return { text: 'Very Low', color: 'bg-yellow-600', textColor: 'text-yellow-600', borderColor: 'border-yellow-600' };
+        } else if (value <= 300) {
+          return { text: 'Normal', color: 'bg-green-600', textColor: 'text-green-600', borderColor: 'border-green-600' };
+        } else if (value <= 400) {
+          return { text: 'High', color: 'bg-red-400', textColor: 'text-red-400', borderColor: 'border-red-400' };
+        } else {
+          return { text: 'Very High - Critical', color: 'bg-red-600', textColor: 'text-red-600', borderColor: 'border-red-600' };
+        }
+
+      case 'battery':
+        if (value < 10) {
+          return { text: 'Very Low - Critical', color: 'bg-red-600', textColor: 'text-red-600', borderColor: 'border-red-600' };
+        } else if (value < 10.5) {
+          return { text: 'Low', color: 'bg-red-400', textColor: 'text-red-400', borderColor: 'border-red-400' };
+        } else if (value <= 14) {
+          return { text: 'Normal', color: 'bg-green-600', textColor: 'text-green-600', borderColor: 'border-green-600' };
+        } else {
+          return { text: 'High', color: 'bg-yellow-600', textColor: 'text-yellow-600', borderColor: 'border-yellow-600' };
+        }
+
+      default:
+        return { text: 'Normal', color: 'bg-green-600', textColor: 'text-green-600', borderColor: 'border-green-600' };
+    }
+  };
+
+  // Export history logs to CSV
+  const exportHistoryLogs = () => {
+    const headers = ['#', 'Timestamp', 'Temperature (°F)', 'Static P (PSI)', 'Diff P (IWC)', 'Volume (MCF)', 'Flow (MCF/day)', 'Battery (V)'];
+    const csvContent = [
+      headers.join(','),
+      ...historyData.map((reading, index) => [
+        index + 1,
+        formatTimestamp(reading.timestamp),
+        reading.temperature.toFixed(1),
+        reading.static_pressure.toFixed(1),
+        reading.differential_pressure.toFixed(2),
+        reading.volume.toFixed(1),
+        reading.total_volume_flow.toFixed(1),
+        reading.battery?.toFixed(1) || '-'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `device_${stationId}_history_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Filter data based on custom date range
+  const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 200) => {
+    if (!historyData || historyData.length === 0) {
+      return [];
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const filtered = historyData.filter(d => {
+      const timestamp = new Date(d.timestamp);
+      return timestamp >= start && timestamp <= end;
+    });
+
+    // If filter returns nothing but we have data, show last 24 hours as fallback
+    if (filtered.length === 0 && historyData.length > 0) {
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      const fallbackData = historyData.filter(d => {
+        const timestamp = new Date(d.timestamp);
+        return timestamp >= twentyFourHoursAgo && timestamp <= now;
+      });
+
+      // Limit to latest readings based on limit parameter
+      return fallbackData.slice(0, limit);
+    }
+
+    // Limit to latest readings for each chart
+    return filtered.slice(0, limit);
+  };
+
+  // Custom Date Range Selector Component
+  const CustomDateRangeSelector = ({
+    startDate,
+    endDate,
+    onStartChange,
+    onEndChange
+  }: {
+    startDate: string;
+    endDate: string;
+    onStartChange: (val: string) => void;
+    onEndChange: (val: string) => void;
+  }) => {
+    return (
+      <div className="mb-4">
+        {/* Custom Date/Time Inputs */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Start Date & Time</label>
+            <input
+              type="datetime-local"
+              value={startDate}
+              onChange={(e) => onStartChange(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">End Date & Time</label>
+            <input
+              type="datetime-local"
+              value={endDate}
+              onChange={(e) => onEndChange(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading device data...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!deviceData) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Device not found</h3>
+          <button
+            onClick={() => navigate('/sections')}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Sections
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Use the latestReading state instead of deviceData.latest_reading
+  const latest = latestReading;
+  const batteryLevel = latest?.battery || 12.5;  // Default to 12.5V (good voltage)
+
+  return (
+    <Layout>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        {/* Header */}
+        <div className="glass rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-700" />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                  {deviceData.device_name || deviceData.client_id}
+                </h1>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    {deviceData.location}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    Last seen: {formatTimestamp(deviceData.last_seen)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleObservation}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isObserved
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={isObserved ? 'Remove from observation' : 'Add to observation'}
+              >
+                {isObserved ? (
+                  <>
+                    <EyeOff className="w-4 h-4" />
+                    <span>Observing</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    <span>Add to Observation</span>
+                  </>
+                )}
+              </button>
+              <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                deviceData.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {deviceData.is_active ? 'Online' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Current Values - 8 Cards (Added T16 & T17) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Temperature */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Temperature</p>
+                <p className="text-xs text-gray-500">°F</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <Thermometer className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.temperature?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-sm text-gray-500">°F</span>
+            </div>
+            {(() => {
+              const status = getStatusIndicator(latest?.temperature || 0, 'temperature');
+              return (
+                <div className={`mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${status.borderColor} bg-${status.color}/10`}>
+                  <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
+                  <span className={`text-xs font-semibold ${status.textColor}`}>{status.text}</span>
+                </div>
+              );
+            })()}
+          </motion.div>
+
+          {/* Static Pressure */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Static Pressure</p>
+                <p className="text-xs text-gray-500">PSI</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <Gauge className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.static_pressure?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-sm text-gray-500">PSI</span>
+            </div>
+            {(() => {
+              const status = getStatusIndicator(latest?.static_pressure || 0, 'static_pressure');
+              return (
+                <div className={`mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${status.borderColor} bg-${status.color}/10`}>
+                  <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
+                  <span className={`text-xs font-semibold ${status.textColor}`}>{status.text}</span>
+                </div>
+              );
+            })()}
+          </motion.div>
+
+          {/* Max Static Pressure - T16 NEW */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Max Static Pressure</p>
+                <p className="text-xs text-gray-500">PSI</p>
+              </div>
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.max_static_pressure?.toFixed(1) || 'N/A'}
+              </span>
+              <span className="text-sm text-gray-500">PSI</span>
+            </div>
+          </motion.div>
+
+          {/* Min Static Pressure - T17 NEW */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Min Static Pressure</p>
+                <p className="text-xs text-gray-500">PSI</p>
+              </div>
+              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-teal-600 transform rotate-180" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.min_static_pressure?.toFixed(1) || 'N/A'}
+              </span>
+              <span className="text-sm text-gray-500">PSI</span>
+            </div>
+          </motion.div>
+
+          {/* Differential Pressure */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Differential Pressure</p>
+                <p className="text-xs text-gray-500">IWC</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Wind className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.differential_pressure?.toFixed(2) || '0.00'}
+              </span>
+              <span className="text-sm text-gray-500">IWC</span>
+            </div>
+            {(() => {
+              const status = getStatusIndicator(latest?.differential_pressure || 0, 'differential_pressure');
+              return (
+                <div className={`mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${status.borderColor} bg-${status.color}/10`}>
+                  <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
+                  <span className={`text-xs font-semibold ${status.textColor}`}>{status.text}</span>
+                </div>
+              );
+            })()}
+            {false && hasAlarm('differential_pressure') && (
+              <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-xs font-medium">Diff Pressure Alert</span>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Volume */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Volume</p>
+                <p className="text-xs text-gray-500">MCF</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Droplets className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.volume?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-sm text-gray-500">MCF</span>
+            </div>
+            {hasAlarm('volume') && (
+              <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-xs font-medium">Volume Alert</span>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Total Volume Flow */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Total Volume Flow</p>
+                <p className="text-xs text-gray-500">MCF/day</p>
+              </div>
+              <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-cyan-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.total_volume_flow?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-sm text-gray-500">MCF/day</span>
+            </div>
+            {hasAlarm('total_volume_flow') && (
+              <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-xs font-medium">Flow Alert</span>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Battery */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Battery</p>
+                <p className="text-xs text-gray-500">V</p>
+              </div>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                batteryLevel >= 12.5 ? 'bg-green-100' : batteryLevel >= 11.8 ? 'bg-yellow-100' : 'bg-red-100'
+              }`}>
+                <Battery className={`w-6 h-6 ${
+                  batteryLevel >= 12.5 ? 'text-green-600' : batteryLevel >= 11.8 ? 'text-yellow-600' : 'text-red-600'
+                }`} />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {batteryLevel.toFixed(1)}
+              </span>
+              <span className="text-sm text-gray-500">V</span>
+            </div>
+            {(() => {
+              const status = getStatusIndicator(batteryLevel, 'battery');
+              return (
+                <div className={`mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${status.borderColor} bg-${status.color}/10`}>
+                  <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
+                  <span className={`text-xs font-semibold ${status.textColor}`}>{status.text}</span>
+                </div>
+              );
+            })()}
+          </motion.div>
+        </div>
+
+        {/* 5 Area Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Temperature Chart */}
+          <div className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Thermometer className="w-5 h-5 text-orange-600" />
+                Temperature History
+              </h3>
+            </div>
+            <CustomDateRangeSelector
+              startDate={tempStartDate}
+              endDate={tempEndDate}
+              onStartChange={setTempStartDate}
+              onEndChange={setTempEndDate}
+            />
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 50)}>
+                <defs>
+                  <linearGradient id="colorTempGreen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    const start = new Date(tempStartDate);
+                    const end = new Date(tempEndDate);
+                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+                    if (diffDays > 2) {
+                      return `${date.getMonth()+1}/${date.getDate()}`;
+                    } else {
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }
+                  }}
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[-10, 150]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: any) => {
+                    const color = getValueColor(value, 'temperature');
+                    let status = 'Normal';
+                    if (color === '#dc2626') status = 'Very Low';
+                    else if (color === '#f87171') status = 'Low';
+                    else if (color === '#eab308') status = 'High';
+                    return [`${value.toFixed(1)}°F (${status})`, 'Temperature'];
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="temperature"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  fill="url(#colorTempGreen)"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div className="flex items-center justify-center gap-4 mt-3 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-red-600 rounded"></div>
+                <span className="text-xs text-gray-600">Very Low (&lt;0°F)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-red-400 rounded"></div>
+                <span className="text-xs text-gray-600">Low (0-10°F)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-green-600 rounded"></div>
+                <span className="text-xs text-gray-600">Normal (10-120°F)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-yellow-600 rounded"></div>
+                <span className="text-xs text-gray-600">High (&gt;120°F)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Static Pressure Chart */}
+          <div className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Gauge className="w-5 h-5 text-green-600" />
+                Static Pressure History
+              </h3>
+            </div>
+            <CustomDateRangeSelector
+              startDate={staticPStartDate}
+              endDate={staticPEndDate}
+              onStartChange={setStaticPStartDate}
+              onEndChange={setStaticPEndDate}
+            />
+
+            {/* Pressure Line Selection */}
+            <div className="flex items-center justify-center gap-6 mb-4 p-3 bg-gray-50 rounded-lg">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showCurrentPressure}
+                  onChange={(e) => setShowCurrentPressure(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="w-6 h-1 bg-blue-600 rounded"></div>
+                  Current Pressure
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showMaxPressure}
+                  onChange={(e) => setShowMaxPressure(e.target.checked)}
+                  className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                />
+                <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="w-6 h-1 bg-red-600 rounded"></div>
+                  Max Pressure
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showMinPressure}
+                  onChange={(e) => setShowMinPressure(e.target.checked)}
+                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                />
+                <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <div className="w-6 h-1 bg-green-600 rounded"></div>
+                  Min Pressure
+                </span>
+              </label>
+            </div>
+
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart
+                data={filterDataByDateRange(staticPStartDate, staticPEndDate, 50)}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorMaxPressure" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#dc2626" stopOpacity={0.05} />
+                  </linearGradient>
+                  <linearGradient id="colorMinPressure" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.05} />
+                  </linearGradient>
+                  <linearGradient id="colorCurrentPressure" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    const diffDays = (new Date(staticPEndDate).getTime() - new Date(staticPStartDate).getTime()) / (1000 * 60 * 60 * 24); return diffDays > 2 ? `${date.getMonth()+1}/${date.getDate()}` : `${date.getHours()}:00`;
+                  }}
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                  domain={[0, 150]}
+                  label={{ value: 'PSI', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: any, name: string) => {
+                    if (name === 'Current Pressure') {
+                      const color = getValueColor(value, 'static_pressure');
+                      let status = 'Normal';
+                      if (color === '#eab308') status = 'Very Low';
+                      else if (color === '#f87171') status = 'High';
+                      else if (color === '#dc2626') status = 'Very High';
+                      return [`${value?.toFixed(1) || 'N/A'} PSI (${status})`, 'Current'];
+                    }
+                    if (name === 'Max Pressure') return [`${value?.toFixed(1) || 'N/A'} PSI`, 'Maximum'];
+                    if (name === 'Min Pressure') return [`${value?.toFixed(1) || 'N/A'} PSI`, 'Minimum'];
+                    return [value, name];
+                  }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                {showCurrentPressure && (
+                  <Area
+                    type="monotone"
+                    dataKey="static_pressure"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    fill="url(#colorCurrentPressure)"
+                    name="Current Pressure"
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                    connectNulls={true}
+                  />
+                )}
+                {showMaxPressure && (
+                  <Area
+                    type="monotone"
+                    dataKey="max_static_pressure"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    fill="url(#colorMaxPressure)"
+                    name="Max Pressure"
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                    connectNulls={true}
+                  />
+                )}
+                {showMinPressure && (
+                  <Area
+                    type="monotone"
+                    dataKey="min_static_pressure"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    fill="url(#colorMinPressure)"
+                    name="Min Pressure"
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                    connectNulls={true}
+                  />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+
+            {/* Static Pressure Alarm Legend */}
+            <div className="flex items-center justify-center gap-4 mt-4 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-yellow-600 rounded"></div>
+                <span className="text-xs text-gray-600">Very Low (&lt;10 PSI)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-green-600 rounded"></div>
+                <span className="text-xs text-gray-600">Normal (10-90 PSI)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-red-400 rounded"></div>
+                <span className="text-xs text-gray-600">High (90-140 PSI)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-red-600 rounded"></div>
+                <span className="text-xs text-gray-600">Very High (&gt;140 PSI)</span>
+              </div>
+            </div>
+
+            {/* Debug Info */}
+            {(() => {
+              const filteredData = filterDataByDateRange(staticPStartDate, staticPEndDate, 50);
+
+              if (filteredData.length === 0) {
+                return (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    No data available for selected time range. Try adjusting the date range.
+                  </div>
+                );
+              }
+
+              const hasCurrentData = filteredData.some(d => d.static_pressure != null);
+              const hasMaxData = filteredData.some(d => d.max_static_pressure != null);
+              const hasMinData = filteredData.some(d => d.min_static_pressure != null);
+
+              return (
+                <div className="mt-2 text-xs text-gray-500 text-center space-y-1">
+                  <div>Showing {filteredData.length} data points</div>
+                  <div className="flex items-center justify-center gap-4 text-xs">
+                    <span className={hasCurrentData ? 'text-blue-600' : 'text-gray-400'}>
+                      Current: {hasCurrentData ? '✓' : '✗'}
+                    </span>
+                    <span className={hasMaxData ? 'text-red-600' : 'text-gray-400'}>
+                      Max: {hasMaxData ? '✓' : '✗'}
+                    </span>
+                    <span className={hasMinData ? 'text-green-600' : 'text-gray-400'}>
+                      Min: {hasMinData ? '✓' : '✗'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="flex items-center justify-center gap-6 mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-0.5 bg-blue-600"></div>
+                <span className="text-xs text-gray-600">Current</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-0.5 bg-red-600 border-t-2 border-dashed"></div>
+                <span className="text-xs text-gray-600">Maximum</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-0.5 bg-green-600 border-t-2 border-dashed"></div>
+                <span className="text-xs text-gray-600">Minimum</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Differential Pressure Chart */}
+          <div className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Wind className="w-5 h-5 text-blue-600" />
+                Differential Pressure History
+              </h3>
+            </div>
+            <CustomDateRangeSelector
+              startDate={diffPStartDate}
+              endDate={diffPEndDate}
+              onStartChange={setDiffPStartDate}
+              onEndChange={setDiffPEndDate}
+            />
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 50)}>
+                <defs>
+                  <linearGradient id="colorDiffPGreen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    const diffDays = (new Date(diffPEndDate).getTime() - new Date(diffPStartDate).getTime()) / (1000 * 60 * 60 * 24); return diffDays > 2 ? `${date.getMonth()+1}/${date.getDate()}` : `${date.getHours()}:00`;
+                  }}
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[-10, 500]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: any) => {
+                    const color = getValueColor(value, 'differential_pressure');
+                    let status = 'Normal';
+                    if (color === '#eab308') status = 'Very Low';
+                    else if (color === '#f87171') status = 'High';
+                    else if (color === '#dc2626') status = 'Very High';
+                    return [`${value.toFixed(2)} IWC (${status})`, 'Differential Pressure'];
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="differential_pressure"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  fill="url(#colorDiffPGreen)"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div className="flex items-center justify-center gap-4 mt-3 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-yellow-600 rounded"></div>
+                <span className="text-xs text-gray-600">Very Low (&lt;0 IWC)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-green-600 rounded"></div>
+                <span className="text-xs text-gray-600">Normal (0-300 IWC)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-red-400 rounded"></div>
+                <span className="text-xs text-gray-600">High (300-400)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-red-600 rounded"></div>
+                <span className="text-xs text-gray-600">Very High (&gt;400)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Volume Chart */}
+          <div className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Droplets className="w-5 h-5 text-purple-600" />
+                Volume History
+              </h3>
+            </div>
+            <CustomDateRangeSelector
+              startDate={volumeStartDate}
+              endDate={volumeEndDate}
+              onStartChange={setVolumeStartDate}
+              onEndChange={setVolumeEndDate}
+            />
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 50)}>
+                <defs>
+                  <linearGradient id="colorVolumeGreen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    const diffDays = (new Date(volumeEndDate).getTime() - new Date(volumeStartDate).getTime()) / (1000 * 60 * 60 * 24); return diffDays > 2 ? `${date.getMonth()+1}/${date.getDate()}` : `${date.getHours()}:00`;
+                  }}
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[0, 25000]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: any) => {
+                    return [`${value.toFixed(1)} MCF`, 'Volume'];
+                  }}
+                />
+                <Area type="monotone" dataKey="volume" stroke="#16a34a" strokeWidth={2} fill="url(#colorVolumeGreen)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Total Volume Flow Chart */}
+          <div className="glass rounded-xl p-6 lg:col-span-2">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-cyan-600" />
+                Total Volume Flow History
+              </h3>
+            </div>
+            <CustomDateRangeSelector
+              startDate={flowStartDate}
+              endDate={flowEndDate}
+              onStartChange={setFlowStartDate}
+              onEndChange={setFlowEndDate}
+            />
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={filterDataByDateRange(flowStartDate, flowEndDate, 50)}>
+                <defs>
+                  <linearGradient id="colorFlowGreen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    const diffDays = (new Date(flowEndDate).getTime() - new Date(flowStartDate).getTime()) / (1000 * 60 * 60 * 24); return diffDays > 2 ? `${date.getMonth()+1}/${date.getDate()}` : `${date.getHours()}:00`;
+                  }}
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[0, 40000]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: any) => {
+                    return [`${value.toFixed(1)} MCF/day`, 'Flow'];
+                  }}
+                />
+                <Area type="monotone" dataKey="total_volume_flow" stroke="#16a34a" strokeWidth={2} fill="url(#colorFlowGreen)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Battery Horizontal Bar Chart */}
+        <div className="glass rounded-xl p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Battery className="w-5 h-5 text-yellow-600" />
+              Battery Voltage History
+            </h3>
+          </div>
+          <CustomDateRangeSelector
+            startDate={batteryStartDate}
+            endDate={batteryEndDate}
+            onStartChange={setBatteryStartDate}
+            onEndChange={setBatteryEndDate}
+          />
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 50)} layout="horizontal">
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                type="category"
+                dataKey="timestamp"
+                stroke="#9ca3af"
+                style={{ fontSize: '12px' }}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  const diffDays = (new Date(batteryEndDate).getTime() - new Date(batteryStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                  if (diffDays > 2) {
+                    return `${date.getMonth()+1}/${date.getDate()}`;
+                  } else {
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                  }
+                }}
+              />
+              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[10, 14]} label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft' }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                labelFormatter={(value) => new Date(value).toLocaleString()}
+                formatter={(value: any) => {
+                  const color = getValueColor(value, 'battery');
+                  let status = 'Normal';
+                  if (color === '#dc2626') status = 'Very Low';
+                  else if (color === '#f87171') status = 'Low';
+                  else if (color === '#eab308') status = 'High';
+                  return [`${value?.toFixed(1) || '0'}V (${status})`, 'Battery'];
+                }}
+              />
+              <Bar dataKey="battery" radius={[4, 4, 0, 0]}>
+                {filterDataByDateRange(batteryStartDate, batteryEndDate, 50).map((entry: any, index: number) => {
+                  const batteryValue = entry.battery || 12;
+                  const color = getValueColor(batteryValue, 'battery');
+                  return <Cell key={`cell-${index}`} fill={color} />;
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center justify-center gap-6 mt-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-600 rounded"></div>
+              <span className="text-sm text-gray-600">Very Low (&lt;10V)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-400 rounded"></div>
+              <span className="text-sm text-gray-600">Low (10-10.5V)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-600 rounded"></div>
+              <span className="text-sm text-gray-600">Normal (10.5-14V)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-600 rounded"></div>
+              <span className="text-sm text-gray-600">High (&gt;14V)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Complete History Logs */}
+        <div className="glass rounded-xl overflow-hidden">
+          <div className="p-6 border-b border-gray-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
+                <p className="text-sm text-gray-600 mt-1">Latest 3000 device readings</p>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export Data</span>
+              </button>
+            </div>
+          </div>
+          <div className="overflow-auto" style={{ maxHeight: '500px' }}>
+            <table className="w-full border-collapse">
+              <thead className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">#</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Timestamp</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Temperature (°F)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Static P (PSI)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Max Static P (PSI)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Min Static P (PSI)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Diff P (IWC)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Volume (MCF)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Flow (MCF/day)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Battery (V)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {historyData.slice(0, 3000).map((reading, index) => (
+                  <tr key={index} className="hover:bg-gray-100 transition-colors">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-700">{index + 1}</span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{formatTimestamp(reading.timestamp)}</span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-sm ${getColorClass(reading.temperature, 'temperature')}`}>
+                        {reading.temperature.toFixed(1)}°F
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-sm ${getColorClass(reading.static_pressure, 'static_pressure')}`}>
+                        {reading.static_pressure.toFixed(1)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-sm ${getColorClass(reading.max_static_pressure || 0, 'static_pressure')}`}>
+                        {reading.max_static_pressure ? reading.max_static_pressure.toFixed(1) : '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-sm ${getColorClass(reading.min_static_pressure || 0, 'static_pressure')}`}>
+                        {reading.min_static_pressure ? reading.min_static_pressure.toFixed(1) : '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-sm ${getColorClass(reading.differential_pressure, 'differential_pressure')}`}>
+                        {reading.differential_pressure.toFixed(2)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{reading.volume.toFixed(1)}</span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{reading.total_volume_flow.toFixed(1)}</span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-sm ${getColorClass(reading.battery || 0, 'battery')}`}>
+                        {reading.battery?.toFixed(1) || '-'}V
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        deviceId={stationId}
+        deviceName={deviceData?.device_name}
+        exportType="device"
+      />
+    </Layout>
+  );
+};
+
+export default StationDetail;

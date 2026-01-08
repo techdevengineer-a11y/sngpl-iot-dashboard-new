@@ -1,0 +1,133 @@
+        {/* T18-T114 Analytics Parameters - 7 Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* T18: Last Hour Flow Time */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Last Hour Flow Time</p>
+                <p className="text-xs text-gray-500">T18 - hours</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Clock className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.last_hour_flow_time?.toFixed(2) || '0.00'}
+              </span>
+              <span className="text-sm text-gray-500">hrs</span>
+            </div>
+          </motion.div>
+
+          {/* T19: Last Hour Diff Pressure */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Last Hour Diff Pressure</p>
+                <p className="text-xs text-gray-500">T19 - IWC</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Wind className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.last_hour_diff_pressure?.toFixed(2) || '0.00'}
+              </span>
+              <span className="text-sm text-gray-500">IWC</span>
+            </div>
+          </motion.div>
+
+          {/* T110: Last Hour Static Pressure */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Last Hour Static Pressure</p>
+                <p className="text-xs text-gray-500">T110 - PSI</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <Gauge className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.last_hour_static_pressure?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-sm text-gray-500">PSI</span>
+            </div>
+          </motion.div>
+
+          {/* T111: Last Hour Temperature */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Last Hour Temperature</p>
+                <p className="text-xs text-gray-500">T111 - °F</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <Thermometer className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.last_hour_temperature?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-sm text-gray-500">°F</span>
+            </div>
+          </motion.div>
+
+          {/* T112: Last Hour Volume */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Last Hour Volume</p>
+                <p className="text-xs text-gray-500">T112 - MCF</p>
+              </div>
+              <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                <Droplets className="w-6 h-6 text-cyan-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.last_hour_volume?.toFixed(2) || '0.00'}
+              </span>
+              <span className="text-sm text-gray-500">MCF</span>
+            </div>
+          </motion.div>
+
+          {/* T113: Last Hour Energy */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Last Hour Energy</p>
+                <p className="text-xs text-gray-500">T113</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Battery className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.last_hour_energy?.toFixed(2) || '0.00'}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* T114: Specific Gravity */}
+          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm text-gray-600">Specific Gravity</p>
+                <p className="text-xs text-gray-500">T114</p>
+              </div>
+              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900">
+                {latest?.specific_gravity?.toFixed(4) || '0.0000'}
+              </span>
+            </div>
+          </motion.div>
+        </div>
