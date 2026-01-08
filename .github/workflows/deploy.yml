@@ -14,7 +14,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to EC2
+      - name: Deploy Backend to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "sngpl-backend/*"
+          target: "/tmp/deploy-backend/"
+          strip_components: 1
+
+      - name: Deploy Frontend to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "sngpl-frontend/*"
+          target: "/tmp/deploy-frontend/"
+          strip_components: 1
+
+      - name: Install and Restart Services
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -23,52 +43,57 @@ jobs:
           script: |
             echo "🚀 Starting deployment..."
 
-            # Navigate to project directory
-            cd /var/www/sngpl-dashboard
-
             # Backend deployment
             echo "📦 Deploying backend..."
-            cd backend
 
-            # Pull latest code
-            git pull origin main || {
-              echo "⚠️ Git pull failed, initializing repository..."
-              git init
-              git remote add origin https://github.com/techdevengineer-a11y/sngpl-iot-dashboard.git
-              git fetch
-              git checkout -b main origin/main
-            }
+            # Backup .env file
+            if [ -f /var/www/sngpl-dashboard/backend/app/.env ]; then
+              cp /var/www/sngpl-dashboard/backend/app/.env /tmp/backend-env.backup
+              echo "✅ Backed up .env file"
+            fi
+
+            # Copy new backend files (preserve venv and .env)
+            sudo rsync -av --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' /tmp/deploy-backend/ /var/www/sngpl-dashboard/backend/
+
+            # Restore .env file
+            if [ -f /tmp/backend-env.backup ]; then
+              sudo cp /tmp/backend-env.backup /var/www/sngpl-dashboard/backend/app/.env
+              sudo chown ubuntu:ubuntu /var/www/sngpl-dashboard/backend/app/.env
+              echo "✅ Restored .env file"
+            fi
 
             # Install Python dependencies
+            cd /var/www/sngpl-dashboard/backend
             source venv/bin/activate
-            pip install -r requirements.txt
+            pip install -r requirements.txt --quiet
+            echo "✅ Python dependencies installed"
 
             # Restart backend services
             sudo systemctl restart sngpl-backend
-            sudo systemctl restart mqtt-listener
-            echo "✅ Backend deployed and restarted"
+            sudo systemctl restart mqtt-listener 2>/dev/null || echo "⚠️ mqtt-listener service not found"
+            echo "✅ Backend services restarted"
 
             # Frontend deployment
             echo "📦 Deploying frontend..."
-            cd /var/www/sngpl-dashboard/frontend
 
-            # Pull latest code
-            git pull origin main || {
-              echo "⚠️ Git pull failed, initializing repository..."
-              git init
-              git remote add origin https://github.com/techdevengineer-a11y/sngpl-iot-dashboard.git
-              git fetch
-              git checkout -b main origin/main
-            }
+            # Copy new frontend files
+            sudo rsync -av --exclude='node_modules' --exclude='dist' /tmp/deploy-frontend/ /var/www/sngpl-dashboard/frontend/
 
             # Install dependencies and build
-            npm install
+            cd /var/www/sngpl-dashboard/frontend
+            npm install --silent
             npm run build
             echo "✅ Frontend built successfully"
+
+            # Set permissions
+            sudo chown -R ubuntu:ubuntu /var/www/sngpl-dashboard
 
             # Reload nginx
             sudo nginx -t && sudo systemctl reload nginx
             echo "✅ Nginx reloaded"
+
+            # Cleanup temp files
+            rm -rf /tmp/deploy-backend /tmp/deploy-frontend /tmp/backend-env.backup
 
             echo "🎉 Deployment complete!"
 
