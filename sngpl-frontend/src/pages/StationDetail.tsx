@@ -765,7 +765,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[-10, 150]} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -830,7 +830,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[0, 150]} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -899,7 +899,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[0, 500]} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -964,7 +964,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[0, 25000]} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1025,7 +1025,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[0, 40000]} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1087,7 +1087,7 @@ const StationDetail = () => {
                   }
                 }}
               />
-              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={[10, 15]} />
+              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1291,7 +1291,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={[-10, 150]}
+                      domain={['auto', 'auto']}
                       label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
@@ -1413,7 +1413,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={[0, 500]}
+                      domain={['auto', 'auto']}
                       label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
