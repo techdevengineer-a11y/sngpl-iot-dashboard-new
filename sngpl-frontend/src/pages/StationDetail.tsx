@@ -1465,7 +1465,7 @@ const StationDetail = () => {
       {/* Fullscreen Differential Pressure Chart Modal */}
       {isDiffPFullscreen && (
         <div
-          className="fixed inset-0 z-[9999] bg-white flex"
+          className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-white to-blue-50 flex"
           onMouseMove={(e) => {
             if (isResizing) {
               const newWidth = window.innerWidth - e.clientX;
@@ -1478,27 +1478,29 @@ const StationDetail = () => {
         >
           {/* Main Chart Area */}
           <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
-            {/* Header */}
-            <div className="bg-gray-100 border-b border-gray-300 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Wind className="w-6 h-6 text-blue-600" />
+            {/* Header with Gradient */}
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-5 flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Wind className="w-7 h-7 text-white" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Differential Pressure History</h2>
-                  <p className="text-sm text-gray-600">{deviceData.device_name} - {deviceData.location}</p>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md">Differential Pressure History</h2>
+                  <p className="text-sm text-blue-100 mt-0.5">{deviceData.device_name} • {deviceData.location}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsDiffPFullscreen(false)}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm group"
                 title="Exit Fullscreen"
               >
-                <X className="w-6 h-6 text-gray-700" />
+                <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
 
             {/* Chart Content */}
-            <div className="flex-1 p-6 bg-gray-50">
-              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+            <div className="flex-1 p-6 bg-gradient-to-br from-white to-blue-50/30">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 h-full border border-blue-100">
                 <CustomDateRangeSelector
                   startDate={diffPStartDate}
                   endDate={diffPEndDate}
