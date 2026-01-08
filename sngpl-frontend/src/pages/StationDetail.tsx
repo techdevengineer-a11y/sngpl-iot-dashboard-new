@@ -117,6 +117,7 @@ const StationDetail = () => {
 
   // Fullscreen chart state
   const [isChartFullscreen, setIsChartFullscreen] = useState(false);
+  const [isDiffPFullscreen, setIsDiffPFullscreen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320); // Default 320px
   const [isResizing, setIsResizing] = useState(false);
 
@@ -865,6 +866,13 @@ const StationDetail = () => {
                 <Wind className="w-5 h-5 text-blue-600" />
                 Differential Pressure History
               </h3>
+              <button
+                onClick={() => setIsDiffPFullscreen(true)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
             <CustomDateRangeSelector
               startDate={diffPStartDate}
@@ -1298,6 +1306,250 @@ const StationDetail = () => {
                       stroke="#dc2626"
                       strokeWidth={2}
                       fill="url(#colorTempGreenFull)"
+                      dot={{ fill: '#dc2626', r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            className="fixed top-0 bottom-0 w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors z-10"
+            style={{ right: `${sidebarWidth}px` }}
+            onMouseDown={() => setIsResizing(true)}
+          />
+
+          {/* Right Sidebar - Parameter Values */}
+          <div
+            className="fixed top-0 bottom-0 right-0 bg-white border-l-2 border-gray-300 flex flex-col shadow-lg"
+            style={{ width: `${sidebarWidth}px` }}
+          >
+            <div className="p-4 bg-gray-100 border-b border-gray-300">
+              <h3 className="text-sm font-bold text-gray-900 uppercase">Live Parameters</h3>
+              <p className="text-xs text-gray-600 mt-1">{deviceData.device_name}</p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
+              {/* Temperature */}
+              <div className="bg-white rounded p-3 border-l-4 border-orange-500 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Temperature</span>
+                  <Thermometer className="w-4 h-4 text-orange-400" />
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {latest?.temperature?.toFixed(1) || '0.0'}
+                  <span className="text-sm text-gray-400 ml-1">°F</span>
+                </div>
+                <div className={`text-xs font-semibold mt-1 ${getTemperatureColor(latest?.temperature || 0).text}`}>
+                  {getTemperatureColor(latest?.temperature || 0).status}
+                </div>
+              </div>
+
+              {/* Static Pressure */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-green-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Static Pressure</span>
+                  <Gauge className="w-4 h-4 text-green-400" />
+                </div>
+                <div className="text-xl font-bold text-white">
+                  {latest?.static_pressure?.toFixed(1) || '0.0'}
+                  <span className="text-sm text-gray-400 ml-1">PSI</span>
+                </div>
+                <div className={`text-xs font-semibold mt-1 ${getStaticPressureColor(latest?.static_pressure || 0).text}`}>
+                  {getStaticPressureColor(latest?.static_pressure || 0).status}
+                </div>
+              </div>
+
+              {/* Max Static Pressure */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Max Static P</span>
+                  <TrendingUp className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="text-lg font-semibold text-white">
+                  {latest?.max_static_pressure?.toFixed(1) || '0.0'}
+                  <span className="text-xs text-gray-400 ml-1">PSI</span>
+                </div>
+              </div>
+
+              {/* Min Static Pressure */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-indigo-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Min Static P</span>
+                  <TrendingUp className="w-4 h-4 text-indigo-400 transform rotate-180" />
+                </div>
+                <div className="text-lg font-semibold text-white">
+                  {latest?.min_static_pressure?.toFixed(1) || '0.0'}
+                  <span className="text-xs text-gray-400 ml-1">PSI</span>
+                </div>
+              </div>
+
+              {/* Differential Pressure */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-blue-400">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Diff Pressure</span>
+                  <Wind className="w-4 h-4 text-blue-300" />
+                </div>
+                <div className="text-lg font-semibold text-white">
+                  {latest?.differential_pressure?.toFixed(2) || '0.00'}
+                  <span className="text-xs text-gray-400 ml-1">IWC</span>
+                </div>
+                <div className={`text-xs font-semibold mt-1 ${getDifferentialPressureColor(latest?.differential_pressure || 0).text}`}>
+                  {getDifferentialPressureColor(latest?.differential_pressure || 0).status}
+                </div>
+              </div>
+
+              {/* Volume */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Volume</span>
+                  <Droplets className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="text-lg font-semibold text-white">
+                  {latest?.volume?.toFixed(1) || '0.0'}
+                  <span className="text-xs text-gray-400 ml-1">MCF</span>
+                </div>
+              </div>
+
+              {/* Flow Rate */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-cyan-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Flow Rate</span>
+                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="text-lg font-semibold text-white">
+                  {latest?.total_volume_flow?.toFixed(1) || '0.0'}
+                  <span className="text-xs text-gray-400 ml-1">MCF/day</span>
+                </div>
+              </div>
+
+              {/* Battery */}
+              <div className="bg-slate-700 rounded p-3 border-l-4 border-yellow-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-300">Battery</span>
+                  <Battery className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div className="text-lg font-semibold text-white">
+                  {batteryLevel.toFixed(2)}
+                  <span className="text-xs text-gray-400 ml-1">V</span>
+                </div>
+                <div className={`text-xs font-semibold mt-1 ${getBatteryColor(batteryLevel).text}`}>
+                  {getBatteryColor(batteryLevel).status}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-900 border-t border-slate-700">
+              <div className="text-xs text-gray-400 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span>Last Update:</span>
+                  <span className="text-white font-mono">{new Date().toLocaleTimeString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Status:</span>
+                  <span className={`font-semibold ${deviceData.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                    {deviceData.is_active ? 'ONLINE' : 'OFFLINE'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Differential Pressure Chart Modal */}
+      {isDiffPFullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-white flex"
+          onMouseMove={(e) => {
+            if (isResizing) {
+              const newWidth = window.innerWidth - e.clientX;
+              if (newWidth >= 250 && newWidth <= 500) {
+                setSidebarWidth(newWidth);
+              }
+            }
+          }}
+          onMouseUp={() => setIsResizing(false)}
+        >
+          {/* Main Chart Area */}
+          <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
+            {/* Header */}
+            <div className="bg-gray-100 border-b border-gray-300 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Wind className="w-6 h-6 text-blue-600" />
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Differential Pressure History</h2>
+                  <p className="text-sm text-gray-600">{deviceData.device_name} - {deviceData.location}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDiffPFullscreen(false)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Exit Fullscreen"
+              >
+                <X className="w-6 h-6 text-gray-700" />
+              </button>
+            </div>
+
+            {/* Chart Content */}
+            <div className="flex-1 p-6 bg-gray-50">
+              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+                <CustomDateRangeSelector
+                  startDate={diffPStartDate}
+                  endDate={diffPEndDate}
+                  onStartChange={setDiffPStartDate}
+                  onEndChange={setDiffPEndDate}
+                />
+                <ResponsiveContainer width="100%" height="90%">
+                  <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 200)}>
+                    <defs>
+                      <linearGradient id="colorDiffPGreenFull" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        const start = new Date(diffPStartDate);
+                        const end = new Date(diffPEndDate);
+                        const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+                        if (diffDays > 2) {
+                          return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                        } else {
+                          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        }
+                      }}
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '13px' }}
+                      domain={[0, 500]}
+                      label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      formatter={(value: any) => {
+                        const color = getValueColor(value, 'differential_pressure');
+                        const status = color === '#16a34a' ? 'Normal' : color === '#eab308' ? 'Warning' : 'Danger';
+                        return [`${value.toFixed(2)} IWC (${status})`, 'Differential Pressure'];
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="differential_pressure"
+                      stroke="#dc2626"
+                      strokeWidth={2}
+                      fill="url(#colorDiffPGreenFull)"
                       dot={{ fill: '#dc2626', r: 3 }}
                       activeDot={{ r: 5 }}
                     />
