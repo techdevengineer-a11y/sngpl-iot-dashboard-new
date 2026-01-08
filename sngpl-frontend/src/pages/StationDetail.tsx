@@ -19,6 +19,7 @@ import {
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
+import { ParameterSidebar } from './StationDetail/ParameterSidebar';
 
 interface DeviceReading {
   timestamp: string;
@@ -1325,140 +1326,16 @@ const StationDetail = () => {
           />
 
           {/* Right Sidebar - Parameter Values */}
-          <div
-            className="fixed top-0 bottom-0 right-0 bg-white border-l-2 border-gray-300 flex flex-col shadow-lg"
-            style={{ width: `${sidebarWidth}px` }}
-          >
-            <div className="p-4 bg-gray-100 border-b border-gray-300">
-              <h3 className="text-sm font-bold text-gray-900 uppercase">Live Parameters</h3>
-              <p className="text-xs text-gray-600 mt-1">{deviceData.device_name}</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
-              {/* Temperature */}
-              <div className="bg-white rounded p-3 border-l-4 border-orange-500 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Temperature</span>
-                  <Thermometer className="w-4 h-4 text-orange-400" />
-                </div>
-                <div className="text-2xl font-bold text-white">
-                  {latest?.temperature?.toFixed(1) || '0.0'}
-                  <span className="text-sm text-gray-400 ml-1">°F</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getTemperatureColor(latest?.temperature || 0).text}`}>
-                  {getTemperatureColor(latest?.temperature || 0).status}
-                </div>
-              </div>
-
-              {/* Static Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-green-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Static Pressure</span>
-                  <Gauge className="w-4 h-4 text-green-400" />
-                </div>
-                <div className="text-xl font-bold text-white">
-                  {latest?.static_pressure?.toFixed(1) || '0.0'}
-                  <span className="text-sm text-gray-400 ml-1">PSI</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getStaticPressureColor(latest?.static_pressure || 0).text}`}>
-                  {getStaticPressureColor(latest?.static_pressure || 0).status}
-                </div>
-              </div>
-
-              {/* Max Static Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-blue-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Max Static P</span>
-                  <TrendingUp className="w-4 h-4 text-blue-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.max_static_pressure?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">PSI</span>
-                </div>
-              </div>
-
-              {/* Min Static Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-indigo-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Min Static P</span>
-                  <TrendingUp className="w-4 h-4 text-indigo-400 transform rotate-180" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.min_static_pressure?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">PSI</span>
-                </div>
-              </div>
-
-              {/* Differential Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-blue-400">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Diff Pressure</span>
-                  <Wind className="w-4 h-4 text-blue-300" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.differential_pressure?.toFixed(2) || '0.00'}
-                  <span className="text-xs text-gray-400 ml-1">IWC</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getDifferentialPressureColor(latest?.differential_pressure || 0).text}`}>
-                  {getDifferentialPressureColor(latest?.differential_pressure || 0).status}
-                </div>
-              </div>
-
-              {/* Volume */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-purple-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Volume</span>
-                  <Droplets className="w-4 h-4 text-purple-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.volume?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">MCF</span>
-                </div>
-              </div>
-
-              {/* Flow Rate */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-cyan-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Flow Rate</span>
-                  <TrendingUp className="w-4 h-4 text-cyan-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.total_volume_flow?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">MCF/day</span>
-                </div>
-              </div>
-
-              {/* Battery */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-yellow-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Battery</span>
-                  <Battery className="w-4 h-4 text-yellow-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {batteryLevel.toFixed(2)}
-                  <span className="text-xs text-gray-400 ml-1">V</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getBatteryColor(batteryLevel).text}`}>
-                  {getBatteryColor(batteryLevel).status}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-900 border-t border-slate-700">
-              <div className="text-xs text-gray-400 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span>Last Update:</span>
-                  <span className="text-white font-mono">{new Date().toLocaleTimeString()}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Status:</span>
-                  <span className={`font-semibold ${deviceData.is_active ? 'text-green-400' : 'text-red-400'}`}>
-                    {deviceData.is_active ? 'ONLINE' : 'OFFLINE'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ParameterSidebar
+            width={sidebarWidth}
+            deviceData={deviceData}
+            latest={latest}
+            batteryLevel={batteryLevel}
+            getTemperatureColor={getTemperatureColor}
+            getStaticPressureColor={getStaticPressureColor}
+            getDifferentialPressureColor={getDifferentialPressureColor}
+            getBatteryColor={getBatteryColor}
+          />
         </div>
       )}
 
@@ -1571,140 +1448,16 @@ const StationDetail = () => {
           />
 
           {/* Right Sidebar - Parameter Values */}
-          <div
-            className="fixed top-0 bottom-0 right-0 bg-white border-l-2 border-gray-300 flex flex-col shadow-lg"
-            style={{ width: `${sidebarWidth}px` }}
-          >
-            <div className="p-4 bg-gray-100 border-b border-gray-300">
-              <h3 className="text-sm font-bold text-gray-900 uppercase">Live Parameters</h3>
-              <p className="text-xs text-gray-600 mt-1">{deviceData.device_name}</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
-              {/* Temperature */}
-              <div className="bg-white rounded p-3 border-l-4 border-orange-500 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Temperature</span>
-                  <Thermometer className="w-4 h-4 text-orange-400" />
-                </div>
-                <div className="text-2xl font-bold text-white">
-                  {latest?.temperature?.toFixed(1) || '0.0'}
-                  <span className="text-sm text-gray-400 ml-1">°F</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getTemperatureColor(latest?.temperature || 0).text}`}>
-                  {getTemperatureColor(latest?.temperature || 0).status}
-                </div>
-              </div>
-
-              {/* Static Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-green-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Static Pressure</span>
-                  <Gauge className="w-4 h-4 text-green-400" />
-                </div>
-                <div className="text-xl font-bold text-white">
-                  {latest?.static_pressure?.toFixed(1) || '0.0'}
-                  <span className="text-sm text-gray-400 ml-1">PSI</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getStaticPressureColor(latest?.static_pressure || 0).text}`}>
-                  {getStaticPressureColor(latest?.static_pressure || 0).status}
-                </div>
-              </div>
-
-              {/* Max Static Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-blue-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Max Static P</span>
-                  <TrendingUp className="w-4 h-4 text-blue-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.max_static_pressure?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">PSI</span>
-                </div>
-              </div>
-
-              {/* Min Static Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-indigo-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Min Static P</span>
-                  <TrendingUp className="w-4 h-4 text-indigo-400 transform rotate-180" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.min_static_pressure?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">PSI</span>
-                </div>
-              </div>
-
-              {/* Differential Pressure */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-blue-400">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Diff Pressure</span>
-                  <Wind className="w-4 h-4 text-blue-300" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.differential_pressure?.toFixed(2) || '0.00'}
-                  <span className="text-xs text-gray-400 ml-1">IWC</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getDifferentialPressureColor(latest?.differential_pressure || 0).text}`}>
-                  {getDifferentialPressureColor(latest?.differential_pressure || 0).status}
-                </div>
-              </div>
-
-              {/* Volume */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-purple-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Volume</span>
-                  <Droplets className="w-4 h-4 text-purple-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.volume?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">MCF</span>
-                </div>
-              </div>
-
-              {/* Flow Rate */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-cyan-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Flow Rate</span>
-                  <TrendingUp className="w-4 h-4 text-cyan-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {latest?.total_volume_flow?.toFixed(1) || '0.0'}
-                  <span className="text-xs text-gray-400 ml-1">MCF/day</span>
-                </div>
-              </div>
-
-              {/* Battery */}
-              <div className="bg-slate-700 rounded p-3 border-l-4 border-yellow-500">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300">Battery</span>
-                  <Battery className="w-4 h-4 text-yellow-400" />
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {batteryLevel.toFixed(2)}
-                  <span className="text-xs text-gray-400 ml-1">V</span>
-                </div>
-                <div className={`text-xs font-semibold mt-1 ${getBatteryColor(batteryLevel).text}`}>
-                  {getBatteryColor(batteryLevel).status}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-900 border-t border-slate-700">
-              <div className="text-xs text-gray-400 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span>Last Update:</span>
-                  <span className="text-white font-mono">{new Date().toLocaleTimeString()}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Status:</span>
-                  <span className={`font-semibold ${deviceData.is_active ? 'text-green-400' : 'text-red-400'}`}>
-                    {deviceData.is_active ? 'ONLINE' : 'OFFLINE'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ParameterSidebar
+            width={sidebarWidth}
+            deviceData={deviceData}
+            latest={latest}
+            batteryLevel={batteryLevel}
+            getTemperatureColor={getTemperatureColor}
+            getStaticPressureColor={getStaticPressureColor}
+            getDifferentialPressureColor={getDifferentialPressureColor}
+            getBatteryColor={getBatteryColor}
+          />
         </div>
       )}
 
