@@ -12,7 +12,9 @@ import {
   AlertTriangle,
   MapPin,
   Clock,
-  Download
+  Download,
+  Maximize2,
+  X
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -112,6 +114,9 @@ const StationDetail = () => {
 
   // Export modal state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // Fullscreen chart state
+  const [isChartFullscreen, setIsChartFullscreen] = useState(false);
 
   useEffect(() => {
     fetchDeviceData();
@@ -708,6 +713,13 @@ const StationDetail = () => {
                 <Thermometer className="w-5 h-5 text-orange-600" />
                 Temperature History
               </h3>
+              <button
+                onClick={() => setIsChartFullscreen(true)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
             <CustomDateRangeSelector
               startDate={tempStartDate}
@@ -1193,6 +1205,116 @@ const StationDetail = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Fullscreen Temperature Chart Modal */}
+      {isChartFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-gray-900 flex flex-col">
+          {/* Header */}
+          <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Thermometer className="w-6 h-6 text-orange-500" />
+              <div>
+                <h2 className="text-xl font-bold text-white">Temperature History - Fullscreen</h2>
+                <p className="text-sm text-gray-400">{deviceData.device_name} | {deviceData.location}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsChartFullscreen(false)}
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-300" />
+            </button>
+          </div>
+
+          {/* Chart Content */}
+          <div className="flex-1 p-6 overflow-auto">
+            <div className="bg-gray-800 rounded-xl p-6 h-full">
+              <CustomDateRangeSelector
+                startDate={tempStartDate}
+                endDate={tempEndDate}
+                onStartChange={setTempStartDate}
+                onEndChange={setTempEndDate}
+              />
+              <ResponsiveContainer width="100%" height="85%">
+                <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 100)}>
+                  <defs>
+                    <linearGradient id="colorTempGreenFull" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorTempYellowFull" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorTempRedFull" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const start = new Date(tempStartDate);
+                      const end = new Date(tempEndDate);
+                      const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()}`;
+                      } else {
+                        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                      }
+                    }}
+                    stroke="#9ca3af"
+                    style={{ fontSize: '14px' }}
+                  />
+                  <YAxis
+                    stroke="#9ca3af"
+                    style={{ fontSize: '14px' }}
+                    domain={[-10, 150]}
+                    label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#9ca3af' } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', color: '#fff' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => {
+                      const color = getValueColor(value, 'temperature');
+                      const status = color === '#16a34a' ? 'Normal' : color === '#eab308' ? 'Warning' : 'Danger';
+                      return [`${value.toFixed(1)}°F (${status})`, 'Temperature'];
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="temperature"
+                    stroke="#16a34a"
+                    strokeWidth={3}
+                    fill="url(#colorTempGreenFull)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+              <div className="flex items-center justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-600 rounded"></div>
+                  <span className="text-sm text-gray-300">V.Low (&lt;0°F)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-400 rounded"></div>
+                  <span className="text-sm text-gray-300">Low (0-10°F)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-600 rounded"></div>
+                  <span className="text-sm text-gray-300">Normal (10-120°F)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-yellow-600 rounded"></div>
+                  <span className="text-sm text-gray-300">High (&gt;120°F)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Export Modal */}
       <ExportModal
