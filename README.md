@@ -553,3 +553,7 @@ Proprietary - Sui Northern Gas Pipelines Limited (SNGPL)
 ---
 
 **Last Updated:** January 8, 2026
+
+## Automatic Deployment Active
+
+This repository is now connected to the EC2 server. Any push to the main branch will automatically deploy!
