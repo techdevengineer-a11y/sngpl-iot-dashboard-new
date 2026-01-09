@@ -1339,14 +1339,8 @@ const StationDetail = () => {
                   }}
                 >
                   <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 8)} height="100%">
-                    <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
-                    <defs>
-                      <linearGradient id="colorTempGreenFull" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                     <XAxis
                       dataKey="timestamp"
                       tickFormatter={(value) => {
@@ -1373,22 +1367,17 @@ const StationDetail = () => {
                     <Tooltip
                       contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                       labelFormatter={(value) => new Date(value).toLocaleString()}
-                      formatter={(value: any) => {
-                        const color = getValueColor(value, 'temperature');
-                        const status = color === '#16a34a' ? 'Normal' : color === '#eab308' ? 'Warning' : 'Danger';
-                        return [`${value.toFixed(1)}°F (${status})`, 'Temperature'];
-                      }}
+                      formatter={(value: any) => [`${value.toFixed(1)}°F`, 'Temperature']}
                     />
-                    <Area
+                    <Line
                       type="monotone"
                       dataKey="temperature"
-                      stroke="#dc2626"
+                      stroke="#8b1538"
                       strokeWidth={2}
-                      fill="url(#colorTempGreenFull)"
-                      dot={{ fill: '#dc2626', r: 3 }}
-                      activeDot={{ r: 5 }}
+                      dot={{ fill: '#8b1538', r: 3 }}
+                      activeDot={{ r: 5, fill: '#8b1538' }}
                     />
-                  </AreaChart>
+                  </LineChart>
                 </ResponsiveContainer>
                 </div>
               </div>
