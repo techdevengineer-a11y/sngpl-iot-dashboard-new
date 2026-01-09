@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -137,7 +137,19 @@ const StationDetail = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const chartContainerRef = useState<HTMLDivElement | null>(null)[0];
+  const chartContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to show latest data when fullscreen opens
+  useEffect(() => {
+    if (isChartFullscreen && chartContainerRef.current) {
+      // Scroll to the right to show the most recent data
+      setTimeout(() => {
+        if (chartContainerRef.current) {
+          chartContainerRef.current.scrollLeft = chartContainerRef.current.scrollWidth;
+        }
+      }, 100);
+    }
+  }, [isChartFullscreen]);
 
   useEffect(() => {
     fetchDeviceData();
@@ -1308,6 +1320,7 @@ const StationDetail = () => {
                   onEndChange={setTempEndDate}
                 />
                 <div
+                  ref={chartContainerRef}
                   className="overflow-x-auto overflow-y-hidden"
                   style={{ height: '90%', cursor: isDragging ? 'grabbing' : 'grab' }}
                   onMouseDown={(e) => {
@@ -1325,7 +1338,7 @@ const StationDetail = () => {
                     e.currentTarget.scrollLeft = scrollLeft - walk;
                   }}
                 >
-                  <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 3)} height="100%">
+                  <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 8)} height="100%">
                     <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
                     <defs>
                       <linearGradient id="colorTempGreenFull" x1="0" y1="0" x2="0" y2="1">
