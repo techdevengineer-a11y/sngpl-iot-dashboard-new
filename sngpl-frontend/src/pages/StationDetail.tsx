@@ -133,6 +133,12 @@ const StationDetail = () => {
   const [sidebarWidth, setSidebarWidth] = useState(320); // Default 320px
   const [isResizing, setIsResizing] = useState(false);
 
+  // Chart drag scrolling state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const chartContainerRef = useState<HTMLDivElement | null>(null)[0];
+
   useEffect(() => {
     fetchDeviceData();
     fetchHistoricalData();
@@ -1278,16 +1284,34 @@ const StationDetail = () => {
             </div>
 
             {/* Chart Content */}
-            <div className="flex-1 p-6 bg-gray-50">
-              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+            <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center">
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200" style={{ width: '95%', height: '85%' }}>
                 <CustomDateRangeSelector
                   startDate={tempStartDate}
                   endDate={tempEndDate}
                   onStartChange={setTempStartDate}
                   onEndChange={setTempEndDate}
                 />
-                <ResponsiveContainer width="100%" height="90%">
-                  <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 200)}>
+                <div
+                  className="overflow-x-auto overflow-y-hidden"
+                  style={{ height: '90%', cursor: isDragging ? 'grabbing' : 'grab' }}
+                  onMouseDown={(e) => {
+                    setIsDragging(true);
+                    setDragStartX(e.pageX - (e.currentTarget.offsetLeft || 0));
+                    setScrollLeft(e.currentTarget.scrollLeft);
+                  }}
+                  onMouseLeave={() => setIsDragging(false)}
+                  onMouseUp={() => setIsDragging(false)}
+                  onMouseMove={(e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const x = e.pageX - (e.currentTarget.offsetLeft || 0);
+                    const walk = (x - dragStartX) * 2; // Scroll speed multiplier
+                    e.currentTarget.scrollLeft = scrollLeft - walk;
+                  }}
+                >
+                  <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 3)} height="100%">
+                    <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
                     <defs>
                       <linearGradient id="colorTempGreenFull" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
@@ -1338,6 +1362,7 @@ const StationDetail = () => {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
