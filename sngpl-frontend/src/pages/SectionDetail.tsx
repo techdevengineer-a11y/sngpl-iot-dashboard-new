@@ -45,7 +45,6 @@ const SectionDetail = () => {
   const navigate = useNavigate();
   const [sectionData, setSectionData] = useState<SectionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAlarmsOnly, setShowAlarmsOnly] = useState(false);
   const [flowHistoryData, setFlowHistoryData] = useState<any[]>([]);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [observedDevices, setObservedDevices] = useState<number[]>([]);
@@ -186,11 +185,6 @@ const SectionDetail = () => {
     return new Date(timestamp).toLocaleString();
   };
 
-  // Mock function to check if device has alarms (will be replaced with real API data)
-  const hasAlarms = (device: Device) => {
-    return Math.random() > 0.7; // 30% of devices have alarms
-  };
-
   // Toggle device observation
   const toggleObservation = (device: Device, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent row click navigation
@@ -239,13 +233,10 @@ const SectionDetail = () => {
   // Calculate statistics
   const activeDevices = sectionData?.devices.filter(d => d.is_active).length || 0;
   const offlineDevices = (sectionData?.device_count || 0) - activeDevices;
-  const devicesWithAlarms = sectionData?.devices.filter(d => hasAlarms(d)).length || 0;
   const totalFlow = sectionData?.devices.reduce((sum, d) => sum + (d.latest_reading?.total_volume_flow || 0), 0) || 0;
 
-  // Filter devices based on alarms toggle
-  const displayedDevices = showAlarmsOnly
-    ? sectionData?.devices.filter(d => hasAlarms(d)) || []
-    : sectionData?.devices || [];
+  // Show all devices (alarms filter removed)
+  const displayedDevices = sectionData?.devices || [];
 
   // Fetch and aggregate historical flow data for all devices in the section
   const generateFlowHistory = async () => {
@@ -414,24 +405,6 @@ const SectionDetail = () => {
               </div>
             </div>
           </div>
-
-          {/* Devices with Alarms */}
-          <div
-            className="bg-yellow-100 rounded-xl p-4 cursor-pointer hover:scale-105 transition-transform"
-            onClick={() => setShowAlarmsOnly(!showAlarmsOnly)}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">{devicesWithAlarms}</div>
-                <div className="text-xs text-gray-600">
-                  {showAlarmsOnly ? 'Showing Alarms' : 'With Alarms'}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Total Flow Card */}
@@ -586,13 +559,11 @@ const SectionDetail = () => {
                     </div>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Reading</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Alarms</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {displayedDevices.map((device, index) => {
-                  const deviceHasAlarms = hasAlarms(device);
                   const batteryVoltage = device.latest_reading?.battery || 0;
                   const getBatteryColor = (voltage: number) => {
                     // 4-color battery threshold system based on voltage
@@ -723,18 +694,6 @@ const SectionDetail = () => {
                         </div>
                       </td>
 
-                      {/* Alarms */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {deviceHasAlarms ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                            <AlertTriangle className="w-3 h-3" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-600">None</span>
-                        )}
-                      </td>
-
                       {/* Actions */}
                       <td className="px-4 py-3 whitespace-nowrap text-center">
                         <button
@@ -770,33 +729,13 @@ const SectionDetail = () => {
         {/* Empty State */}
         {displayedDevices.length === 0 && (
           <div className="glass rounded-xl p-12 text-center">
-            {showAlarmsOnly ? (
-              <>
-                <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  No Active Alarms
-                </h3>
-                <p className="text-gray-400">
-                  All devices in this section are operating normally.
-                </p>
-                <button
-                  onClick={() => setShowAlarmsOnly(false)}
-                  className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                >
-                  Show All Devices
-                </button>
-              </>
-            ) : (
-              <>
-                <Gauge className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  No devices found
-                </h3>
-                <p className="text-gray-400">
-                  This section doesn't have any SMS devices yet.
-                </p>
-              </>
-            )}
+            <Gauge className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-semibold text-white mb-2">
+              No devices found
+            </h3>
+            <p className="text-gray-400">
+              This section doesn't have any SMS devices yet.
+            </p>
           </div>
         )}
       </div>

@@ -302,9 +302,6 @@ const StationDetail = () => {
     return new Date(timestamp).toLocaleString();
   };
 
-  // Mock alarm data
-  const hasAlarm = (parameter: string) => Math.random() > 0.7;
-
   // Get color based on value thresholds
   const getValueColor = (value: number, type: string) => {
     switch (type) {
@@ -661,12 +658,6 @@ const StationDetail = () => {
               </span>
               <span className="text-sm text-gray-500">MCF</span>
             </div>
-            {hasAlarm('volume') && (
-              <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-xs font-medium">Volume Alert</span>
-              </div>
-            )}
           </motion.div>
 
           {/* Total Volume Flow */}
@@ -686,12 +677,6 @@ const StationDetail = () => {
               </span>
               <span className="text-sm text-gray-500">MCF/day</span>
             </div>
-            {hasAlarm('total_volume_flow') && (
-              <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-xs font-medium">Flow Alert</span>
-              </div>
-            )}
           </motion.div>
 
           {/* Battery */}
