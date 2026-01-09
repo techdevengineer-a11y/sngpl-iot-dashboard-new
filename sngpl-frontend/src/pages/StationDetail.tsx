@@ -19,7 +19,14 @@ import {
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
-import { ParameterSidebar } from './StationDetail/ParameterSidebar';
+import {
+  TemperatureParameterSidebar,
+  PressureParameterSidebar,
+  DifferentialPressureParameterSidebar,
+  VolumeParameterSidebar,
+  FlowRateParameterSidebar,
+  BatteryParameterSidebar
+} from './StationDetail/ChartParameterSidebars';
 
 interface DeviceReading {
   timestamp: string;
@@ -117,8 +124,12 @@ const StationDetail = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Fullscreen chart state
-  const [isChartFullscreen, setIsChartFullscreen] = useState(false);
-  const [isDiffPFullscreen, setIsDiffPFullscreen] = useState(false);
+  const [isChartFullscreen, setIsChartFullscreen] = useState(false); // Temperature
+  const [isPressureFullscreen, setIsPressureFullscreen] = useState(false); // Pressure History
+  const [isDiffPFullscreen, setIsDiffPFullscreen] = useState(false); // Differential Pressure
+  const [isVolumeFullscreen, setIsVolumeFullscreen] = useState(false); // Volume
+  const [isFlowFullscreen, setIsFlowFullscreen] = useState(false); // Flow Rate
+  const [isBatteryFullscreen, setIsBatteryFullscreen] = useState(false); // Battery
   const [sidebarWidth, setSidebarWidth] = useState(320); // Default 320px
   const [isResizing, setIsResizing] = useState(false);
 
@@ -811,6 +822,13 @@ const StationDetail = () => {
                 <Gauge className="w-5 h-5 text-green-600" />
                 Pressure History (Static / Max / Min)
               </h3>
+              <button
+                onClick={() => setIsPressureFullscreen(true)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
             <CustomDateRangeSelector
               startDate={staticPStartDate}
@@ -939,6 +957,13 @@ const StationDetail = () => {
                 <Droplets className="w-5 h-5 text-purple-600" />
                 Volume History
               </h3>
+              <button
+                onClick={() => setIsVolumeFullscreen(true)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
             <CustomDateRangeSelector
               startDate={volumeStartDate}
@@ -1000,6 +1025,13 @@ const StationDetail = () => {
                 <TrendingUp className="w-5 h-5 text-cyan-600" />
                 Total Volume Flow History
               </h3>
+              <button
+                onClick={() => setIsFlowFullscreen(true)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
             <CustomDateRangeSelector
               startDate={flowStartDate}
@@ -1062,6 +1094,13 @@ const StationDetail = () => {
               <Battery className="w-5 h-5 text-yellow-600" />
               Battery Voltage History
             </h3>
+            <button
+              onClick={() => setIsBatteryFullscreen(true)}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Fullscreen"
+            >
+              <Maximize2 className="w-5 h-5 text-gray-600" />
+            </button>
           </div>
           <CustomDateRangeSelector
             startDate={batteryStartDate}
@@ -1325,16 +1364,12 @@ const StationDetail = () => {
             onMouseDown={() => setIsResizing(true)}
           />
 
-          {/* Right Sidebar - Parameter Values */}
-          <ParameterSidebar
+          {/* Right Sidebar - Temperature Parameter */}
+          <TemperatureParameterSidebar
             width={sidebarWidth}
             deviceData={deviceData}
             latest={latest}
-            batteryLevel={batteryLevel}
             getTemperatureColor={getTemperatureColor}
-            getStaticPressureColor={getStaticPressureColor}
-            getDifferentialPressureColor={getDifferentialPressureColor}
-            getBatteryColor={getBatteryColor}
           />
         </div>
       )}
@@ -1447,15 +1482,462 @@ const StationDetail = () => {
             onMouseDown={() => setIsResizing(true)}
           />
 
-          {/* Right Sidebar - Parameter Values */}
-          <ParameterSidebar
+          {/* Right Sidebar - Differential Pressure Parameter */}
+          <DifferentialPressureParameterSidebar
+            width={sidebarWidth}
+            deviceData={deviceData}
+            latest={latest}
+            getDifferentialPressureColor={getDifferentialPressureColor}
+          />
+        </div>
+      )}
+
+      {/* Fullscreen Pressure History Chart Modal */}
+      {isPressureFullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-white to-green-50 flex"
+          onMouseMove={(e) => {
+            if (isResizing) {
+              const newWidth = window.innerWidth - e.clientX;
+              if (newWidth >= 250 && newWidth <= 500) {
+                setSidebarWidth(newWidth);
+              }
+            }
+          }}
+          onMouseUp={() => setIsResizing(false)}
+        >
+          {/* Main Chart Area */}
+          <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
+            {/* Header with Gradient */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Gauge className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md">Pressure History</h2>
+                  <p className="text-sm text-green-100 mt-0.5">{deviceData.device_name} • {deviceData.location}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPressureFullscreen(false)}
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm group"
+                title="Exit Fullscreen"
+              >
+                <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
+              </button>
+            </div>
+
+            {/* Chart Content */}
+            <div className="flex-1 p-6 bg-gray-50">
+              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+                <CustomDateRangeSelector
+                  startDate={staticPStartDate}
+                  endDate={staticPEndDate}
+                  onStartChange={setStaticPStartDate}
+                  onEndChange={setStaticPEndDate}
+                />
+                <ResponsiveContainer width="100%" height="90%">
+                  <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 200)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        const start = new Date(staticPStartDate);
+                        const end = new Date(staticPEndDate);
+                        const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+                        if (diffDays > 2) {
+                          return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                        } else {
+                          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        }
+                      }}
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '13px' }}
+                      domain={['auto', 'auto']}
+                      label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                    />
+                    <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            className="fixed top-0 bottom-0 w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors z-10"
+            style={{ right: `${sidebarWidth}px` }}
+            onMouseDown={() => setIsResizing(true)}
+          />
+
+          {/* Right Sidebar - Pressure Parameters */}
+          <PressureParameterSidebar
+            width={sidebarWidth}
+            deviceData={deviceData}
+            latest={latest}
+            getStaticPressureColor={getStaticPressureColor}
+          />
+        </div>
+      )}
+
+      {/* Fullscreen Volume Chart Modal */}
+      {isVolumeFullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-white to-purple-50 flex"
+          onMouseMove={(e) => {
+            if (isResizing) {
+              const newWidth = window.innerWidth - e.clientX;
+              if (newWidth >= 250 && newWidth <= 500) {
+                setSidebarWidth(newWidth);
+              }
+            }
+          }}
+          onMouseUp={() => setIsResizing(false)}
+        >
+          {/* Main Chart Area */}
+          <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
+            {/* Header with Gradient */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-5 flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Droplets className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md">Volume History</h2>
+                  <p className="text-sm text-purple-100 mt-0.5">{deviceData.device_name} • {deviceData.location}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsVolumeFullscreen(false)}
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm group"
+                title="Exit Fullscreen"
+              >
+                <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
+              </button>
+            </div>
+
+            {/* Chart Content */}
+            <div className="flex-1 p-6 bg-gray-50">
+              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+                <CustomDateRangeSelector
+                  startDate={volumeStartDate}
+                  endDate={volumeEndDate}
+                  onStartChange={setVolumeStartDate}
+                  onEndChange={setVolumeEndDate}
+                />
+                <ResponsiveContainer width="100%" height="90%">
+                  <AreaChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 200)}>
+                    <defs>
+                      <linearGradient id="colorVolumeGreenFull" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        const start = new Date(volumeStartDate);
+                        const end = new Date(volumeEndDate);
+                        const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+                        if (diffDays > 2) {
+                          return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                        } else {
+                          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        }
+                      }}
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '13px' }}
+                      domain={['auto', 'auto']}
+                      label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      formatter={(value: any) => [`${value.toFixed(1)} MCF`, 'Volume']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="volume"
+                      stroke="#9333ea"
+                      strokeWidth={2}
+                      fill="url(#colorVolumeGreenFull)"
+                      dot={{ fill: '#9333ea', r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            className="fixed top-0 bottom-0 w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors z-10"
+            style={{ right: `${sidebarWidth}px` }}
+            onMouseDown={() => setIsResizing(true)}
+          />
+
+          {/* Right Sidebar - Volume Parameter */}
+          <VolumeParameterSidebar
+            width={sidebarWidth}
+            deviceData={deviceData}
+            latest={latest}
+          />
+        </div>
+      )}
+
+      {/* Fullscreen Flow Rate Chart Modal */}
+      {isFlowFullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-white to-teal-50 flex"
+          onMouseMove={(e) => {
+            if (isResizing) {
+              const newWidth = window.innerWidth - e.clientX;
+              if (newWidth >= 250 && newWidth <= 500) {
+                setSidebarWidth(newWidth);
+              }
+            }
+          }}
+          onMouseUp={() => setIsResizing(false)}
+        >
+          {/* Main Chart Area */}
+          <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
+            {/* Header with Gradient */}
+            <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-5 flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md">Flow Rate History</h2>
+                  <p className="text-sm text-teal-100 mt-0.5">{deviceData.device_name} • {deviceData.location}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsFlowFullscreen(false)}
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm group"
+                title="Exit Fullscreen"
+              >
+                <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
+              </button>
+            </div>
+
+            {/* Chart Content */}
+            <div className="flex-1 p-6 bg-gray-50">
+              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+                <CustomDateRangeSelector
+                  startDate={flowStartDate}
+                  endDate={flowEndDate}
+                  onStartChange={setFlowStartDate}
+                  onEndChange={setFlowEndDate}
+                />
+                <ResponsiveContainer width="100%" height="90%">
+                  <AreaChart data={filterDataByDateRange(flowStartDate, flowEndDate, 200)}>
+                    <defs>
+                      <linearGradient id="colorFlowGreenFull" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        const start = new Date(flowStartDate);
+                        const end = new Date(flowEndDate);
+                        const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+                        if (diffDays > 2) {
+                          return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                        } else {
+                          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        }
+                      }}
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '13px' }}
+                      domain={['auto', 'auto']}
+                      label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      formatter={(value: any) => [`${value.toFixed(1)} MCF/day`, 'Flow Rate']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total_volume_flow"
+                      stroke="#14b8a6"
+                      strokeWidth={2}
+                      fill="url(#colorFlowGreenFull)"
+                      dot={{ fill: '#14b8a6', r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            className="fixed top-0 bottom-0 w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors z-10"
+            style={{ right: `${sidebarWidth}px` }}
+            onMouseDown={() => setIsResizing(true)}
+          />
+
+          {/* Right Sidebar - Flow Rate Parameter */}
+          <FlowRateParameterSidebar
+            width={sidebarWidth}
+            deviceData={deviceData}
+            latest={latest}
+          />
+        </div>
+      )}
+
+      {/* Fullscreen Battery Chart Modal */}
+      {isBatteryFullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-white to-yellow-50 flex"
+          onMouseMove={(e) => {
+            if (isResizing) {
+              const newWidth = window.innerWidth - e.clientX;
+              if (newWidth >= 250 && newWidth <= 500) {
+                setSidebarWidth(newWidth);
+              }
+            }
+          }}
+          onMouseUp={() => setIsResizing(false)}
+        >
+          {/* Main Chart Area */}
+          <div className="flex-1 flex flex-col" style={{ marginRight: `${sidebarWidth}px` }}>
+            {/* Header with Gradient */}
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-5 flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Battery className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md">Battery Voltage History</h2>
+                  <p className="text-sm text-yellow-100 mt-0.5">{deviceData.device_name} • {deviceData.location}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBatteryFullscreen(false)}
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm group"
+                title="Exit Fullscreen"
+              >
+                <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
+              </button>
+            </div>
+
+            {/* Chart Content */}
+            <div className="flex-1 p-6 bg-gray-50">
+              <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
+                <CustomDateRangeSelector
+                  startDate={batteryStartDate}
+                  endDate={batteryEndDate}
+                  onStartChange={setBatteryStartDate}
+                  onEndChange={setBatteryEndDate}
+                />
+                <ResponsiveContainer width="100%" height="90%">
+                  <BarChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 200)} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      type="category"
+                      dataKey="timestamp"
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        const diffDays = (new Date(batteryEndDate).getTime() - new Date(batteryStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                        if (diffDays > 2) {
+                          return `${date.getMonth()+1}/${date.getDate()}`;
+                        } else {
+                          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        }
+                      }}
+                    />
+                    <YAxis
+                      type="number"
+                      stroke="#6b7280"
+                      style={{ fontSize: '13px' }}
+                      domain={['auto', 'auto']}
+                      label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      formatter={(value: any) => {
+                        const batteryValue = value || 12.5;
+                        const status = batteryValue >= 12.5 ? 'Optimal' : batteryValue >= 11.8 ? 'Good' : batteryValue >= 11.0 ? 'Warning' : batteryValue >= 10.5 ? 'Low' : batteryValue >= 10.0 ? 'V.Low' : 'Critical';
+                        return [`${batteryValue.toFixed(2)}V (${status})`, 'Battery'];
+                      }}
+                    />
+                    <Bar dataKey="battery" radius={[4, 4, 0, 0]}>
+                      {filterDataByDateRange(batteryStartDate, batteryEndDate, 200).map((entry: any, index: number) => {
+                        const batteryValue = entry.battery || 12.5;
+                        const color = batteryValue >= 12.5 ? '#16a34a' : batteryValue >= 11.8 ? '#eab308' : '#dc2626';
+                        return <Cell key={`cell-${index}`} fill={color} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="flex items-center justify-center gap-4 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-600 rounded"></div>
+                    <span className="text-sm text-gray-600">Optimal (≥12.5V)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-600 rounded"></div>
+                    <span className="text-sm text-gray-600">Good (11.8-12.5V)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-600 rounded"></div>
+                    <span className="text-sm text-gray-600">Low (&lt;11.8V)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            className="fixed top-0 bottom-0 w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors z-10"
+            style={{ right: `${sidebarWidth}px` }}
+            onMouseDown={() => setIsResizing(true)}
+          />
+
+          {/* Right Sidebar - Battery Parameter */}
+          <BatteryParameterSidebar
             width={sidebarWidth}
             deviceData={deviceData}
             latest={latest}
             batteryLevel={batteryLevel}
-            getTemperatureColor={getTemperatureColor}
-            getStaticPressureColor={getStaticPressureColor}
-            getDifferentialPressureColor={getDifferentialPressureColor}
             getBatteryColor={getBatteryColor}
           />
         </div>
