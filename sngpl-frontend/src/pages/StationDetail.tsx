@@ -1338,7 +1338,7 @@ const StationDetail = () => {
                     e.currentTarget.scrollLeft = scrollLeft - walk;
                   }}
                 >
-                  <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 8)} height="100%">
+                  <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 80)} height="100%">
                     <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                     <XAxis
@@ -1373,9 +1373,9 @@ const StationDetail = () => {
                       type="monotone"
                       dataKey="temperature"
                       stroke="#8b1538"
-                      strokeWidth={2}
-                      dot={{ fill: '#8b1538', r: 3 }}
-                      activeDot={{ r: 5, fill: '#8b1538' }}
+                      strokeWidth={2.5}
+                      dot={{ fill: '#8b1538', r: 4, strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: '#8b1538' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
