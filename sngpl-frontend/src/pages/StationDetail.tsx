@@ -1312,7 +1312,7 @@ const StationDetail = () => {
 
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center">
-              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200" style={{ width: '95%', height: '85%' }}>
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200" style={{ width: '90%', height: '80%', maxWidth: '1200px', aspectRatio: '1.2' }}>
                 <CustomDateRangeSelector
                   startDate={tempStartDate}
                   endDate={tempEndDate}
@@ -1338,8 +1338,9 @@ const StationDetail = () => {
                     e.currentTarget.scrollLeft = scrollLeft - walk;
                   }}
                 >
-                  <ResponsiveContainer width={Math.max(1200, filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 80)} height="100%">
-                    <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
+                  <div style={{ width: `${filterDataByDateRange(tempStartDate, tempEndDate, 1000).length * 80}px`, minWidth: '100%' }}>
+                    <ResponsiveContainer width="100%" height={500}>
+                      <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 1000)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                     <XAxis
                       dataKey="timestamp"
@@ -1377,8 +1378,9 @@ const StationDetail = () => {
                       dot={{ fill: '#8b1538', r: 4, strokeWidth: 0 }}
                       activeDot={{ r: 6, fill: '#8b1538' }}
                     />
-                  </LineChart>
-                </ResponsiveContainer>
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             </div>
