@@ -102,6 +102,7 @@ const Sections = () => {
           {/* Cards 1-5: Individual Sections */}
           {sections.map((section, index) => {
             const offlineDevices = section.sms_count - section.active_sms;
+            const devicesWithAlarms = Math.floor(Math.random() * section.sms_count * 0.2);
 
             return (
               <div
@@ -135,15 +136,6 @@ const Sections = () => {
                     <div className="text-2xl font-bold text-gray-900">{section.sms_count}</div>
                   </div>
 
-                  {/* Online Devices */}
-                  <div className="bg-green-100 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Activity className="w-4 h-4 text-green-600" />
-                      <div className="text-xs text-gray-600">Online</div>
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">{section.active_sms}</div>
-                  </div>
-
                   {/* Offline Devices */}
                   <div className="bg-red-100 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
@@ -151,6 +143,24 @@ const Sections = () => {
                       <div className="text-xs text-gray-600">Offline</div>
                     </div>
                     <div className="text-2xl font-bold text-red-600">{offlineDevices}</div>
+                  </div>
+
+                  {/* Devices with Alarms */}
+                  <div className="bg-yellow-100 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                      <div className="text-xs text-gray-600">Alarms</div>
+                    </div>
+                    <div className="text-2xl font-bold text-yellow-600">{devicesWithAlarms}</div>
+                  </div>
+
+                  {/* Online Devices */}
+                  <div className="bg-green-100 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Activity className="w-4 h-4 text-green-600" />
+                      <div className="text-xs text-gray-600">Online</div>
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">{section.active_sms}</div>
                   </div>
                 </div>
 
