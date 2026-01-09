@@ -188,7 +188,7 @@ const SectionDetail = () => {
 
   // Function to check if device has alarms
   const hasAlarms = (device: Device) => {
-    return Math.random() > 0.7; // 30% of devices have alarms
+    return false; // Set to false for now - no active alarms shown
   };
 
   // Toggle device observation

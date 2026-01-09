@@ -321,7 +321,7 @@ const StationDetail = () => {
   };
 
   // Function to check if parameter has alarm
-  const hasAlarm = (parameter: string) => Math.random() > 0.7;
+  const hasAlarm = (parameter: string) => false; // Set to false for now - no alerts shown
 
   // Get color based on value thresholds
   const getValueColor = (value: number, type: string) => {

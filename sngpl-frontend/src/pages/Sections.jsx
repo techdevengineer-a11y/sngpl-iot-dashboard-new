@@ -102,7 +102,7 @@ const Sections = () => {
           {/* Cards 1-5: Individual Sections */}
           {sections.map((section, index) => {
             const offlineDevices = section.sms_count - section.active_sms;
-            const devicesWithAlarms = Math.floor(Math.random() * section.sms_count * 0.2);
+            const devicesWithAlarms = 0; // Set to 0 for now
 
             return (
               <div
