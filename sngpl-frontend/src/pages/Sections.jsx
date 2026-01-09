@@ -164,60 +164,6 @@ const Sections = () => {
               </div>
             );
           })}
-
-          {/* Card 6: Total Devices Across All Sections */}
-          <div className="glass rounded-xl p-6 bg-gradient-to-br from-purple-50 to-blue-50">
-            {/* Header with Total Icon */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                <Building2 className="w-8 h-8" />
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-600 mb-1">Total Flow</div>
-                <div className="text-3xl font-bold text-cyan-600">{allSms.cumulative_volume_flow.toFixed(1)}</div>
-                <div className="text-xs text-gray-600">MCF/day</div>
-              </div>
-            </div>
-
-            {/* Section Name */}
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Total Devices</h2>
-
-            {/* Stats Grid - 2x2 */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {/* Total Devices */}
-              <div className="bg-blue-100 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Gauge className="w-4 h-4 text-blue-600" />
-                  <div className="text-xs text-gray-600">Total</div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900">{allSms.sms_count}</div>
-              </div>
-
-              {/* Online Devices */}
-              <div className="bg-green-100 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Activity className="w-4 h-4 text-green-600" />
-                  <div className="text-xs text-gray-600">Online</div>
-                </div>
-                <div className="text-2xl font-bold text-green-600">{allSms.active_sms}</div>
-              </div>
-
-              {/* Offline Devices */}
-              <div className="bg-red-100 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <WifiOff className="w-4 h-4 text-red-600" />
-                  <div className="text-xs text-gray-600">Offline</div>
-                </div>
-                <div className="text-2xl font-bold text-red-600">{allSms.sms_count - allSms.active_sms}</div>
-              </div>
-            </div>
-
-            {/* View Details Info */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-300">
-              <span className="text-sm text-gray-600">Across All Sections</span>
-              <span className="text-xs text-gray-600 bg-purple-100 px-2 py-1 rounded">Sections I-V</span>
-            </div>
-          </div>
         </div>
 
         {/* Last Updated */}
