@@ -152,14 +152,16 @@ const StationDetail = () => {
   }, [isChartFullscreen]);
 
   useEffect(() => {
+    // Initial fetch on mount
     fetchDeviceData();
     fetchHistoricalData();
 
-    // Auto-refresh every 2 seconds to match MQTT data storage interval
+    // Auto-refresh device data only every 10 seconds (reduced from 2 seconds)
+    // Historical data is only fetched once on mount to avoid wasteful API calls
     const dataInterval = setInterval(() => {
-      fetchDeviceData();
-      fetchHistoricalData();
-    }, 2000);
+      fetchDeviceData(); // Only fetch device metadata
+      // Removed: fetchHistoricalData() - no need to refetch 1000 records every 2 seconds
+    }, 10000);
 
     // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
@@ -214,8 +216,7 @@ const StationDetail = () => {
         const result = await response.json();
         const readings = result.data || [];
 
-        console.log(`[StationDetail] Fetched ${readings.length} readings for device ${stationId}`);
-
+        // Removed excessive logging
         if (readings && readings.length > 0) {
           // Sort readings by timestamp descending (most recent first)
           const sortedReadings = readings.sort((a: any, b: any) =>
@@ -226,7 +227,6 @@ const StationDetail = () => {
 
           // Set the latest reading (first item in the sorted array is most recent)
           setLatestReading(sortedReadings[0]);
-          console.log('[StationDetail] Latest reading:', sortedReadings[0]);
 
           // Generate battery history from readings
           const battHist = sortedReadings.map((reading: any) => ({
@@ -236,7 +236,6 @@ const StationDetail = () => {
           }));
           setBatteryHistory(battHist);
         } else {
-          console.log('[StationDetail] No readings found, generating mock data');
           // No data available, generate mock data
           generateMockHistory();
         }
