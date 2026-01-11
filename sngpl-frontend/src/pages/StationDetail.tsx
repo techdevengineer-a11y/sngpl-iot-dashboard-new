@@ -1312,18 +1312,24 @@ const StationDetail = () => {
 
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center overflow-visible">
-              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 overflow-visible" style={{ width: '90%', height: '80%', maxWidth: '1200px', aspectRatio: '1.2' }}>
-                <CustomDateRangeSelector
-                  startDate={tempStartDate}
-                  endDate={tempEndDate}
-                  onStartChange={setTempStartDate}
-                  onEndChange={setTempEndDate}
-                />
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200" style={{ width: '90%', height: '80%', maxWidth: '1200px', aspectRatio: '1.2' }}>
+                <div style={{ position: 'relative', zIndex: 10 }}>
+                  <CustomDateRangeSelector
+                    startDate={tempStartDate}
+                    endDate={tempEndDate}
+                    onStartChange={setTempStartDate}
+                    onEndChange={setTempEndDate}
+                  />
+                </div>
                 <div
                   ref={chartContainerRef}
-                  className="overflow-x-auto overflow-y-visible"
+                  className="overflow-x-auto overflow-y-hidden"
                   style={{ height: '90%', cursor: isDragging ? 'grabbing' : 'grab' }}
                   onMouseDown={(e) => {
+                    // Prevent drag on date inputs
+                    if (e.target instanceof HTMLInputElement && e.target.type === 'datetime-local') {
+                      return;
+                    }
                     setIsDragging(true);
                     setDragStartX(e.pageX - (e.currentTarget.offsetLeft || 0));
                     setScrollLeft(e.currentTarget.scrollLeft);
