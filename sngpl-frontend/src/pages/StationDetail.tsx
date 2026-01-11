@@ -1311,8 +1311,8 @@ const StationDetail = () => {
             </div>
 
             {/* Chart Content */}
-            <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center">
-              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200" style={{ width: '90%', height: '80%', maxWidth: '1200px', aspectRatio: '1.2' }}>
+            <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center overflow-visible">
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 overflow-visible" style={{ width: '90%', height: '80%', maxWidth: '1200px', aspectRatio: '1.2' }}>
                 <CustomDateRangeSelector
                   startDate={tempStartDate}
                   endDate={tempEndDate}
@@ -1321,7 +1321,7 @@ const StationDetail = () => {
                 />
                 <div
                   ref={chartContainerRef}
-                  className="overflow-x-auto overflow-y-hidden"
+                  className="overflow-x-auto overflow-y-visible"
                   style={{ height: '90%', cursor: isDragging ? 'grabbing' : 'grab' }}
                   onMouseDown={(e) => {
                     setIsDragging(true);
