@@ -404,7 +404,7 @@ const StationDetail = () => {
 
     // If filter returns nothing but we have data, show last 24 hours as fallback
     if (limited.length === 0 && historyData.length > 0) {
-      console.warn('[Filter] No data in selected range, showing last 24 hours');
+      // Removed excessive console logging to prevent spam
       const now = new Date();
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
