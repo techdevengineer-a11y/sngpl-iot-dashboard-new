@@ -5,14 +5,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
-// Create a client with optimized settings
+// Create a client with optimized settings for better performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5000,
+      staleTime: 60000, // 60 seconds - dashboard data doesn't change that fast
       cacheTime: 10 * 60 * 1000, // 10 minutes
+      refetchInterval: false, // Disable automatic refetching, use manual polling where needed
     },
   },
 });

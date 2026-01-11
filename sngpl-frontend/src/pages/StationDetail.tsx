@@ -156,12 +156,12 @@ const StationDetail = () => {
     fetchDeviceData();
     fetchHistoricalData();
 
-    // Auto-refresh device data only every 10 seconds (reduced from 2 seconds)
+    // Auto-refresh device data every 30 seconds for better performance
     // Historical data is only fetched once on mount to avoid wasteful API calls
     const dataInterval = setInterval(() => {
       fetchDeviceData(); // Only fetch device metadata
-      // Removed: fetchHistoricalData() - no need to refetch 1000 records every 2 seconds
-    }, 10000);
+      // Removed: fetchHistoricalData() - no need to refetch 1000 records
+    }, 30000); // Increased from 10s to 30s
 
     // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
