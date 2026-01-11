@@ -433,25 +433,27 @@ const StationDetail = () => {
     onEndChange: (val: string) => void;
   }) => {
     return (
-      <div className="mb-4">
+      <div className="mb-4" style={{ position: 'relative', zIndex: 50 }}>
         {/* Custom Date/Time Inputs */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
+          <div style={{ position: 'relative' }}>
             <label className="block text-xs font-medium text-gray-700 mb-1">Start Date & Time</label>
             <input
               type="datetime-local"
               value={startDate}
               onChange={(e) => onStartChange(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              style={{ position: 'relative', zIndex: 100 }}
             />
           </div>
-          <div>
+          <div style={{ position: 'relative' }}>
             <label className="block text-xs font-medium text-gray-700 mb-1">End Date & Time</label>
             <input
               type="datetime-local"
               value={endDate}
               onChange={(e) => onEndChange(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              style={{ position: 'relative', zIndex: 100 }}
             />
           </div>
         </div>
@@ -740,7 +742,7 @@ const StationDetail = () => {
         {/* 5 Area Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Temperature Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Thermometer className="w-5 h-5 text-orange-600" />
@@ -834,7 +836,7 @@ const StationDetail = () => {
           </div>
 
           {/* Combined Pressure Chart - Static, Max, Min */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Gauge className="w-5 h-5 text-green-600" />
@@ -897,7 +899,7 @@ const StationDetail = () => {
           </div>
 
           {/* Differential Pressure Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Wind className="w-5 h-5 text-blue-600" />
@@ -969,7 +971,7 @@ const StationDetail = () => {
           </div>
 
           {/* Volume Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Droplets className="w-5 h-5 text-purple-600" />
@@ -1037,7 +1039,7 @@ const StationDetail = () => {
           </div>
 
           {/* Total Volume Flow Chart */}
-          <div className="glass rounded-xl p-6 lg:col-span-2">
+          <div className="glass rounded-xl p-6 lg:col-span-2" style={{ position: 'relative', overflow: 'visible' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-cyan-600" />
