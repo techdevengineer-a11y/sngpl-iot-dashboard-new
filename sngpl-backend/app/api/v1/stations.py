@@ -4,23 +4,24 @@ Provides section-level aggregated data and SMS listings
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case, and_, literal
 from typing import List, Dict, Any
 from app.db.database import get_db
 from app.models.models import Device, DeviceReading
 from datetime import datetime, timedelta
+from app.core.redis_client import cache_response
 
 router = APIRouter(prefix="/sections", tags=["sections"])
 
 
 @router.get("/stats")
+@cache_response("sections:stats", ttl=60)
 async def get_section_stats(db: Session = Depends(get_db)):
     """
     Get statistics for all sections (Sections I-V) and overall total
     Returns cumulative volume flow for each section
+    OPTIMIZED: Single aggregation query instead of N+1 queries
     """
-    sections = []
-
     # Section mapping
     section_info = {
         'I': {'name': 'Section I - Multan/BWP/Sahiwal', 'section': 'I'},
@@ -30,34 +31,95 @@ async def get_section_stats(db: Session = Depends(get_db)):
         'V': {'name': 'Section V', 'section': 'V'},
     }
 
+    # Subquery to get latest reading per device
+    latest_reading_subq = (
+        db.query(
+            DeviceReading.device_id,
+            func.max(DeviceReading.timestamp).label('max_timestamp')
+        )
+        .group_by(DeviceReading.device_id)
+        .subquery()
+    )
+
+    # Extract section from client_id (SMS-I-XXX -> I, SMS-II-XXX -> II, etc.)
+    section_extract = func.substr(Device.client_id, 5, func.length(Device.client_id))
+
+    # Single optimized query for SMS devices with aggregation
+    sms_stats = (
+        db.query(
+            case(
+                # Extract section identifier (I, II, III, IV, V)
+                (Device.client_id.like('SMS-I-%'), literal('I')),
+                (Device.client_id.like('SMS-II-%'), literal('II')),
+                (Device.client_id.like('SMS-III-%'), literal('III')),
+                (Device.client_id.like('SMS-IV-%'), literal('IV')),
+                (Device.client_id.like('SMS-V-%'), literal('V')),
+                else_=literal('OTHER')
+            ).label('section_id'),
+            func.count(Device.id).label('sms_count'),
+            func.sum(case((Device.is_active == True, 1), else_=0)).label('active_sms'),
+            func.sum(func.coalesce(DeviceReading.total_volume_flow, 0)).label('cumulative_flow')
+        )
+        .outerjoin(
+            latest_reading_subq,
+            Device.id == latest_reading_subq.c.device_id
+        )
+        .outerjoin(
+            DeviceReading,
+            and_(
+                DeviceReading.device_id == Device.id,
+                DeviceReading.timestamp == latest_reading_subq.c.max_timestamp
+            )
+        )
+        .filter(Device.client_id.like('SMS-%'))
+        .group_by('section_id')
+    ).all()
+
+    # Query for non-SMS devices (OTHER)
+    other_stats = (
+        db.query(
+            func.count(Device.id).label('sms_count'),
+            func.sum(case((Device.is_active == True, 1), else_=0)).label('active_sms'),
+            func.sum(func.coalesce(DeviceReading.total_volume_flow, 0)).label('cumulative_flow')
+        )
+        .outerjoin(
+            latest_reading_subq,
+            Device.id == latest_reading_subq.c.device_id
+        )
+        .outerjoin(
+            DeviceReading,
+            and_(
+                DeviceReading.device_id == Device.id,
+                DeviceReading.timestamp == latest_reading_subq.c.max_timestamp
+            )
+        )
+        .filter(~Device.client_id.like('SMS-%'))
+    ).first()
+
+    # Build sections list
+    sections = []
     total_cumulative_flow = 0
     total_sms_count = 0
     total_active_sms = 0
 
-    # Get stats for each section
-    for section, info in section_info.items():
-        # Get all devices in this section
-        devices = db.query(Device).filter(
-            Device.client_id.like(f'SMS-{section}-%')
-        ).all()
+    # Create a dict from query results for easier lookup
+    stats_dict = {row.section_id: row for row in sms_stats}
 
-        sms_count = len(devices)
-        active_count = sum(1 for d in devices if d.is_active)
+    # Add stats for each defined section (I-V)
+    for section_id, info in section_info.items():
+        stats = stats_dict.get(section_id)
 
-        # Calculate cumulative volume flow for this section
-        # Get latest reading for each device and sum their total_volume_flow
-        cumulative_flow = 0
-
-        for device in devices:
-            latest_reading = db.query(DeviceReading).filter(
-                DeviceReading.device_id == device.id
-            ).order_by(DeviceReading.timestamp.desc()).first()
-
-            if latest_reading and latest_reading.total_volume_flow:
-                cumulative_flow += latest_reading.total_volume_flow
+        if stats:
+            sms_count = stats.sms_count or 0
+            active_count = stats.active_sms or 0
+            cumulative_flow = stats.cumulative_flow or 0.0
+        else:
+            sms_count = 0
+            active_count = 0
+            cumulative_flow = 0.0
 
         sections.append({
-            'section_id': section,
+            'section_id': section_id,
             'section_name': info['name'],
             'sms_count': sms_count,
             'active_sms': active_count,
@@ -69,30 +131,12 @@ async def get_section_stats(db: Session = Depends(get_db)):
         total_sms_count += sms_count
         total_active_sms += active_count
 
-    # Get non-SMS devices (like modem2) as a separate section
-    other_devices = db.query(Device).filter(
-        ~Device.client_id.like('SMS-%')
-    ).all()
-
-    other_sms_count = len(other_devices)
-    other_active_count = sum(1 for d in other_devices if d.is_active)
-    other_cumulative_flow = 0
-
-    for device in other_devices:
-        latest_reading = db.query(DeviceReading).filter(
-            DeviceReading.device_id == device.id
-        ).order_by(DeviceReading.timestamp.desc()).first()
-
-        if latest_reading and latest_reading.total_volume_flow:
-            other_cumulative_flow += latest_reading.total_volume_flow
-            total_cumulative_flow += latest_reading.total_volume_flow
-
-        if device.is_active:
-            total_active_sms += 1
-        total_sms_count += 1
-
     # Add "Other Devices" section if there are any
-    if other_sms_count > 0:
+    if other_stats and other_stats.sms_count and other_stats.sms_count > 0:
+        other_sms_count = other_stats.sms_count or 0
+        other_active_count = other_stats.active_sms or 0
+        other_cumulative_flow = other_stats.cumulative_flow or 0.0
+
         sections.append({
             'section_id': 'OTHER',
             'section_name': 'Other Devices',
@@ -101,6 +145,10 @@ async def get_section_stats(db: Session = Depends(get_db)):
             'cumulative_volume_flow': round(other_cumulative_flow, 2),
             'unit': 'MCF/day'
         })
+
+        total_cumulative_flow += other_cumulative_flow
+        total_sms_count += other_sms_count
+        total_active_sms += other_active_count
 
     # Add "All SMS" summary
     all_sms = {
@@ -120,6 +168,7 @@ async def get_section_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/{section_id}/devices")
+@cache_response("sections:devices", ttl=60)
 async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
     """
     Get all devices for a specific section
@@ -218,6 +267,7 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{section_id}/summary")
+@cache_response("sections:summary", ttl=60)
 async def get_section_summary(section_id: str, db: Session = Depends(get_db)):
     """
     Get detailed summary for a specific section including all measurement parameters

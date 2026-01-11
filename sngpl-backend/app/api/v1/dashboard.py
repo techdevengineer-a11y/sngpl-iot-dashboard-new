@@ -2,13 +2,14 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, and_, case
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 from app.db.database import get_db
 from app.models.models import Device, DeviceReading, Alarm, User, AlarmThreshold
 from app.api.v1.auth import get_current_user
+from app.core.redis_client import cache_response
 
 router = APIRouter()
 
@@ -57,6 +58,7 @@ def get_device_online_status(last_seen: datetime) -> Dict[str, str]:
 
 
 @router.get("/recent-readings")
+@cache_response("dashboard:recent_readings", ttl=30)
 async def get_recent_readings(
     limit: int = 50,
     db: Session = Depends(get_db),
@@ -78,6 +80,7 @@ async def get_recent_readings(
 
 
 @router.get("/recent-alarms")
+@cache_response("dashboard:recent_alarms", ttl=30)
 async def get_recent_alarms(
     limit: int = 10,
     db: Session = Depends(get_db),
@@ -98,6 +101,7 @@ async def get_recent_alarms(
 
 
 @router.get("/system-metrics")
+@cache_response("dashboard:system_metrics", ttl=60)
 async def get_system_metrics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -135,6 +139,7 @@ async def get_system_metrics(
 
 
 @router.get("/parameter-averages")
+@cache_response("dashboard:parameter_averages", ttl=300)
 async def get_parameter_averages(
     hours: int = 24,
     db: Session = Depends(get_db),
@@ -170,6 +175,7 @@ async def get_parameter_averages(
 
 
 @router.get("/status-overview")
+@cache_response("dashboard:status_overview", ttl=30)
 async def get_status_overview(
     device_type: str = None,
     db: Session = Depends(get_db),
@@ -177,16 +183,61 @@ async def get_status_overview(
 ):
     """
     Get enhanced status overview with parameter-level status indicators
-    Similar to EVC Status Indicators table in reference
+    OPTIMIZED: Single query with JOINs instead of N+1 queries
     """
-    # Build query
-    query = db.query(Device)
+    # Subquery for latest reading per device (most recent timestamp)
+    latest_reading_subq = (
+        db.query(
+            DeviceReading.device_id,
+            func.max(DeviceReading.timestamp).label('max_timestamp')
+        )
+        .group_by(DeviceReading.device_id)
+        .subquery()
+    )
+
+    # Subquery for alarm counts per device
+    alarm_count_subq = (
+        db.query(
+            Alarm.device_id,
+            func.count(Alarm.id).label('alarm_count')
+        )
+        .filter(Alarm.is_acknowledged == False)
+        .group_by(Alarm.device_id)
+        .subquery()
+    )
+
+    # Single optimized query with all joins
+    query = (
+        db.query(
+            Device,
+            DeviceReading,
+            func.coalesce(alarm_count_subq.c.alarm_count, 0).label('alarm_count')
+        )
+        .outerjoin(
+            latest_reading_subq,
+            Device.id == latest_reading_subq.c.device_id
+        )
+        .outerjoin(
+            DeviceReading,
+            and_(
+                DeviceReading.device_id == Device.id,
+                DeviceReading.timestamp == latest_reading_subq.c.max_timestamp
+            )
+        )
+        .outerjoin(
+            alarm_count_subq,
+            Device.id == alarm_count_subq.c.device_id
+        )
+    )
+
+    # Apply device type filter if provided
     if device_type:
         query = query.filter(Device.device_type == device_type.upper())
 
-    devices = query.all()
+    # Execute single query (replaces 801 queries!)
+    results = query.all()
 
-    # Get thresholds for all devices
+    # Get thresholds for all devices (one query instead of per-device)
     threshold_records = db.query(AlarmThreshold).all()
     thresholds_map = {}
     for t in threshold_records:
@@ -197,18 +248,9 @@ async def get_status_overview(
             'high_threshold': t.high_threshold
         }
 
+    # Process results
     result = []
-    for device in devices:
-        # Get latest reading
-        latest_reading = db.query(DeviceReading).filter(
-            DeviceReading.device_id == device.id
-        ).order_by(desc(DeviceReading.timestamp)).first()
-
-        # Get active alarms count
-        active_alarms = db.query(Alarm).filter(
-            Alarm.device_id == device.id,
-            Alarm.is_acknowledged == False
-        ).count()
+    for device, latest_reading, active_alarms in results:
 
         # Get device thresholds
         device_thresholds = thresholds_map.get(device.id, {})
@@ -273,6 +315,7 @@ async def get_status_overview(
 
 
 @router.get("/stats")
+@cache_response("dashboard:stats", ttl=30)
 async def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

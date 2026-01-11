@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     MQTT_PORT: int = 1883
     MQTT_TOPIC: str = "evc/data"
 
+    # Redis Cache
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str = None
+
     # API
     API_V1_PREFIX: str = "/api"
 
@@ -41,12 +47,12 @@ class Settings(BaseSettings):
             print("⚠️  WARNING: Using default SECRET_KEY. Change this in production!", file=sys.stderr)
         return v
 
-    @field_validator("MQTT_PORT")
+    @field_validator("MQTT_PORT", "REDIS_PORT")
     @classmethod
-    def validate_mqtt_port(cls, v: int) -> int:
-        """Validate MQTT port is valid"""
+    def validate_port(cls, v: int) -> int:
+        """Validate port is valid"""
         if not (1 <= v <= 65535):
-            raise ValueError("MQTT_PORT must be between 1 and 65535")
+            raise ValueError("Port must be between 1 and 65535")
         return v
 
     @field_validator("ACCESS_TOKEN_EXPIRE_MINUTES")
