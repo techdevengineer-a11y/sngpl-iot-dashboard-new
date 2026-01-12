@@ -453,7 +453,19 @@ const Trends = () => {
       console.log('[Filter] Sample filtered data:', limited[0]);
     }
 
-    return limited;
+    // Clean the data: Replace null/undefined values with 0 for charts to render properly
+    const cleanedData = limited.map(reading => ({
+      ...reading,
+      last_hour_flow_time: reading.last_hour_flow_time ?? 0,
+      last_hour_diff_pressure: reading.last_hour_diff_pressure ?? 0,
+      last_hour_static_pressure: reading.last_hour_static_pressure ?? 0,
+      last_hour_temperature: reading.last_hour_temperature ?? 0,
+      last_hour_volume: reading.last_hour_volume ?? 0,
+      last_hour_energy: reading.last_hour_energy ?? 0,
+      specific_gravity: reading.specific_gravity ?? 0
+    }));
+
+    return cleanedData;
   };
 
   // Custom Date Range Selector Component
