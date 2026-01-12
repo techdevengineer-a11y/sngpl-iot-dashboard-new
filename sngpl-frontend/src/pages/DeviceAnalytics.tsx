@@ -414,6 +414,7 @@ const DeviceAnalytics = () => {
   // Filter data for charts (latest 50 readings max)
   const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 50) => {
     if (!historyData || historyData.length === 0) {
+      console.log('[Filter] No history data available');
       return [];
     }
 
@@ -426,14 +427,25 @@ const DeviceAnalytics = () => {
       return timestamp >= start && timestamp <= end;
     });
 
+    console.log(`[Filter] Date range: ${start.toLocaleString()} to ${end.toLocaleString()}`);
+    console.log(`[Filter] Filtered ${filtered.length} readings from ${historyData.length} total`);
+
     // Limit to latest N readings for performance and clarity
     const limited = filtered.slice(0, limit);
 
     // If filter returns nothing but we have data, return all data (no date filter)
     // This happens when the date range doesn't match the data timezone
     if (limited.length === 0 && historyData.length > 0) {
-      // Just return the most recent data without date filtering
-      return historyData.slice(0, limit);
+      console.log('[Filter] No data in selected range, returning recent data');
+      const fallback = historyData.slice(0, limit);
+      if (fallback.length > 0) {
+        console.log('[Filter] Sample data point:', fallback[0]);
+      }
+      return fallback;
+    }
+
+    if (limited.length > 0) {
+      console.log('[Filter] Sample filtered data:', limited[0]);
     }
 
     return limited;
