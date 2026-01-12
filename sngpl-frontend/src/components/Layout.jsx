@@ -34,6 +34,7 @@ const Layout = ({ children }) => {
     { path: '/sections', label: 'Sections', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
     { path: '/alarms', label: 'Alerts', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
     { path: '/advanced-reports', label: 'Advanced Reports', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
+    { path: '/analytics-page', label: 'Analytics', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
     { path: '/device-management', label: 'Manage', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
     { path: '/under-observation', label: 'Under Observation', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
     { path: '/odorant-drum', label: 'Odorant Drum', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },

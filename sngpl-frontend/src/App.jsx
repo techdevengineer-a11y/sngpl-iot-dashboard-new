@@ -34,6 +34,7 @@ const Map = lazy(() => import('./pages/Map'));
 const LiveMonitor = lazy(() => import('./pages/LiveMonitor'));
 const Reports = lazy(() => import('./pages/Reports'));
 const AdvancedReports = lazy(() => import('./pages/AdvancedReports'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
@@ -90,6 +91,7 @@ function AppRoutes() {
         <Route path="/alarms" element={<PrivateRoute><Alarms /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
         <Route path="/advanced-reports" element={<PrivateRoute><AdvancedReports /></PrivateRoute>} />
+        <Route path="/analytics-page" element={<PrivateRoute><AnalyticsPage /></PrivateRoute>} />
         <Route path="/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
         <Route path="/favourites" element={<PrivateRoute><Favourites /></PrivateRoute>} />
         <Route path="/under-observation" element={<PrivateRoute><UnderObservation /></PrivateRoute>} />
