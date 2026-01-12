@@ -30,16 +30,16 @@ const Layout = ({ children }) => {
 
   // Sidebar menu items with gradient colors
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
-    { path: '/sections', label: 'Sections', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
-    { path: '/alarms', label: 'Alerts', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
-    { path: '/advanced-reports', label: 'Advanced Reports', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
-    { path: '/analytics-page', label: 'Analytics', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
-    { path: '/device-management', label: 'Manage', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
-    { path: '/under-observation', label: 'Under Observation', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
-    { path: '/odorant-drum', label: 'Odorant Drum', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
-    { path: '/map', label: 'Map', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
-    { path: '/settings', label: 'Settings', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
+    { path: '/dashboard', label: 'DASHBOARD', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
+    { path: '/sections', label: 'SECTIONS', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
+    { path: '/alarms', label: 'ALERTS', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
+    { path: '/advanced-reports', label: 'ADVANCED REPORTS', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
+    { path: '/analytics-page', label: 'ANALYTICS', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
+    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
+    { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
+    { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
+    { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
+    { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
   ];
 
   useEffect(() => {
@@ -229,7 +229,7 @@ const Layout = ({ children }) => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <span className="text-sm flex-1 text-left">Notifications</span>
+              <span className="text-sm flex-1 text-left">NOTIFICATIONS</span>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-medium">
                   {unreadCount}
