@@ -128,8 +128,8 @@ class MQTTService:
                 battery=sensor_data.get("T15", 0.0),             # T15 = Battery (V)
                 max_static_pressure=sensor_data.get("T16", 0.0),  # T16 = Max Static Pressure (PSI)
                 min_static_pressure=sensor_data.get("T17", 0.0),  # T17 = Min Static Pressure (PSI)
-                # T18-T114 Analytics Parameters
-                last_hour_flow_time=sensor_data.get("T18", 0.0),       # T18 = Last Hour Flow Time (hours)
+                # T18-T114 Analytics Parameters - Device sends these values
+                last_hour_flow_time=sensor_data.get("T18", 0.0),       # T18 = Last Hour Flow Time (seconds)
                 last_hour_diff_pressure=sensor_data.get("T19", 0.0),   # T19 = Last Hour Diff Pressure (IWC)
                 last_hour_static_pressure=sensor_data.get("T110", 0.0),  # T110 = Last Hour Static Pressure (PSI)
                 last_hour_temperature=sensor_data.get("T111", 0.0),    # T111 = Last Hour Temperature (°F)
