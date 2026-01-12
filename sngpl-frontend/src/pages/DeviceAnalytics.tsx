@@ -152,11 +152,11 @@ const DeviceAnalytics = () => {
     fetchDeviceData();
     fetchHistoricalData();
 
-    // Auto-refresh every 2 seconds to match MQTT data storage interval
+    // Auto-refresh device data every 10 seconds for real-time updates
     const dataInterval = setInterval(() => {
       fetchDeviceData();
       fetchHistoricalData();
-    }, 2000);
+    }, 10000);
 
     // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
@@ -167,6 +167,14 @@ const DeviceAnalytics = () => {
       setVolumeEndDate(now);
       setFlowEndDate(now);
       setBatteryEndDate(now);
+      // T18-T114 Analytics Parameters
+      setT18EndDate(now);
+      setT19EndDate(now);
+      setT110EndDate(now);
+      setT111EndDate(now);
+      setT112EndDate(now);
+      setT113EndDate(now);
+      setT114EndDate(now);
       setHistoryLogEndDate(now);
     }, 5000);
 
