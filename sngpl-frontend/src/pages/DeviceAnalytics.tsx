@@ -722,7 +722,17 @@ const DeviceAnalytics = () => {
               onEndChange={setT18EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t18StartDate, t18EndDate, 50)}>
+              <AreaChart data={(() => {
+                const chartData = filterDataByDateRange(t18StartDate, t18EndDate, 50);
+                console.log('[T18 Chart] Data points:', chartData.length);
+                if (chartData.length > 0) {
+                  console.log('[T18 Chart] Sample:', {
+                    timestamp: chartData[0].timestamp,
+                    last_hour_flow_time: chartData[0].last_hour_flow_time
+                  });
+                }
+                return chartData;
+              })()}>
                 <defs>
                   <linearGradient id="colorT18" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
