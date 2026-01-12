@@ -766,10 +766,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="last_hour_flow_time"
                   stroke="#3b82f6"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT18)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -824,10 +826,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="last_hour_diff_pressure"
                   stroke="#a855f7"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT19)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#a855f7', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -882,10 +886,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="last_hour_static_pressure"
                   stroke="#16a34a"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT110)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -940,10 +946,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="last_hour_temperature"
                   stroke="#f97316"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT111)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -998,10 +1006,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="last_hour_volume"
                   stroke="#06b6d4"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT112)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#06b6d4', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -1056,10 +1066,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="last_hour_energy"
                   stroke="#eab308"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT113)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#eab308', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -1114,10 +1126,12 @@ const Trends = () => {
                   type="monotone"
                   dataKey="specific_gravity"
                   stroke="#6366f1"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorT114)"
+                  fillOpacity={0.6}
                   dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={true}
                 />
               </AreaChart>
             </ResponsiveContainer>
