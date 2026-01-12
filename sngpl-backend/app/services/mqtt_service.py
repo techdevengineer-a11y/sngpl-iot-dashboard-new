@@ -115,6 +115,17 @@ class MQTTService:
                 except ValueError as e:
                     logger.warning(f"Failed to parse Utime '{utime_str}': {e}, using server time")
 
+            # Deduplication: Check if we already have a reading with same timestamp + client_id
+            # Device sends duplicate messages at slightly different times, but with same Utime
+            existing_reading = db.query(DeviceReading).filter(
+                DeviceReading.client_id == client_id,
+                DeviceReading.timestamp == device_timestamp
+            ).first()
+
+            if existing_reading:
+                logger.info(f"[SKIP] Duplicate reading detected for {client_id} at {device_timestamp}")
+                return
+
             # Create device reading with ALL parameters including T18-T114 analytics
             # CORRECT MAPPING: T13 = Total Volume Flow (MCF/day), T14 = Volume (MCF)
             reading = DeviceReading(
