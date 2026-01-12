@@ -319,13 +319,13 @@ const AdvancedReports = () => {
                       <div className="text-2xl font-bold text-green-600">{section.active_sms}</div>
                     </div>
 
-                    {/* Flow Rate */}
+                    {/* Online Devices */}
                     <div className="bg-cyan-100 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <FileSpreadsheet className="w-4 h-4 text-cyan-600" />
-                        <div className="text-xs text-gray-600">Flow</div>
+                        <div className="text-xs text-gray-600">Reports</div>
                       </div>
-                      <div className="text-xl font-bold text-cyan-600">{section.cumulative_volume_flow.toFixed(1)}</div>
+                      <div className="text-xl font-bold text-cyan-600">{section.active_sms}</div>
                     </div>
                   </div>
 

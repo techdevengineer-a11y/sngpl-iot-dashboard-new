@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 const AnalyticsPage = () => {
   return (
     <Layout>
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen">
         {/* Content will be added later */}
       </div>
     </Layout>
