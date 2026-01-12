@@ -230,13 +230,17 @@ const Trends = () => {
 
   const fetchHistoricalData = async () => {
     try {
-      // Fetch latest 1000 readings for history logs
-      const response = await fetch(`/api/analytics/readings?client_id=${deviceId}&page_size=1000&page=1`);
+      // OPTIMIZATION: Only fetch 200 readings instead of 1000
+      // This is enough for charts (50 points each) with some buffer for filtering
+      const response = await fetch(`/api/analytics/readings?client_id=${deviceId}&page_size=200&page=1`);
       if (response.ok) {
         const result = await response.json();
         const readings = result.data || [];
 
-        console.log(`[Trends] Fetched ${readings.length} readings for device ${deviceId}`);
+        // OPTIMIZATION: Reduced logging for better performance
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Trends] Fetched ${readings.length} readings for device ${deviceId}`);
+        }
 
         if (readings && readings.length > 0) {
           // Sort readings by timestamp descending (most recent first)
@@ -248,16 +252,20 @@ const Trends = () => {
 
           // Set the latest reading (first item in the sorted array is most recent)
           setLatestReading(sortedReadings[0]);
-          console.log('[Trends] Latest reading:', sortedReadings[0]);
-          console.log('[Trends] T18-T114 values in latest reading:', {
-            T18: sortedReadings[0].last_hour_flow_time,
-            T19: sortedReadings[0].last_hour_diff_pressure,
-            T110: sortedReadings[0].last_hour_static_pressure,
-            T111: sortedReadings[0].last_hour_temperature,
-            T112: sortedReadings[0].last_hour_volume,
-            T113: sortedReadings[0].last_hour_energy,
-            T114: sortedReadings[0].specific_gravity
-          });
+
+          // OPTIMIZATION: Only log in development mode
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Trends] Latest reading:', sortedReadings[0]);
+            console.log('[Trends] T18-T114 values in latest reading:', {
+              T18: sortedReadings[0].last_hour_flow_time,
+              T19: sortedReadings[0].last_hour_diff_pressure,
+              T110: sortedReadings[0].last_hour_static_pressure,
+              T111: sortedReadings[0].last_hour_temperature,
+              T112: sortedReadings[0].last_hour_volume,
+              T113: sortedReadings[0].last_hour_energy,
+              T114: sortedReadings[0].specific_gravity
+            });
+          }
 
           // Generate battery history from readings
           const battHist = sortedReadings.map((reading: any) => ({
@@ -416,10 +424,9 @@ const Trends = () => {
   };
 
   // Filter data based on custom date range
-  // Filter data for charts (latest 50 readings max)
+  // OPTIMIZATION: Filter data for charts (latest 50 readings max)
   const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 50) => {
     if (!historyData || historyData.length === 0) {
-      console.log('[Filter] No history data available');
       return [];
     }
 
@@ -432,8 +439,8 @@ const Trends = () => {
       return timestamp >= start && timestamp <= end;
     });
 
-    console.log(`[Filter] Date range: ${start.toLocaleString()} to ${end.toLocaleString()}`);
-    console.log(`[Filter] Filtered ${filtered.length} readings from ${historyData.length} total`);
+    // OPTIMIZATION: Removed verbose logging for better performance
+    // Only log in development if needed for debugging
 
     // Limit to latest N readings for performance and clarity
     const limited = filtered.slice(0, limit);
@@ -443,13 +450,7 @@ const Trends = () => {
 
     // If filter returns nothing but we have data, use fallback data
     if (limited.length === 0 && historyData.length > 0) {
-      console.log('[Filter] No data in selected range, returning recent data');
       dataToClean = historyData.slice(0, limit);
-      if (dataToClean.length > 0) {
-        console.log('[Filter] Sample data point:', dataToClean[0]);
-      }
-    } else if (limited.length > 0) {
-      console.log('[Filter] Sample filtered data:', limited[0]);
     }
 
     // Clean the data: Replace null/undefined values with 0 for charts to render properly
