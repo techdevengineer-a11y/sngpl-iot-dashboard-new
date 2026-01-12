@@ -82,7 +82,7 @@ const getGenericGreenColor = () => {
   return { bg: 'bg-green-100', text: 'text-green-600', status: 'Normal', color: '#16a34a' };
 };
 
-const DeviceAnalytics = () => {
+const Trends = () => {
   const { deviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
   const [deviceData, setDeviceData] = useState<Device | null>(null);
@@ -1226,4 +1226,4 @@ const DeviceAnalytics = () => {
   );
 };
 
-export default DeviceAnalytics;
+export default Trends;

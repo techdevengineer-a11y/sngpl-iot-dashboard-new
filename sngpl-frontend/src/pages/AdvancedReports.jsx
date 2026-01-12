@@ -590,12 +590,12 @@ const AdvancedReports = () => {
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center justify-center gap-2">
                                 <button
-                                  onClick={() => navigate(`/analytics/${device.client_id}`)}
+                                  onClick={() => navigate(`/trends/${device.client_id}`)}
                                   className="px-2 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all font-semibold text-xs flex items-center gap-1"
-                                  title="View Analytics & Charts"
+                                  title="View Trends & Charts"
                                 >
                                   <BarChart3 className="w-3 h-3" />
-                                  Analytics
+                                  Trends
                                 </button>
                                 <button
                                   onClick={(e) => {

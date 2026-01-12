@@ -24,7 +24,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
 const Sections = lazy(() => import('./pages/Sections'));
 const SectionDetail = lazy(() => import('./pages/SectionDetail.tsx'));
 const StationDetail = lazy(() => import('./pages/StationDetail.tsx'));
-const DeviceAnalytics = lazy(() => import('./pages/DeviceAnalytics.tsx'));
+const Trends = lazy(() => import('./pages/Trends.tsx'));
 const Devices = lazy(() => import('./pages/Devices'));
 const DeviceManagement = lazy(() => import('./pages/DeviceManagement'));
 const Analytics = lazy(() => import('./pages/Analytics'));
@@ -80,7 +80,7 @@ function AppRoutes() {
         <Route path="/sections" element={<PrivateRoute><Sections /></PrivateRoute>} />
         <Route path="/sections/:sectionId" element={<PrivateRoute><SectionDetail /></PrivateRoute>} />
         <Route path="/stations/:stationId" element={<PrivateRoute><StationDetail /></PrivateRoute>} />
-        <Route path="/analytics/:deviceId" element={<PrivateRoute><DeviceAnalytics /></PrivateRoute>} />
+        <Route path="/trends/:deviceId" element={<PrivateRoute><Trends /></PrivateRoute>} />
         <Route path="/devices" element={<PrivateRoute><Devices /></PrivateRoute>} />
         <Route path="/device-management" element={<PrivateRoute><DeviceManagement /></PrivateRoute>} />
         <Route path="/map" element={<PrivateRoute><Map /></PrivateRoute>} />
