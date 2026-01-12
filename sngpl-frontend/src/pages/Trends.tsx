@@ -240,7 +240,7 @@ const Trends = () => {
         const result = await response.json();
         const readings = result.data || [];
 
-        console.log(`[StationDetail] Fetched ${readings.length} readings for device ${deviceId}`);
+        console.log(`[Trends] Fetched ${readings.length} readings for device ${deviceId}`);
 
         if (readings && readings.length > 0) {
           // Sort readings by timestamp descending (most recent first)
@@ -252,7 +252,16 @@ const Trends = () => {
 
           // Set the latest reading (first item in the sorted array is most recent)
           setLatestReading(sortedReadings[0]);
-          console.log('[StationDetail] Latest reading:', sortedReadings[0]);
+          console.log('[Trends] Latest reading:', sortedReadings[0]);
+          console.log('[Trends] T18-T114 values in latest reading:', {
+            T18: sortedReadings[0].last_hour_flow_time,
+            T19: sortedReadings[0].last_hour_diff_pressure,
+            T110: sortedReadings[0].last_hour_static_pressure,
+            T111: sortedReadings[0].last_hour_temperature,
+            T112: sortedReadings[0].last_hour_volume,
+            T113: sortedReadings[0].last_hour_energy,
+            T114: sortedReadings[0].specific_gravity
+          });
 
           // Generate battery history from readings
           const battHist = sortedReadings.map((reading: any) => ({
@@ -262,12 +271,12 @@ const Trends = () => {
           }));
           setBatteryHistory(battHist);
         } else {
-          console.log('[StationDetail] No readings found, generating mock data');
+          console.log('[Trends] No readings found, generating mock data');
           // No data available, generate mock data
           generateMockHistory();
         }
       } else {
-        console.error('[StationDetail] API failed with status:', response.status);
+        console.error('[Trends] API failed with status:', response.status);
         // API failed, generate mock data
         generateMockHistory();
       }
