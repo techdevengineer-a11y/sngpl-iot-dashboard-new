@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, EmailStr, field_validator
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.db.database import get_db
 from app.models.models import User
@@ -13,6 +13,12 @@ from app.services.audit_service import audit_service
 from app.core.password_validator import PasswordValidator
 
 router = APIRouter()
+
+# In-memory storage for failed login attempts (use Redis in production for distributed systems)
+failed_password_attempts: Dict[int, Dict] = {}
+LOCKOUT_THRESHOLD = 4  # Lock after 4 failed attempts
+LOCKOUT_DURATION = 15  # minutes
+WARNING_THRESHOLD = 3  # Warn after 3 failed attempts
 
 
 class UserResponse(BaseModel):
@@ -71,6 +77,67 @@ class UserUpdate(BaseModel):
             if v not in valid_roles:
                 raise ValueError(f"Role must be one of: {', '.join(valid_roles)}")
         return v
+
+
+def check_account_locked(user_id: int) -> tuple[bool, int, str]:
+    """
+    Check if account is locked due to failed password attempts
+    Returns: (is_locked, remaining_attempts, lock_message)
+    """
+    if user_id not in failed_password_attempts:
+        return False, LOCKOUT_THRESHOLD, ""
+
+    attempt_data = failed_password_attempts[user_id]
+    attempts = attempt_data.get('count', 0)
+    locked_until = attempt_data.get('locked_until')
+
+    # Check if still locked
+    if locked_until and datetime.now() < locked_until:
+        remaining_time = (locked_until - datetime.now()).total_seconds() / 60
+        return True, 0, f"Account temporarily locked. Try again in {int(remaining_time)} minutes."
+
+    # Lock expired, reset attempts
+    if locked_until and datetime.now() >= locked_until:
+        del failed_password_attempts[user_id]
+        return False, LOCKOUT_THRESHOLD, ""
+
+    remaining = LOCKOUT_THRESHOLD - attempts
+    return False, remaining, ""
+
+
+def record_failed_attempt(user_id: int) -> tuple[bool, str]:
+    """
+    Record a failed password attempt
+    Returns: (should_lock, message)
+    """
+    if user_id not in failed_password_attempts:
+        failed_password_attempts[user_id] = {'count': 1, 'last_attempt': datetime.now()}
+        remaining = LOCKOUT_THRESHOLD - 1
+        return False, f"Current password is incorrect. {remaining} attempts remaining."
+
+    attempt_data = failed_password_attempts[user_id]
+    attempt_data['count'] += 1
+    attempt_data['last_attempt'] = datetime.now()
+
+    attempts = attempt_data['count']
+
+    # Lock account after threshold
+    if attempts >= LOCKOUT_THRESHOLD:
+        attempt_data['locked_until'] = datetime.now() + timedelta(minutes=LOCKOUT_DURATION)
+        return True, f"Too many failed attempts. Account locked for {LOCKOUT_DURATION} minutes."
+
+    # Warning at threshold - 1
+    remaining = LOCKOUT_THRESHOLD - attempts
+    if attempts == WARNING_THRESHOLD:
+        return False, f"⚠️ WARNING: Current password is incorrect. Only {remaining} attempt remaining before account lockout!"
+
+    return False, f"Current password is incorrect. {remaining} attempts remaining."
+
+
+def reset_failed_attempts(user_id: int):
+    """Reset failed attempts on successful password change"""
+    if user_id in failed_password_attempts:
+        del failed_password_attempts[user_id]
 
 
 class PasswordChange(BaseModel):
@@ -321,24 +388,35 @@ async def change_password(
             detail="Can only change your own password"
         )
 
+    # Check if account is locked due to failed attempts
+    is_locked, remaining_attempts, lock_message = check_account_locked(current_user.id)
+    if is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=lock_message
+        )
+
     # Verify current password
     if not verify_password(password_data.current_password, current_user.hashed_password):
+        # Record failed attempt and get appropriate message
+        should_lock, error_message = record_failed_attempt(current_user.id)
+
         # Log failed attempt
         from app.models.models import SecurityEvent
         security_event = SecurityEvent(
             event_type="password_change_failed",
-            severity="low",
+            severity="medium" if should_lock else "low",
             user_id=current_user.id,
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            description="Failed password change attempt - incorrect current password"
+            description=f"Failed password change attempt - {'account locked' if should_lock else 'incorrect current password'}"
         )
         db.add(security_event)
         db.commit()
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
+            detail=error_message
         )
 
     # Validate new password complexity
@@ -370,6 +448,9 @@ async def change_password(
     current_user.must_change_password = False
 
     db.commit()
+
+    # Reset failed attempts on successful password change
+    reset_failed_attempts(current_user.id)
 
     # Log successful password change
     audit_service.log_from_request(
