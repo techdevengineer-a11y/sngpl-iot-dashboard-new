@@ -11,12 +11,10 @@ import {
   Battery,
   AlertTriangle,
   MapPin,
-  Clock,
-  Download
+  Clock
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
-import ExportModal from '../components/ExportModal';
 
 interface DeviceReading {
   timestamp: string;
@@ -157,9 +155,6 @@ const Trends = () => {
 
   const [historyLogStartDate, setHistoryLogStartDate] = useState(getDefaultStartDate());
   const [historyLogEndDate, setHistoryLogEndDate] = useState(getDefaultEndDate());
-
-  // Export modal state
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     // Initial fetch on mount
@@ -393,34 +388,6 @@ const Trends = () => {
       default:
         return '#16a34a';
     }
-  };
-
-  // Export history logs to CSV
-  const exportHistoryLogs = () => {
-    const headers = ['#', 'Timestamp', 'Temperature (°F)', 'Static P (PSI)', 'Diff P (IWC)', 'Volume (MCF)', 'Flow (MCF/day)', 'Battery (%)'];
-    const csvContent = [
-      headers.join(','),
-      ...historyData.map((reading, index) => [
-        index + 1,
-        formatTimestamp(reading.timestamp),
-        reading.temperature.toFixed(1),
-        reading.static_pressure.toFixed(1),
-        reading.differential_pressure.toFixed(2),
-        reading.volume.toFixed(1),
-        reading.total_volume_flow.toFixed(1),
-        reading.battery?.toFixed(0) || '-'
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `device_${deviceId}_history_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // Filter data based on custom date range
@@ -1134,18 +1101,9 @@ const Trends = () => {
         {/* Complete History Logs */}
         <div className="glass rounded-xl overflow-hidden">
           <div className="p-6 border-b border-gray-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-                <p className="text-sm text-gray-600 mt-1">All device readings for selected time range</p>
-              </div>
-              <button
-                onClick={() => setIsExportModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export Data</span>
-              </button>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
+              <p className="text-sm text-gray-600 mt-1">All device readings for selected time range</p>
             </div>
             <CustomDateRangeSelector
               startDate={historyLogStartDate}
@@ -1220,15 +1178,6 @@ const Trends = () => {
           </div>
         </div>
       </motion.div>
-
-      {/* Export Modal */}
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        deviceId={deviceId}
-        deviceName={deviceData?.device_name}
-        exportType="device"
-      />
     </Layout>
   );
 };
