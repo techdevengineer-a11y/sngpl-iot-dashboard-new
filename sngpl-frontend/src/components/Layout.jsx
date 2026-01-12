@@ -28,57 +28,17 @@ const Layout = ({ children }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Sidebar menu structure organized by sections
-  const menuSections = [
-    {
-      title: 'Main',
-      items: [
-        { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null },
-      ]
-    },
-    {
-      title: 'Current',
-      items: [
-        { path: '/sections', label: 'Sections', icon: '🏢', badge: null },
-      ]
-    },
-    {
-      title: 'Monitoring',
-      items: [
-        { path: '/alarms', label: 'Alerts', icon: '🔔', badge: unreadCount },
-        { path: '/advanced-reports', label: 'Advanced Reports', icon: '📈', badge: null },
-      ]
-    },
-    {
-      title: 'Management',
-      items: [
-        { path: '/device-management', label: 'Manage', icon: '⚙️', badge: null },
-      ]
-    },
-    {
-      title: 'Observation',
-      items: [
-        { path: '/under-observation', label: 'Under Observation', icon: '👁️', badge: null },
-      ]
-    },
-    {
-      title: 'Utilities',
-      items: [
-        { path: '/odorant-drum', label: 'Odorant Drum', icon: '🛢️', badge: null },
-      ]
-    },
-    {
-      title: 'View',
-      items: [
-        { path: '/map', label: 'Map', icon: '🗺️', badge: null },
-      ]
-    },
-    {
-      title: 'Personal',
-      items: [
-        { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },
-      ]
-    }
+  // Sidebar menu items with gradient colors
+  const menuItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
+    { path: '/sections', label: 'Sections', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
+    { path: '/alarms', label: 'Alerts', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
+    { path: '/advanced-reports', label: 'Advanced Reports', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
+    { path: '/device-management', label: 'Manage', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
+    { path: '/under-observation', label: 'Under Observation', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
+    { path: '/odorant-drum', label: 'Odorant Drum', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
+    { path: '/map', label: 'Map', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
+    { path: '/settings', label: 'Settings', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
   ];
 
   useEffect(() => {
@@ -224,45 +184,35 @@ const Layout = ({ children }) => {
 
         {/* Navigation Links */}
         <nav className="flex-1 p-3 overflow-y-auto">
-          <div className="space-y-4">
-            {menuSections.map((section, sectionIdx) => (
-              <div key={sectionIdx}>
-                {/* Section Header */}
-                {!sidebarCollapsed && (
-                  <div className="px-3 mb-2">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      {section.title}
-                    </h3>
-                  </div>
-                )}
-
-                {/* Section Items */}
-                <div className="space-y-0.5">
-                  {section.items.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                        location.pathname === item.path
-                          ? 'bg-blue-50 text-blue-600 font-medium border-l-4 border-blue-600 -ml-3 pl-6'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                      title={sidebarCollapsed ? item.label : ''}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className={sidebarCollapsed ? 'text-xl mx-auto' : 'text-base'}>{item.icon}</span>
-                        {!sidebarCollapsed && <span className="text-sm">{item.label}</span>}
-                      </div>
-                      {/* Badge */}
-                      {!sidebarCollapsed && item.badge !== null && item.badge > 0 && (
-                        <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-medium">
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
+          <div className="space-y-2">
+            {menuItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 ${
+                  location.pathname === item.path
+                    ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105 font-bold`
+                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-md hover:scale-102 font-semibold'
+                }`}
+                title={sidebarCollapsed ? item.label : ''}
+              >
+                <div className="flex items-center space-x-3">
+                  <span className={`${sidebarCollapsed ? 'text-2xl mx-auto' : 'text-xl'} transition-transform group-hover:scale-110`}>
+                    {item.icon}
+                  </span>
+                  {!sidebarCollapsed && (
+                    <span className="text-sm tracking-wide">
+                      {item.label}
+                    </span>
+                  )}
                 </div>
-              </div>
+                {/* Badge */}
+                {!sidebarCollapsed && item.badge !== null && item.badge > 0 && (
+                  <span className="px-2.5 py-1 bg-white text-red-600 text-xs rounded-full font-bold shadow-md animate-pulse border-2 border-red-500">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
             ))}
           </div>
         </nav>
