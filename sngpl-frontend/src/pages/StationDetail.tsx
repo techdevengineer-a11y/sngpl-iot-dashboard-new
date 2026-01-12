@@ -419,6 +419,31 @@ const StationDetail = () => {
     return limited;
   };
 
+  // Calculate dynamic Y-axis domain with padding above max value
+  const calculateDomain = (data: any[], key: string, paddingAbove: number): [number, number] => {
+    if (!data || data.length === 0) {
+      return [0, 100]; // Default range
+    }
+
+    const values = data.map(d => d[key]).filter(v => v !== undefined && v !== null && !isNaN(v));
+
+    if (values.length === 0) {
+      return [0, 100];
+    }
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+
+    // Add padding above the max value
+    const paddedMax = maxValue + paddingAbove;
+
+    // Floor the min to nearest 5, ceil the max to nearest 5
+    const domainMin = Math.floor(minValue / 5) * 5;
+    const domainMax = Math.ceil(paddedMax / 5) * 5;
+
+    return [domainMin, domainMax];
+  };
+
   // Custom Date Range Selector Component
   const CustomDateRangeSelector = ({
     startDate,
@@ -795,7 +820,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 50), 'temperature', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -867,7 +892,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 50), 'static_pressure', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -936,7 +961,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 50), 'differential_pressure', 20)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1008,7 +1033,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 50), 'volume', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1076,7 +1101,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 50), 'total_volume_flow', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1145,7 +1170,7 @@ const StationDetail = () => {
                   }
                 }}
               />
-              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={['auto', 'auto']} />
+              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 50), 'battery', 5)} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1369,7 +1394,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={['auto', 'auto']}
+                      domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 1000), 'temperature', 5)}
                       label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
@@ -1484,7 +1509,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={['auto', 'auto']}
+                      domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 1000), 'differential_pressure', 20)}
                       label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
@@ -1596,7 +1621,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={['auto', 'auto']}
+                      domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 1000), 'static_pressure', 5)}
                       label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
@@ -1703,7 +1728,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={['auto', 'auto']}
+                      domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 1000), 'volume', 5)}
                       label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
@@ -1816,7 +1841,7 @@ const StationDetail = () => {
                     <YAxis
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={['auto', 'auto']}
+                      domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 1000), 'total_volume_flow', 5)}
                       label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
@@ -1922,7 +1947,7 @@ const StationDetail = () => {
                       type="number"
                       stroke="#6b7280"
                       style={{ fontSize: '13px' }}
-                      domain={['auto', 'auto']}
+                      domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 1000), 'battery', 5)}
                       label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                     />
                     <Tooltip
