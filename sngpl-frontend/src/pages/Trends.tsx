@@ -453,15 +453,16 @@ const Trends = () => {
     }
 
     // Clean the data: Replace null/undefined values with 0 for charts to render properly
+    // Use Number() to force conversion, which turns null/undefined/NaN to 0
     const cleanedData = dataToClean.map(reading => ({
       ...reading,
-      last_hour_flow_time: reading.last_hour_flow_time ?? 0,
-      last_hour_diff_pressure: reading.last_hour_diff_pressure ?? 0,
-      last_hour_static_pressure: reading.last_hour_static_pressure ?? 0,
-      last_hour_temperature: reading.last_hour_temperature ?? 0,
-      last_hour_volume: reading.last_hour_volume ?? 0,
-      last_hour_energy: reading.last_hour_energy ?? 0,
-      specific_gravity: reading.specific_gravity ?? 0
+      last_hour_flow_time: Number(reading.last_hour_flow_time) || 0,
+      last_hour_diff_pressure: Number(reading.last_hour_diff_pressure) || 0,
+      last_hour_static_pressure: Number(reading.last_hour_static_pressure) || 0,
+      last_hour_temperature: Number(reading.last_hour_temperature) || 0,
+      last_hour_volume: Number(reading.last_hour_volume) || 0,
+      last_hour_energy: Number(reading.last_hour_energy) || 0,
+      specific_gravity: Number(reading.specific_gravity) || 0
     }));
 
     return cleanedData;
