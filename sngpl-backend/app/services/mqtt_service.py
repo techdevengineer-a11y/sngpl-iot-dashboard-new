@@ -106,7 +106,16 @@ class MQTTService:
                 value = float(item.get("Addrv", 0))
                 sensor_data[addr] = value
 
-            # Create device reading
+            # Parse device timestamp from Utime field (format: "2026/1/12 23:14:13")
+            device_timestamp = datetime.now()  # fallback
+            utime_str = data.get("Utime", "").strip()
+            if utime_str:
+                try:
+                    device_timestamp = datetime.strptime(utime_str, "%Y/%m/%d %H:%M:%S")
+                except ValueError as e:
+                    logger.warning(f"Failed to parse Utime '{utime_str}': {e}, using server time")
+
+            # Create device reading with ALL parameters including T18-T114 analytics
             # CORRECT MAPPING: T13 = Total Volume Flow (MCF/day), T14 = Volume (MCF)
             reading = DeviceReading(
                 device_id=device.id,
@@ -116,7 +125,18 @@ class MQTTService:
                 differential_pressure=sensor_data.get("T10", 0.0),
                 volume=sensor_data.get("T14", 0.0),              # T14 = Volume (MCF)
                 total_volume_flow=sensor_data.get("T13", 0.0),  # T13 = Total Volume Flow (MCF/day)
-                timestamp=datetime.now()
+                battery=sensor_data.get("T15", 0.0),             # T15 = Battery (V)
+                max_static_pressure=sensor_data.get("T16", 0.0),  # T16 = Max Static Pressure (PSI)
+                min_static_pressure=sensor_data.get("T17", 0.0),  # T17 = Min Static Pressure (PSI)
+                # T18-T114 Analytics Parameters
+                last_hour_flow_time=sensor_data.get("T18", 0.0),       # T18 = Last Hour Flow Time (hours)
+                last_hour_diff_pressure=sensor_data.get("T19", 0.0),   # T19 = Last Hour Diff Pressure (IWC)
+                last_hour_static_pressure=sensor_data.get("T110", 0.0),  # T110 = Last Hour Static Pressure (PSI)
+                last_hour_temperature=sensor_data.get("T111", 0.0),    # T111 = Last Hour Temperature (°F)
+                last_hour_volume=sensor_data.get("T112", 0.0),         # T112 = Last Hour Volume (MCF)
+                last_hour_energy=sensor_data.get("T113", 0.0),         # T113 = Last Hour Energy
+                specific_gravity=sensor_data.get("T114", 0.0),         # T114 = Specific Gravity
+                timestamp=device_timestamp  # Use device timestamp from Utime field
             )
             db.add(reading)
 
