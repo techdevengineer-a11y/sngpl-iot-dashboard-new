@@ -28,18 +28,45 @@ class ReadingResponse(BaseModel):
     battery: Optional[float] = None
     max_static_pressure: Optional[float] = None
     min_static_pressure: Optional[float] = None
-    # T18-T114 Analytics parameters - default to 0 for chart compatibility
-    last_hour_flow_time: float = 0
-    last_hour_diff_pressure: float = 0
-    last_hour_static_pressure: float = 0
-    last_hour_temperature: float = 0
-    last_hour_volume: float = 0
-    last_hour_energy: float = 0
-    specific_gravity: float = 0
+    # T18-T114 Analytics parameters - Optional to preserve actual values
+    last_hour_flow_time: Optional[float] = None
+    last_hour_diff_pressure: Optional[float] = None
+    last_hour_static_pressure: Optional[float] = None
+    last_hour_temperature: Optional[float] = None
+    last_hour_volume: Optional[float] = None
+    last_hour_energy: Optional[float] = None
+    specific_gravity: Optional[float] = None
     timestamp: datetime
 
     class Config:
         from_attributes = True
+
+    @staticmethod
+    def from_orm_with_defaults(obj):
+        """Convert ORM object to response model, replacing None with 0 for analytics fields"""
+        data = {
+            "id": obj.id,
+            "device_id": obj.device_id,
+            "client_id": obj.client_id,
+            "temperature": obj.temperature,
+            "static_pressure": obj.static_pressure,
+            "differential_pressure": obj.differential_pressure,
+            "volume": obj.volume,
+            "total_volume_flow": obj.total_volume_flow,
+            "battery": obj.battery,
+            "max_static_pressure": obj.max_static_pressure,
+            "min_static_pressure": obj.min_static_pressure,
+            # Replace None with 0 for analytics fields to fix chart rendering
+            "last_hour_flow_time": obj.last_hour_flow_time if obj.last_hour_flow_time is not None else 0,
+            "last_hour_diff_pressure": obj.last_hour_diff_pressure if obj.last_hour_diff_pressure is not None else 0,
+            "last_hour_static_pressure": obj.last_hour_static_pressure if obj.last_hour_static_pressure is not None else 0,
+            "last_hour_temperature": obj.last_hour_temperature if obj.last_hour_temperature is not None else 0,
+            "last_hour_volume": obj.last_hour_volume if obj.last_hour_volume is not None else 0,
+            "last_hour_energy": obj.last_hour_energy if obj.last_hour_energy is not None else 0,
+            "specific_gravity": obj.specific_gravity if obj.specific_gravity is not None else 0,
+            "timestamp": obj.timestamp
+        }
+        return ReadingResponse(**data)
 
 
 class PaginatedResponse(BaseModel):
@@ -87,12 +114,15 @@ async def get_readings(
     # Get paginated data
     readings = query.order_by(DeviceReading.timestamp.desc()).offset(offset).limit(page_size).all()
 
+    # Convert readings with null-to-zero conversion for analytics fields
+    converted_readings = [ReadingResponse.from_orm_with_defaults(r) for r in readings]
+
     return {
         "total": total,
         "page": page,
         "page_size": page_size,
         "total_pages": total_pages,
-        "data": readings
+        "data": converted_readings
     }
 
 
@@ -108,7 +138,8 @@ async def get_device_recent_readings(
         DeviceReading.device_id == device_id
     ).order_by(DeviceReading.timestamp.desc()).limit(limit).all()
 
-    return readings
+    # Convert readings with null-to-zero conversion for analytics fields
+    return [ReadingResponse.from_orm_with_defaults(r) for r in readings]
 
 
 @router.get("/readings/export/csv")
