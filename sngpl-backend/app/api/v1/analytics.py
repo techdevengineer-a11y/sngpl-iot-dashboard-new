@@ -28,14 +28,14 @@ class ReadingResponse(BaseModel):
     battery: Optional[float] = None
     max_static_pressure: Optional[float] = None
     min_static_pressure: Optional[float] = None
-    # T18-T114 Analytics parameters
-    last_hour_flow_time: Optional[float] = None
-    last_hour_diff_pressure: Optional[float] = None
-    last_hour_static_pressure: Optional[float] = None
-    last_hour_temperature: Optional[float] = None
-    last_hour_volume: Optional[float] = None
-    last_hour_energy: Optional[float] = None
-    specific_gravity: Optional[float] = None
+    # T18-T114 Analytics parameters - default to 0 for chart compatibility
+    last_hour_flow_time: float = 0
+    last_hour_diff_pressure: float = 0
+    last_hour_static_pressure: float = 0
+    last_hour_temperature: float = 0
+    last_hour_volume: float = 0
+    last_hour_energy: float = 0
+    specific_gravity: float = 0
     timestamp: datetime
 
     class Config:
