@@ -735,9 +735,12 @@ const Trends = () => {
                 const chartData = filterDataByDateRange(t18StartDate, t18EndDate, 50);
                 console.log('[T18 Chart] Data points:', chartData.length);
                 if (chartData.length > 0) {
-                  console.log('[T18 Chart] Sample:', {
-                    timestamp: chartData[0].timestamp,
-                    last_hour_flow_time: chartData[0].last_hour_flow_time
+                  const values = chartData.map(d => d.last_hour_flow_time);
+                  console.log('[T18 Chart] First 5 values:', values.slice(0, 5));
+                  console.log('[T18 Chart] Min/Max:', {
+                    min: Math.min(...values),
+                    max: Math.max(...values),
+                    allSame: values.every(v => v === values[0])
                   });
                 }
                 return chartData;
