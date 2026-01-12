@@ -291,10 +291,12 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className={`flex-1 px-6 py-6 overflow-y-auto transition-all duration-300 ${
+        <main className={`flex-1 overflow-y-auto transition-all duration-300 ${
           sidebarCollapsed ? 'ml-16' : 'ml-64'
         }`}>
-          {children}
+          <div className="p-6">
+            {children}
+          </div>
         </main>
       </div>
 
