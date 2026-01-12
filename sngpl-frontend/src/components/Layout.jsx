@@ -259,11 +259,11 @@ const Layout = ({ children }) => {
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
-        sidebarCollapsed ? 'ml-16' : 'ml-64'
-      }`}>
+      <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="enterprise-header h-14 flex items-center justify-between px-6">
+        <header className={`enterprise-header h-14 flex items-center justify-between px-6 transition-all duration-300 ${
+          sidebarCollapsed ? 'ml-16' : 'ml-64'
+        }`}>
           <div className="flex items-center space-x-4">
             {sidebarCollapsed && (
               <button
