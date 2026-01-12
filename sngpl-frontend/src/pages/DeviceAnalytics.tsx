@@ -746,6 +746,8 @@ const DeviceAnalytics = () => {
                   stroke="#3b82f6"
                   strokeWidth={2}
                   fill="url(#colorT18)"
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -802,6 +804,8 @@ const DeviceAnalytics = () => {
                   stroke="#a855f7"
                   strokeWidth={2}
                   fill="url(#colorT19)"
+                  dot={{ fill: '#a855f7', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -858,6 +862,8 @@ const DeviceAnalytics = () => {
                   stroke="#16a34a"
                   strokeWidth={2}
                   fill="url(#colorT110)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -914,6 +920,8 @@ const DeviceAnalytics = () => {
                   stroke="#f97316"
                   strokeWidth={2}
                   fill="url(#colorT111)"
+                  dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -970,6 +978,8 @@ const DeviceAnalytics = () => {
                   stroke="#06b6d4"
                   strokeWidth={2}
                   fill="url(#colorT112)"
+                  dot={{ fill: '#06b6d4', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -1026,6 +1036,8 @@ const DeviceAnalytics = () => {
                   stroke="#eab308"
                   strokeWidth={2}
                   fill="url(#colorT113)"
+                  dot={{ fill: '#eab308', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -1082,6 +1094,8 @@ const DeviceAnalytics = () => {
                   stroke="#6366f1"
                   strokeWidth={2}
                   fill="url(#colorT114)"
+                  dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
