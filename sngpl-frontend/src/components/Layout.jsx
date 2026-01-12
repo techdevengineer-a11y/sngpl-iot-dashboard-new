@@ -124,10 +124,10 @@ const Layout = ({ children }) => {
 
       {/* Sidebar Navigation */}
       <aside className={`fixed left-0 top-0 h-screen enterprise-sidebar flex flex-col transition-all duration-300 z-40 ${
-        sidebarCollapsed ? 'w-16' : 'w-52'
+        sidebarCollapsed ? 'w-16' : 'w-64'
       }`}>
         {/* Logo and Collapse Toggle */}
-        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {!sidebarCollapsed ? (
             <Link to="/dashboard" className="flex items-center space-x-3">
               <img
@@ -183,7 +183,7 @@ const Layout = ({ children }) => {
         )}
 
         {/* Navigation Links */}
-        <nav className="flex-1 p-2 overflow-y-auto">
+        <nav className="flex-1 p-3 overflow-y-auto">
           <div className="space-y-1">
             {menuItems.map((item) => (
               <Link
@@ -191,17 +191,17 @@ const Layout = ({ children }) => {
                 to={item.path}
                 className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
                   location.pathname === item.path
-                    ? `bg-gradient-to-r ${item.gradient} text-white shadow-md font-bold`
-                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm font-semibold'
+                    ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105 font-medium`
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
                 }`}
                 title={sidebarCollapsed ? item.label : ''}
               >
-                <div className="flex items-center space-x-2.5">
-                  <span className={`${sidebarCollapsed ? 'text-xl mx-auto' : 'text-lg'} transition-transform group-hover:scale-110`}>
+                <div className="flex items-center space-x-3">
+                  <span className={`${sidebarCollapsed ? 'text-2xl mx-auto' : 'text-base'} transition-transform`}>
                     {item.icon}
                   </span>
                   {!sidebarCollapsed && (
-                    <span className="text-xs font-bold tracking-wide">
+                    <span className="text-sm">
                       {item.label}
                     </span>
                   )}
@@ -291,8 +291,8 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className={`flex-1 p-4 overflow-y-auto transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-16' : 'ml-52'
+        <main className={`flex-1 p-8 overflow-y-auto transition-all duration-300 ${
+          sidebarCollapsed ? 'ml-16' : 'ml-64'
         }`}>
           {children}
         </main>
