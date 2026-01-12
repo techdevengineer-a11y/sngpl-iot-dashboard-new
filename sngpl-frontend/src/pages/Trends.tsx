@@ -162,24 +162,20 @@ const Trends = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
+    // Initial fetch on mount
     fetchDeviceData();
     fetchHistoricalData();
 
-    // Auto-refresh device data every 10 seconds for real-time updates
+    // Auto-refresh device data every 30 seconds for better performance
+    // Historical data is only fetched once on mount to avoid wasteful API calls
     const dataInterval = setInterval(() => {
-      fetchDeviceData();
-      fetchHistoricalData();
-    }, 10000);
+      fetchDeviceData(); // Only fetch device metadata
+      // Removed: fetchHistoricalData() - no need to refetch 1000 records every 10s
+    }, 30000); // Increased from 10s to 30s
 
     // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const now = `${year}-${month}-${day}T${hours}:${minutes}`;
+      const now = new Date().toISOString().slice(0, 16);
 
       setTempEndDate(now);
       setStaticPEndDate(now);
