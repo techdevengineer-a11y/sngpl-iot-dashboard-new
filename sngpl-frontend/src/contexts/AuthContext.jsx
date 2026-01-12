@@ -18,17 +18,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuth();
-
-    // Auto-logout when tab/window is closed
-    const handleBeforeUnload = () => {
-      localStorage.removeItem('token');
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
   }, []);
 
   const checkAuth = async () => {

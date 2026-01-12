@@ -696,7 +696,7 @@ const DeviceAnalytics = () => {
         {/* 7 Individual Charts for T18-T114 Analytics Parameters */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Last Hour Flow Time Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-600" />
@@ -709,7 +709,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT18StartDate}
               onEndChange={setT18EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t18StartDate, t18EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT18" x1="0" y1="0" x2="0" y2="1">
@@ -754,7 +754,7 @@ const DeviceAnalytics = () => {
           </div>
 
           {/* Last Hour Diff Pressure Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Wind className="w-5 h-5 text-purple-600" />
@@ -767,7 +767,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT19StartDate}
               onEndChange={setT19EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t19StartDate, t19EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT19" x1="0" y1="0" x2="0" y2="1">
@@ -812,7 +812,7 @@ const DeviceAnalytics = () => {
           </div>
 
           {/* Last Hour Static Pressure Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Gauge className="w-5 h-5 text-green-600" />
@@ -825,7 +825,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT110StartDate}
               onEndChange={setT110EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t110StartDate, t110EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT110" x1="0" y1="0" x2="0" y2="1">
@@ -870,7 +870,7 @@ const DeviceAnalytics = () => {
           </div>
 
           {/* Last Hour Temperature Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Thermometer className="w-5 h-5 text-orange-600" />
@@ -883,7 +883,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT111StartDate}
               onEndChange={setT111EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t111StartDate, t111EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT111" x1="0" y1="0" x2="0" y2="1">
@@ -928,7 +928,7 @@ const DeviceAnalytics = () => {
           </div>
 
           {/* Last Hour Volume Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Droplets className="w-5 h-5 text-cyan-600" />
@@ -941,7 +941,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT112StartDate}
               onEndChange={setT112EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t112StartDate, t112EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT112" x1="0" y1="0" x2="0" y2="1">
@@ -986,7 +986,7 @@ const DeviceAnalytics = () => {
           </div>
 
           {/* Last Hour Energy Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Battery className="w-5 h-5 text-yellow-600" />
@@ -999,7 +999,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT113StartDate}
               onEndChange={setT113EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t113StartDate, t113EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT113" x1="0" y1="0" x2="0" y2="1">
@@ -1044,7 +1044,7 @@ const DeviceAnalytics = () => {
           </div>
 
           {/* Specific Gravity Chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6" style={{ minHeight: '350px' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-indigo-600" />
@@ -1057,7 +1057,7 @@ const DeviceAnalytics = () => {
               onStartChange={setT114StartDate}
               onEndChange={setT114EndDate}
             />
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <AreaChart data={filterDataByDateRange(t114StartDate, t114EndDate, 50)}>
                 <defs>
                   <linearGradient id="colorT114" x1="0" y1="0" x2="0" y2="1">
