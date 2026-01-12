@@ -123,7 +123,7 @@ const Layout = ({ children }) => {
       <div className="fixed bottom-1/3 right-1/3 w-56 h-56 bg-pink-400/5 rounded-full blur-3xl animate-float pointer-events-none" style={{animationDelay: '2.5s'}}></div>
 
       {/* Sidebar Navigation */}
-      <aside className={`enterprise-sidebar flex flex-col transition-all duration-300 ${
+      <aside className={`fixed left-0 top-0 h-screen enterprise-sidebar flex flex-col transition-all duration-300 z-40 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
       }`}>
         {/* Logo and Collapse Toggle */}
@@ -291,7 +291,9 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className={`flex-1 p-8 overflow-y-auto transition-all duration-300 ${
+          sidebarCollapsed ? 'ml-16' : 'ml-64'
+        }`}>
           {children}
         </main>
       </div>
