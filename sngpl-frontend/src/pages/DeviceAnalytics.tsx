@@ -182,7 +182,8 @@ const DeviceAnalytics = () => {
       const response = await fetch(`/api/devices/`);
       if (response.ok) {
         const devices = await response.json();
-        const device = devices.find((d: any) => d.id === parseInt(deviceId || '0'));
+        // Match by client_id (e.g., "SNGPL-001") not by numeric id
+        const device = devices.find((d: any) => d.client_id === deviceId);
 
         if (device) {
           setDeviceData(device);
@@ -206,7 +207,7 @@ const DeviceAnalytics = () => {
   const fetchHistoricalData = async () => {
     try {
       // Fetch latest 1000 readings for history logs
-      const response = await fetch(`/api/analytics/readings?device_id=${deviceId}&page_size=1000&page=1`);
+      const response = await fetch(`/api/analytics/readings?client_id=${deviceId}&page_size=1000&page=1`);
       if (response.ok) {
         const result = await response.json();
         const readings = result.data || [];
