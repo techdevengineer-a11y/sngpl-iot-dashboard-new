@@ -94,12 +94,25 @@ const DeviceAnalytics = () => {
   // Custom date range states for each parameter
   const getDefaultStartDate = () => {
     const date = new Date();
-    date.setHours(date.getHours() - 24); // Default to last 24 hours
-    return date.toISOString().slice(0, 16); // Format for datetime-local input
+    date.setDate(date.getDate() - 7); // Default to last 7 days for more data
+    // Format for datetime-local: YYYY-MM-DDThh:mm (local time, not UTC)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const getDefaultEndDate = () => {
-    return new Date().toISOString().slice(0, 16);
+    const date = new Date();
+    // Format for datetime-local: YYYY-MM-DDThh:mm (local time, not UTC)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const [tempStartDate, setTempStartDate] = useState(getDefaultStartDate());
@@ -160,7 +173,14 @@ const DeviceAnalytics = () => {
 
     // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
-      const now = new Date().toISOString().slice(0, 16);
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const now = `${year}-${month}-${day}T${hours}:${minutes}`;
+
       setTempEndDate(now);
       setStaticPEndDate(now);
       setDiffPEndDate(now);
@@ -397,6 +417,7 @@ const DeviceAnalytics = () => {
       return [];
     }
 
+    // For datetime-local inputs, we need to treat them as local time, not UTC
     const start = new Date(startDate);
     const end = new Date(endDate);
 
@@ -408,19 +429,11 @@ const DeviceAnalytics = () => {
     // Limit to latest N readings for performance and clarity
     const limited = filtered.slice(0, limit);
 
-    // If filter returns nothing but we have data, show last 24 hours as fallback
+    // If filter returns nothing but we have data, return all data (no date filter)
+    // This happens when the date range doesn't match the data timezone
     if (limited.length === 0 && historyData.length > 0) {
-      console.warn('[Filter] No data in selected range, showing last 24 hours');
-      const now = new Date();
-      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-      const fallbackFiltered = historyData.filter(d => {
-        const timestamp = new Date(d.timestamp);
-        return timestamp >= twentyFourHoursAgo && timestamp <= now;
-      });
-
-      // Apply limit to fallback data as well
-      return fallbackFiltered.slice(0, limit);
+      // Just return the most recent data without date filtering
+      return historyData.slice(0, limit);
     }
 
     return limited;
