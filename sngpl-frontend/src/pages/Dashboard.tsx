@@ -4,6 +4,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
+import api from '../services/api';
 import {
   Activity,
   Wifi,
@@ -351,10 +352,9 @@ const Dashboard = () => {
 
   const generateAlertsData = async () => {
     try {
-      // Fetch real alarms from API
-      const response = await fetch('/api/alarms/');
-      if (response.ok) {
-        const alarms = await response.json();
+      // Fetch real alarms from API with authentication
+      const response = await api.get('/alarms/');
+      const alarms = response.data;
 
         // Map alarms to alerts format
         const alerts: any[] = alarms.map((alarm: any) => {
@@ -399,12 +399,8 @@ const Dashboard = () => {
           };
         });
 
-        setAlertsData(alerts);
-        setTotalAlerts(alerts.length);
-      } else {
-        console.warn('Failed to fetch alerts from API');
-        setAlertsData([]);
-      }
+      setAlertsData(alerts);
+      setTotalAlerts(alerts.length);
     } catch (error) {
       console.error('Error fetching alerts:', error);
       setAlertsData([]);
