@@ -276,7 +276,7 @@ const Layout = ({ children }) => {
               </button>
             )}
             <h1 className="text-lg font-semibold text-gray-900">
-              {menuSections.flatMap(s => s.items).find(item => item.path === location.pathname)?.label || 'Dashboard'}
+              {menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
             </h1>
           </div>
           <div className="flex items-center space-x-4">
