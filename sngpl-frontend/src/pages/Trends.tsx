@@ -438,23 +438,22 @@ const Trends = () => {
     // Limit to latest N readings for performance and clarity
     const limited = filtered.slice(0, limit);
 
-    // If filter returns nothing but we have data, return all data (no date filter)
-    // This happens when the date range doesn't match the data timezone
+    // Determine which data to use (filtered or fallback)
+    let dataToClean = limited;
+
+    // If filter returns nothing but we have data, use fallback data
     if (limited.length === 0 && historyData.length > 0) {
       console.log('[Filter] No data in selected range, returning recent data');
-      const fallback = historyData.slice(0, limit);
-      if (fallback.length > 0) {
-        console.log('[Filter] Sample data point:', fallback[0]);
+      dataToClean = historyData.slice(0, limit);
+      if (dataToClean.length > 0) {
+        console.log('[Filter] Sample data point:', dataToClean[0]);
       }
-      return fallback;
-    }
-
-    if (limited.length > 0) {
+    } else if (limited.length > 0) {
       console.log('[Filter] Sample filtered data:', limited[0]);
     }
 
     // Clean the data: Replace null/undefined values with 0 for charts to render properly
-    const cleanedData = limited.map(reading => ({
+    const cleanedData = dataToClean.map(reading => ({
       ...reading,
       last_hour_flow_time: reading.last_hour_flow_time ?? 0,
       last_hour_diff_pressure: reading.last_hour_diff_pressure ?? 0,
