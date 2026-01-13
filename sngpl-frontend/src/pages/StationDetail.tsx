@@ -156,19 +156,14 @@ const StationDetail = () => {
     fetchDeviceData();
     fetchHistoricalData();
 
-    // Auto-refresh latest reading every 2 minutes (120 seconds) - optimized for 10-minute data intervals
-    // Only fetch the latest reading for real-time metric cards (much smaller payload)
-    const latestInterval = setInterval(() => {
-      fetchDeviceData();
-      fetchLatestReading(); // Fetch only latest reading - lightweight update
-    }, 120000); // 2 minutes - reduced API calls while staying responsive
+    // Auto-refresh device data every 30 seconds for better performance
+    // Historical data is only fetched once on mount to avoid wasteful API calls
+    const dataInterval = setInterval(() => {
+      fetchDeviceData(); // Only fetch device metadata
+      // Removed: fetchHistoricalData() - no need to refetch 1000 records
+    }, 30000); // Increased from 10s to 30s
 
-    // Refetch full historical data every 10 minutes to update charts and history logs
-    const historyInterval = setInterval(() => {
-      fetchHistoricalData(); // Full historical data refresh
-    }, 600000); // 10 minutes - matches device data send interval
-
-    // Auto-update date range end times every 30 seconds for chart updates
+    // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
       const now = new Date().toISOString().slice(0, 16);
       setTempEndDate(now);
@@ -178,11 +173,10 @@ const StationDetail = () => {
       setFlowEndDate(now);
       setBatteryEndDate(now);
       setHistoryLogEndDate(now);
-    }, 30000); // Changed from 5s to 30s - reduces unnecessary re-renders
+    }, 5000);
 
     return () => {
-      clearInterval(latestInterval);
-      clearInterval(historyInterval);
+      clearInterval(dataInterval);
       clearInterval(dateInterval);
     };
   }, [stationId]);
@@ -214,22 +208,9 @@ const StationDetail = () => {
     }
   };
 
-  const fetchLatestReading = async () => {
-    try {
-      // Fetch only the latest reading for real-time updates
-      const response = await fetch(`/api/analytics/device/${stationId}/latest`);
-      if (response.ok) {
-        const reading = await response.json();
-        setLatestReading(reading);
-      }
-    } catch (error) {
-      console.error('Error fetching latest reading:', error);
-    }
-  };
-
   const fetchHistoricalData = async () => {
     try {
-      // Fetch latest 1000 readings for history logs and charts
+      // Fetch latest 1000 readings for history logs
       const response = await fetch(`/api/analytics/readings?device_id=${stationId}&page_size=1000&page=1`);
       if (response.ok) {
         const result = await response.json();

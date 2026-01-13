@@ -11,7 +11,6 @@ from app.db.database import get_db
 from app.models.models import Device, DeviceReading, User
 from app.api.v1.auth import get_current_user
 from app.services.audit_service import audit_service
-from app.core.redis_client import cache_response
 
 router = APIRouter()
 
@@ -53,6 +52,21 @@ class DeviceCreate(BaseModel):
         return v.strip()
 
 
+class LatestReading(BaseModel):
+    temperature: Optional[float] = None
+    static_pressure: Optional[float] = None
+    max_static_pressure: Optional[float] = None
+    min_static_pressure: Optional[float] = None
+    differential_pressure: Optional[float] = None
+    battery: Optional[float] = None
+    volume: Optional[float] = None
+    total_volume_flow: Optional[float] = None
+    timestamp: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 class DeviceResponse(BaseModel):
     id: int
     client_id: str
@@ -63,6 +77,8 @@ class DeviceResponse(BaseModel):
     longitude: Optional[float] = None
     is_active: bool
     last_seen: Optional[datetime] = None
+    latest_reading: Optional[LatestReading] = None
+    section_id: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -101,11 +117,55 @@ async def get_device_stats(db: Session = Depends(get_db), current_user: User = D
 
 
 @router.get("/", response_model=List[DeviceResponse])
-@cache_response("devices:all", ttl=120)  # Cache for 2 minutes - optimized for 10-min data intervals
 async def get_devices(db: Session = Depends(get_db)):
-    """Get all devices - Public endpoint with Redis caching (2min TTL)"""
+    """Get all devices - Public endpoint with latest reading including battery"""
     devices = db.query(Device).all()
-    return devices
+
+    # Attach latest reading with battery data for each device
+    result = []
+    for device in devices:
+        # Get latest reading for this device
+        latest_reading = db.query(DeviceReading).filter(
+            DeviceReading.device_id == device.id
+        ).order_by(DeviceReading.timestamp.desc()).first()
+
+        # Extract section_id from client_id (e.g., SMS-II-023 -> II)
+        section_id = None
+        if device.client_id and device.client_id.startswith("SMS-"):
+            parts = device.client_id.split("-")
+            if len(parts) >= 2:
+                section_id = parts[1]
+
+        device_dict = {
+            "id": device.id,
+            "client_id": device.client_id,
+            "device_name": device.device_name,
+            "device_type": device.device_type,
+            "location": device.location,
+            "latitude": device.latitude,
+            "longitude": device.longitude,
+            "is_active": device.is_active,
+            "last_seen": device.last_seen,
+            "section_id": section_id,
+            "latest_reading": None
+        }
+
+        if latest_reading:
+            device_dict["latest_reading"] = {
+                "temperature": latest_reading.temperature,
+                "static_pressure": latest_reading.static_pressure,
+                "max_static_pressure": latest_reading.max_static_pressure,
+                "min_static_pressure": latest_reading.min_static_pressure,
+                "differential_pressure": latest_reading.differential_pressure,
+                "battery": latest_reading.battery,
+                "volume": latest_reading.volume,
+                "total_volume_flow": latest_reading.total_volume_flow,
+                "timestamp": latest_reading.timestamp
+            }
+
+        result.append(device_dict)
+
+    return result
 
 
 @router.get("/{client_id}", response_model=DeviceResponse)
@@ -171,6 +231,38 @@ async def update_device(
         action="UPDATE", resource_type="device",
         user=current_user, resource_id=device.id,
         details={"client_id": device.client_id, "device_name": device.device_name},
+        status="success"
+    )
+
+    return device
+
+
+@router.patch("/{client_id}/name")
+async def update_device_name(
+    client_id: str,
+    device_name: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update only the device name"""
+    device = db.query(Device).filter(Device.client_id == client_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    if not device_name or not device_name.strip():
+        raise HTTPException(status_code=400, detail="Device name cannot be empty")
+
+    device.device_name = device_name.strip()
+    db.commit()
+    db.refresh(device)
+
+    # Audit log
+    audit_service.log_from_request(
+        db=db, request=request,
+        action="UPDATE", resource_type="device",
+        user=current_user, resource_id=device.id,
+        details={"client_id": device.client_id, "device_name": device.device_name, "field": "name"},
         status="success"
     )
 
