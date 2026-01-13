@@ -1045,23 +1045,9 @@ const StationDetail = () => {
                     return [`${value.toFixed(1)} MCF (${status})`, 'Volume'];
                   }}
                 />
-                <Area type="monotone" dataKey="volume" stroke="#16a34a" strokeWidth={2} fill="url(#colorVolumeGreen)" />
+                <Area type="monotone" dataKey="volume" stroke="#16a34a" strokeWidth={2} fill="url(#colorVolumeGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
               </AreaChart>
             </ResponsiveContainer>
-            <div className="flex items-center justify-center gap-4 mt-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-green-600 rounded"></div>
-                <span className="text-xs text-gray-600">Normal (&gt;4000 MCF)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-yellow-600 rounded"></div>
-                <span className="text-xs text-gray-600">Warning (3000-4000)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-red-600 rounded"></div>
-                <span className="text-xs text-gray-600">Danger (&lt;3000)</span>
-              </div>
-            </div>
           </div>
 
           {/* Total Volume Flow Chart */}
@@ -1113,23 +1099,9 @@ const StationDetail = () => {
                     return [`${value.toFixed(1)} MCF/day (${status})`, 'Flow'];
                   }}
                 />
-                <Area type="monotone" dataKey="total_volume_flow" stroke="#16a34a" strokeWidth={2} fill="url(#colorFlowGreen)" />
+                <Area type="monotone" dataKey="total_volume_flow" stroke="#16a34a" strokeWidth={2} fill="url(#colorFlowGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
               </AreaChart>
             </ResponsiveContainer>
-            <div className="flex items-center justify-center gap-4 mt-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-green-600 rounded"></div>
-                <span className="text-xs text-gray-600">Normal (&gt;8000 MCF/day)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-yellow-600 rounded"></div>
-                <span className="text-xs text-gray-600">Warning (5000-8000)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 bg-red-600 rounded"></div>
-                <span className="text-xs text-gray-600">Danger (&lt;5000)</span>
-              </div>
-            </div>
           </div>
         </div>
 
