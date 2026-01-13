@@ -131,24 +131,24 @@ async def get_section_stats(db: Session = Depends(get_db)):
         total_sms_count += sms_count
         total_active_sms += active_count
 
-    # Add "Other Devices" section if there are any
+    # Include "Other Devices" in totals but don't add as separate card
     if other_stats and other_stats.sms_count and other_stats.sms_count > 0:
-        other_sms_count = other_stats.sms_count or 0
-        other_active_count = other_stats.active_sms or 0
         other_cumulative_flow = other_stats.cumulative_flow or 0.0
-
-        sections.append({
-            'section_id': 'OTHER',
-            'section_name': 'Other Devices',
-            'sms_count': other_sms_count,
-            'active_sms': other_active_count,
-            'cumulative_volume_flow': round(other_cumulative_flow, 2),
-            'unit': 'MCF/day'
-        })
-
         total_cumulative_flow += other_cumulative_flow
-        total_sms_count += other_sms_count
-        total_active_sms += other_active_count
+        total_sms_count += other_stats.sms_count or 0
+        total_active_sms += other_stats.active_sms or 0
+
+    # Add "Total Devices" card showing combined stats from all sections
+    sections.append({
+        'section_id': 'TOTAL',
+        'section_name': 'Total Devices',
+        'sms_count': total_sms_count,
+        'active_sms': total_active_sms,
+        'offline_sms': total_sms_count - total_active_sms,
+        'alarms_count': 0,  # Placeholder for alarm count
+        'cumulative_volume_flow': round(total_cumulative_flow, 2),
+        'unit': 'MCF/day'
+    })
 
     # Add "All SMS" summary
     all_sms = {

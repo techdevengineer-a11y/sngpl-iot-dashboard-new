@@ -46,13 +46,14 @@ const Sections = () => {
     );
   }
 
-  // Section colors
+  // Section colors (5 sections + 1 total)
   const sectionColors = [
     'from-blue-600 to-blue-700',
     'from-green-600 to-green-700',
     'from-purple-600 to-purple-700',
     'from-orange-600 to-orange-700',
     'from-pink-600 to-pink-700',
+    'from-cyan-600 to-cyan-700', // Total card
   ];
 
   // Default sections if no data from API
@@ -99,16 +100,21 @@ const Sections = () => {
 
         {/* Section Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Cards 1-5: Individual Sections */}
+          {/* Cards 1-6: Individual Sections + Total */}
           {sections.map((section, index) => {
-            const offlineDevices = section.sms_count - section.active_sms;
-            const devicesWithAlarms = 0; // Set to 0 for now
+            const offlineDevices = section.offline_sms || (section.sms_count - section.active_sms);
+            const devicesWithAlarms = section.alarms_count || 0;
+            const isTotal = section.section_id === 'TOTAL';
 
             return (
               <div
                 key={section.section_id}
-                onClick={() => handleSectionClick(section.section_id)}
-                className="glass rounded-xl p-6 cursor-pointer hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20"
+                onClick={() => !isTotal && handleSectionClick(section.section_id)}
+                className={`glass rounded-xl p-6 transition-all duration-300 ${
+                  isTotal
+                    ? 'border-2 border-blue-500'
+                    : 'cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20'
+                }`}
               >
                 {/* Header with Section Number */}
                 <div className="flex items-center justify-between mb-4">
@@ -164,13 +170,15 @@ const Sections = () => {
                   </div>
                 </div>
 
-                {/* View Details Button */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-300">
-                  <span className="text-sm text-gray-600">View SMS Devices</span>
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
+                {/* View Details Button - Only show for non-Total cards */}
+                {!isTotal && (
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-300">
+                    <span className="text-sm text-gray-600">View SMS Devices</span>
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                )}
               </div>
             );
           })}
