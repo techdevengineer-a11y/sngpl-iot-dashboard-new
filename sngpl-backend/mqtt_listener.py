@@ -382,9 +382,9 @@ class StandaloneMQTTListener:
         return alarm
 
     def check_offline_devices(self):
-        """Background task to check for offline devices every 10 seconds"""
+        """Background task to check for offline devices every 15 minutes"""
         logger.info("[OFFLINE MONITOR] Starting offline device monitoring thread")
-        print("[INFO] Offline device monitoring started (15-minute timeout)")
+        print("[INFO] Offline device monitoring started (15-minute check interval)")
 
         while self.running:
             try:
@@ -415,12 +415,12 @@ class StandaloneMQTTListener:
                 finally:
                     db.close()
 
-                # Sleep for 10 seconds before next check
-                time.sleep(10)
+                # Sleep for 15 minutes (900 seconds) before next check
+                time.sleep(900)
 
             except Exception as e:
                 logger.error(f"[ERROR] Offline check thread error: {e}", exc_info=True)
-                time.sleep(10)
+                time.sleep(900)
 
         logger.info("[OFFLINE MONITOR] Offline device monitoring thread stopped")
 
