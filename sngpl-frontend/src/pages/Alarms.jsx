@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAlarms, getAlarmsBySection, acknowledgeAlarm, deleteAlarm, deleteAllAlarms, getAlarmMonitoringStatus, toggleAlarmMonitoring } from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { Bell, AlertTriangle, CheckCircle, Clock, Activity, Trash2, PlayCircle, StopCircle, Gauge, WifiOff, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Alarms = () => {
+  const navigate = useNavigate();
   const [sectionData, setSectionData] = useState([]);
   const [allAlarms, setAllAlarms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,11 +99,7 @@ const Alarms = () => {
   };
 
   const handleSectionClick = (sectionId) => {
-    if (expandedSection === sectionId) {
-      setExpandedSection(null); // Collapse if already expanded
-    } else {
-      setExpandedSection(sectionId); // Expand the clicked section
-    }
+    navigate(`/alarms/${sectionId}`);
   };
 
   // Color indicator functions - matching Station Detail chart colors
@@ -286,13 +284,9 @@ const Alarms = () => {
             return (
               <div
                 key={section.section_id}
-                className="glass rounded-xl p-6 transition-all duration-300"
+                onClick={() => handleSectionClick(section.section_id)}
+                className="glass rounded-xl p-6 transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20"
               >
-                {/* Clickable Card Header */}
-                <div
-                  onClick={() => handleSectionClick(section.section_id)}
-                  className="cursor-pointer hover:scale-105 transition-all duration-300"
-                >
                   {/* Header with Section Number */}
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-16 h-16 bg-gradient-to-br ${getSectionColor(index)} rounded-xl flex items-center justify-center text-white shadow-lg`}>
@@ -353,26 +347,21 @@ const Alarms = () => {
                     </div>
                   </div>
 
-                  {/* View Details Button */}
+                  {/* View Alarms Button */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-300">
-                    <span className="text-sm text-gray-600">
-                      {sectionAlarms.length} alarm{sectionAlarms.length !== 1 ? 's' : ''}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-700">
-                        {isExpanded ? 'Hide Details' : 'View Details'}
-                      </span>
-                      {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-gray-600" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-600" />
-                      )}
-                    </div>
+                    <span className="text-sm text-gray-600">View Section Alarms</span>
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </div>
+            );
+          })}
+          </div>
+        )}
 
-                {/* Expandable Alarms Table */}
-                {isExpanded && (
+        {/* REMOVE THIS - Expandable Alarms Table */}
+        {false && (
                   <div className="mt-4 border-t border-gray-300 pt-4 animate-in slide-in-from-top duration-300">
                     {sectionAlarms.length === 0 ? (
                       <div className="bg-green-50 rounded-lg p-4 text-center">

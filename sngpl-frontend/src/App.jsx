@@ -30,6 +30,7 @@ const DeviceManagement = lazy(() => import('./pages/DeviceManagement'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const DeepAnalytics = lazy(() => import('./pages/DeepAnalytics'));
 const Alarms = lazy(() => import('./pages/Alarms'));
+const SectionAlarms = lazy(() => import('./pages/SectionAlarms'));
 const Map = lazy(() => import('./pages/Map'));
 const LiveMonitor = lazy(() => import('./pages/LiveMonitor'));
 const Reports = lazy(() => import('./pages/Reports'));
@@ -89,6 +90,7 @@ function AppRoutes() {
         <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
         <Route path="/deep-analytics" element={<PrivateRoute><DeepAnalytics /></PrivateRoute>} />
         <Route path="/alarms" element={<PrivateRoute><Alarms /></PrivateRoute>} />
+        <Route path="/alarms/:sectionId" element={<PrivateRoute><SectionAlarms /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
         <Route path="/advanced-reports" element={<PrivateRoute><AdvancedReports /></PrivateRoute>} />
         <Route path="/analytics-page" element={<PrivateRoute><AnalyticsPage /></PrivateRoute>} />
