@@ -105,7 +105,73 @@ const Alarms = () => {
     }
   };
 
-  const getSeverityColor = (severity) => {
+  // Color indicator functions - matching Station Detail chart colors
+  const getTemperatureColor = (temp) => {
+    if (temp < 0) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'V.Low', severity: 'high' };
+    if (temp < 10) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-200', status: 'Low', severity: 'high' };
+    if (temp <= 120) return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
+    return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600', icon: 'text-yellow-500', bgSolid: 'bg-yellow-100', status: 'High', severity: 'medium' };
+  };
+
+  const getStaticPressureColor = (pressure) => {
+    if (pressure < 10) return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600', icon: 'text-yellow-500', bgSolid: 'bg-yellow-100', status: 'V.Low', severity: 'medium' };
+    if (pressure <= 90) return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
+    if (pressure <= 120) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-200', status: 'High', severity: 'high' };
+    return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'V.High', severity: 'high' };
+  };
+
+  const getDifferentialPressureColor = (pressure) => {
+    if (pressure < 0) return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600', icon: 'text-yellow-500', bgSolid: 'bg-yellow-100', status: 'V.Low', severity: 'medium' };
+    if (pressure <= 300) return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
+    if (pressure <= 400) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-200', status: 'High', severity: 'high' };
+    return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'V.High', severity: 'high' };
+  };
+
+  const getBatteryColor = (voltage) => {
+    if (voltage < 10) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'V.Low', severity: 'high' };
+    if (voltage < 10.5) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-200', status: 'Low', severity: 'high' };
+    if (voltage <= 14) return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
+    return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600', icon: 'text-yellow-500', bgSolid: 'bg-yellow-100', status: 'High', severity: 'medium' };
+  };
+
+  const getVolumeColor = (volume) => {
+    if (volume < 3000) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'Danger', severity: 'high' };
+    if (volume < 4000) return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600', icon: 'text-yellow-500', bgSolid: 'bg-yellow-100', status: 'Warning', severity: 'medium' };
+    return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
+  };
+
+  // Get color based on alarm parameter type and value
+  const getSeverityColor = (alarm) => {
+    // If alarm has parameter type and value, use parameter-specific colors
+    if (alarm.parameter && alarm.value !== null && alarm.value !== undefined) {
+      const value = parseFloat(alarm.value);
+
+      switch (alarm.parameter.toLowerCase()) {
+        case 'temperature':
+          return getTemperatureColor(value);
+        case 'static_pressure':
+        case 'pressure':
+          return getStaticPressureColor(value);
+        case 'differential_pressure':
+        case 'diff_pressure':
+          return getDifferentialPressureColor(value);
+        case 'battery':
+        case 'battery_voltage':
+          return getBatteryColor(value);
+        case 'volume':
+        case 'volume_flow':
+        case 'total_volume_flow':
+          return getVolumeColor(value);
+        default:
+          // Fall back to severity-based colors
+          break;
+      }
+    }
+
+    // Fallback to severity-based colors if parameter info not available
+    // If alarm is an object with severity property, use alarm.severity
+    const severity = typeof alarm === 'string' ? alarm : alarm.severity;
+
     if (severity === 'high') {
       return {
         bg: 'bg-red-500/10',
@@ -124,11 +190,11 @@ const Alarms = () => {
       };
     }
     return {
-      bg: 'bg-blue-500/10',
-      border: 'border-blue-500/30',
-      text: 'text-blue-600',
-      icon: 'text-blue-500',
-      bgSolid: 'bg-blue-100'
+      bg: 'bg-green-500/10',
+      border: 'border-green-500/30',
+      text: 'text-green-600',
+      icon: 'text-green-500',
+      bgSolid: 'bg-green-100'
     };
   };
 
@@ -330,7 +396,7 @@ const Alarms = () => {
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
                             {sectionAlarms.map((alarm) => {
-                              const severityColor = getSeverityColor(alarm.severity);
+                              const severityColor = getSeverityColor(alarm);
                               return (
                                 <tr key={alarm.id} className={`hover:bg-gray-50 ${alarm.is_acknowledged ? 'opacity-60' : ''}`}>
                                   <td className="px-2 py-3 whitespace-nowrap">
