@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAlarms, acknowledgeAlarm, deleteAlarm, deleteAllAlarms, getAlarmMonitoringStatus, toggleAlarmMonitoring } from '../services/api';
+import { getAlarms, getAlarmsBySection, acknowledgeAlarm, deleteAlarm, deleteAllAlarms, getAlarmMonitoringStatus, toggleAlarmMonitoring } from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { Bell, AlertTriangle, CheckCircle, Clock, Activity, Trash2, PlayCircle, StopCircle, Gauge, WifiOff, ChevronDown, ChevronUp } from 'lucide-react';
@@ -24,8 +24,7 @@ const Alarms = () => {
   const fetchData = async () => {
     try {
       // Fetch section-based alarm data
-      const response = await fetch('/api/alarms/by-section');
-      const data = await response.json();
+      const data = await getAlarmsBySection();
       setSectionData(data.sections || []);
 
       // Fetch all alarms for detail view

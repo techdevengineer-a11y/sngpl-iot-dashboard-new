@@ -84,6 +84,11 @@ export const getAlarmStats = async () => {
   return response.data;
 };
 
+export const getAlarmsBySection = async () => {
+  const response = await api.get('/alarms/by-section');
+  return response.data;
+};
+
 export const acknowledgeAlarm = async (alarmId) => {
   const response = await api.put(`/alarms/${alarmId}/acknowledge`);
   return response.data;
