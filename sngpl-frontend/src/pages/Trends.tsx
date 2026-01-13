@@ -1101,16 +1101,10 @@ const Trends = () => {
         {/* Complete History Logs */}
         <div className="glass rounded-xl overflow-hidden">
           <div className="p-6 border-b border-gray-300">
-            <div className="mb-4">
+            <div>
               <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-              <p className="text-sm text-gray-600 mt-1">All device readings for selected time range</p>
+              <p className="text-sm text-gray-600 mt-1">Latest 500 readings</p>
             </div>
-            <CustomDateRangeSelector
-              startDate={historyLogStartDate}
-              endDate={historyLogEndDate}
-              onStartChange={setHistoryLogStartDate}
-              onEndChange={setHistoryLogEndDate}
-            />
           </div>
           <div className="overflow-auto" style={{ maxHeight: '500px' }}>
             <table className="w-full border-collapse">
@@ -1128,7 +1122,7 @@ const Trends = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filterDataByDateRange(historyLogStartDate, historyLogEndDate, 1000).map((reading, index) => (
+                {historyData.slice(0, 500).map((reading, index) => (
                   <tr key={index} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-700">{index + 1}</span>
