@@ -179,6 +179,21 @@ class StandaloneMQTTListener:
             # T13 = Total Volume Flow (MCF/day), T14 = Volume (MCF)
             # T15 = Battery (V), T16 = Max Static Pressure, T17 = Min Static Pressure
             # T18-T114 = New Analytics Parameters
+
+            # Get current timestamp
+            current_timestamp = datetime.now()
+
+            # Check if a reading with same device_id and timestamp already exists (prevent duplicates)
+            existing_reading = db.query(DeviceReading).filter(
+                DeviceReading.device_id == device.id,
+                DeviceReading.timestamp == current_timestamp
+            ).first()
+
+            if existing_reading:
+                logger.warning(f"[DUPLICATE PREVENTED] Reading for device {client_id} at {current_timestamp} already exists, skipping")
+                print(f"⚠️  [DUPLICATE] Skipped duplicate reading for {client_id} at {current_timestamp}")
+                return
+
             reading = DeviceReading(
                 device_id=device.id,
                 client_id=client_id,
@@ -198,7 +213,7 @@ class StandaloneMQTTListener:
                 last_hour_volume=sensor_data.get("T112", 0.0),             # T112 - Last Hour Volume
                 last_hour_energy=sensor_data.get("T113", 0.0),             # T113 - Last Hour Energy
                 specific_gravity=sensor_data.get("T114", 0.0),             # T114 - Specific Gravity In Use
-                timestamp=datetime.now()
+                timestamp=current_timestamp
             )
             db.add(reading)
 
@@ -369,7 +384,7 @@ class StandaloneMQTTListener:
     def check_offline_devices(self):
         """Background task to check for offline devices every 10 seconds"""
         logger.info("[OFFLINE MONITOR] Starting offline device monitoring thread")
-        print("[INFO] Offline device monitoring started (1-minute timeout)")
+        print("[INFO] Offline device monitoring started (15-minute timeout)")
 
         while self.running:
             try:
@@ -377,10 +392,10 @@ class StandaloneMQTTListener:
                 try:
                     # Get current time
                     now = datetime.now()
-                    # Calculate threshold time (1 minute ago)
-                    threshold_time = now - timedelta(seconds=60)
+                    # Calculate threshold time (15 minutes ago)
+                    threshold_time = now - timedelta(seconds=900)
 
-                    # Find devices that were active but haven't sent data in 1 minute
+                    # Find devices that were active but haven't sent data in 15 minutes
                     offline_devices = db.query(Device).filter(
                         Device.is_active == True,
                         Device.last_seen < threshold_time
@@ -390,7 +405,7 @@ class StandaloneMQTTListener:
                         for device in offline_devices:
                             device.is_active = False
                             logger.warning(f"[OFFLINE] Device {device.client_id} marked as offline (last seen: {device.last_seen})")
-                            print(f"⚠️  [OFFLINE] Device {device.client_id} is now OFFLINE (no data for 1 minute)")
+                            print(f"⚠️  [OFFLINE] Device {device.client_id} is now OFFLINE (no data for 15 minutes)")
 
                         db.commit()
 
