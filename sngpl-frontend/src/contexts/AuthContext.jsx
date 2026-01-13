@@ -21,13 +21,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       try {
         const userData = await getCurrentUser();
         setUser(userData);
       } catch (error) {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
       }
     }
     setLoading(false);
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const data = await apiLogin(username, password);
-      localStorage.setItem('token', data.access_token);
+      sessionStorage.setItem('token', data.access_token);
       setUser(data.user);
       toast.success('Login successful!');
       return true;
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     setUser(null);
     toast.success('Logged out successfully');
   };
