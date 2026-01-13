@@ -165,10 +165,26 @@ const AdvancedReports = () => {
         return;
       }
 
+      // Format timestamp helper
+      const formatTimestamp = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        });
+      };
+
       // Prepare Excel data
       const excelData = readings.map(reading => {
         const row = {
-          'Date/Time': new Date(reading.timestamp).toLocaleString(),
+          'Date': formatTimestamp(reading.timestamp).split(', ')[0], // MM/DD/YYYY
+          'Time': formatTimestamp(reading.timestamp).split(', ')[1], // HH:MM:SS AM/PM
           'Device ID': selectedDevice.client_id,
         };
 
@@ -176,7 +192,9 @@ const AdvancedReports = () => {
         Object.keys(selectedParameters).forEach(paramName => {
           if (selectedParameters[paramName]) {
             const fieldName = parameterFieldMap[paramName];
-            row[paramName] = reading[fieldName] ?? 'N/A';
+            const value = reading[fieldName];
+            // Format numbers to 2 decimal places, or show N/A
+            row[paramName] = value !== null && value !== undefined ? Number(value).toFixed(2) : 'N/A';
           }
         });
 
@@ -188,15 +206,16 @@ const AdvancedReports = () => {
 
       // Set column widths
       const columnWidths = [
-        { wch: 20 }, // Date/Time
-        { wch: 15 }, // Device ID
-        { wch: 25 }, // Parameters...
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 25 },
+        { wch: 12 }, // Date
+        { wch: 15 }, // Time
+        { wch: 18 }, // Device ID
+        { wch: 20 }, // Parameters...
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 },
       ];
       worksheet['!cols'] = columnWidths;
 
