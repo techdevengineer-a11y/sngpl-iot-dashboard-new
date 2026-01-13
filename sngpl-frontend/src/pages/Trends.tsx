@@ -354,6 +354,31 @@ const Trends = () => {
     return new Date(timestamp).toLocaleString();
   };
 
+  // Filter to show only hourly readings (one per hour) to avoid showing duplicate last_hour values
+  const getHourlyReadings = (readings: DeviceReading[], limit: number = 500) => {
+    const hourlyReadings: DeviceReading[] = [];
+    const seenHours = new Set<string>();
+
+    for (const reading of readings) {
+      if (!reading.timestamp) continue;
+
+      // Get hour key (YYYY-MM-DD-HH format)
+      const date = new Date(reading.timestamp);
+      const hourKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
+
+      // Only include first reading from each hour
+      if (!seenHours.has(hourKey)) {
+        seenHours.add(hourKey);
+        hourlyReadings.push(reading);
+
+        // Stop if we've reached the limit
+        if (hourlyReadings.length >= limit) break;
+      }
+    }
+
+    return hourlyReadings;
+  };
+
   // Mock alarm data
   const hasAlarm = (parameter: string) => Math.random() > 0.7;
 
@@ -1103,7 +1128,7 @@ const Trends = () => {
           <div className="p-6 border-b border-gray-300">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-              <p className="text-sm text-gray-600 mt-1">Latest 500 readings</p>
+              <p className="text-sm text-gray-600 mt-1">Hourly readings (one per hour to avoid duplicates)</p>
             </div>
           </div>
           <div className="overflow-auto" style={{ maxHeight: '500px' }}>
@@ -1122,7 +1147,7 @@ const Trends = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {historyData.slice(0, 500).map((reading, index) => (
+                {getHourlyReadings(historyData, 500).map((reading, index) => (
                   <tr key={index} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-700">{index + 1}</span>
