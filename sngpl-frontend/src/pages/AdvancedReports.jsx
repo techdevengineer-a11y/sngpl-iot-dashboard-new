@@ -15,8 +15,6 @@ const AdvancedReports = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
 
   // Report generation state
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [selectedParameters, setSelectedParameters] = useState({
     'Last Hour Flow Time': true,
     'Last Hour Differential Pressure': true,
@@ -50,12 +48,6 @@ const AdvancedReports = () => {
 
   useEffect(() => {
     fetchSectionData();
-    // Set default date range (last 7 days)
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 7);
-    setEndDate(end.toISOString().slice(0, 16));
-    setStartDate(start.toISOString().slice(0, 16));
   }, []);
 
   const fetchSectionData = async () => {
@@ -139,17 +131,20 @@ const AdvancedReports = () => {
       return;
     }
 
-    if (!startDate || !endDate) {
-      toast.error('Please select start and end dates');
-      return;
-    }
-
     setGeneratingReport(true);
 
     try {
-      // Fetch readings for the selected device and date range
+      // Automatically use last 1 month date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1); // 1 month ago
+
+      const startDateStr = startDate.toISOString();
+      const endDateStr = endDate.toISOString();
+
+      // Fetch readings for the selected device and date range (last 1 month)
       const response = await fetch(
-        `/api/analytics/readings?client_id=${selectedDevice.client_id}&start_date=${startDate}&end_date=${endDate}&page=1&page_size=10000`
+        `/api/analytics/readings?client_id=${selectedDevice.client_id}&start_date=${startDateStr}&end_date=${endDateStr}&page=1&page_size=10000`
       );
 
       if (!response.ok) {
@@ -229,7 +224,7 @@ const AdvancedReports = () => {
       // Download
       XLSX.writeFile(workbook, filename);
 
-      toast.success(`Report generated successfully! (${readings.length} records)`);
+      toast.success(`Report generated successfully! (${readings.length} records from last 1 month)`);
       setShowReportModal(false);
     } catch (error) {
       console.error('Error generating report:', error);
@@ -663,34 +658,15 @@ const AdvancedReports = () => {
 
             {/* Modal Body */}
             <div className="p-6 space-y-6">
-              {/* Date Range Selection */}
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  Select Date Range
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
+              {/* Info Banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date & Time
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      End Date & Time
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                    <h4 className="text-sm font-semibold text-blue-900 mb-1">Report Date Range</h4>
+                    <p className="text-sm text-blue-700">
+                      This report will include data from the <strong>last 1 month</strong> for device <strong>{selectedDevice?.client_id}</strong>
+                    </p>
                   </div>
                 </div>
               </div>
