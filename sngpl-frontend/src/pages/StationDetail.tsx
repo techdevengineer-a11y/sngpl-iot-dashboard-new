@@ -787,7 +787,7 @@ const StationDetail = () => {
               onEndChange={setTempEndDate}
             />
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 50)}>
+              <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 20)}>
                 <defs>
                   <linearGradient id="colorTempGreen" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
@@ -820,7 +820,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 50), 'temperature', 5)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 20), 'temperature', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -836,6 +836,8 @@ const StationDetail = () => {
                   stroke="#16a34a"
                   strokeWidth={2}
                   fill="url(#colorTempGreen)"
+                  dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -881,7 +883,7 @@ const StationDetail = () => {
               onEndChange={setStaticPEndDate}
             />
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 50)}>
+              <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
@@ -892,14 +894,14 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 50), 'static_pressure', 5)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 20), 'static_pressure', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                 />
-                <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
             <div className="flex items-center justify-center gap-3 mt-3">
@@ -944,7 +946,7 @@ const StationDetail = () => {
               onEndChange={setDiffPEndDate}
             />
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 50)}>
+              <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 20)}>
                 <defs>
                   <linearGradient id="colorDiffPGreen" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
@@ -961,7 +963,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 50), 'differential_pressure', 20)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 20), 'differential_pressure', 20)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -971,7 +973,7 @@ const StationDetail = () => {
                     return [`${value.toFixed(2)} IWC (${status})`, 'Differential Pressure'];
                   }}
                 />
-                <Area type="monotone" dataKey="differential_pressure" stroke="#16a34a" strokeWidth={2} fill="url(#colorDiffPGreen)" />
+                <Area type="monotone" dataKey="differential_pressure" stroke="#16a34a" strokeWidth={2} fill="url(#colorDiffPGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
               </AreaChart>
             </ResponsiveContainer>
             <div className="flex items-center justify-center gap-3 mt-3">
@@ -1016,7 +1018,7 @@ const StationDetail = () => {
               onEndChange={setVolumeEndDate}
             />
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 50)}>
+              <AreaChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 20)}>
                 <defs>
                   <linearGradient id="colorVolumeGreen" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
@@ -1033,7 +1035,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 50), 'volume', 5)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 20), 'volume', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1084,7 +1086,7 @@ const StationDetail = () => {
               onEndChange={setFlowEndDate}
             />
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={filterDataByDateRange(flowStartDate, flowEndDate, 50)}>
+              <AreaChart data={filterDataByDateRange(flowStartDate, flowEndDate, 20)}>
                 <defs>
                   <linearGradient id="colorFlowGreen" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
@@ -1101,7 +1103,7 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 50), 'total_volume_flow', 5)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 20), 'total_volume_flow', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1153,7 +1155,7 @@ const StationDetail = () => {
             onEndChange={setBatteryEndDate}
           />
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 50)} layout="horizontal">
+            <BarChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 20)} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
                 type="category"
@@ -1170,7 +1172,7 @@ const StationDetail = () => {
                   }
                 }}
               />
-              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 50), 'battery', 5)} />
+              <YAxis type="number" stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 20), 'battery', 5)} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelFormatter={(value) => new Date(value).toLocaleString()}
@@ -1180,7 +1182,7 @@ const StationDetail = () => {
                 }}
               />
               <Bar dataKey="battery" radius={[4, 4, 0, 0]}>
-                {filterDataByDateRange(batteryStartDate, batteryEndDate, 50).map((entry: any, index: number) => {
+                {filterDataByDateRange(batteryStartDate, batteryEndDate, 20).map((entry: any, index: number) => {
                   const batteryValue = entry.battery || 12.5;
                   const color = batteryValue >= 12.5 ? '#16a34a' : batteryValue >= 11.8 ? '#eab308' : '#dc2626';
                   return <Cell key={`cell-${index}`} fill={color} />;
