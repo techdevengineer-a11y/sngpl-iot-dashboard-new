@@ -12,6 +12,7 @@ import io
 from app.db.database import get_db
 from app.models.models import DeviceReading, Device, User
 from app.api.v1.auth import get_current_user
+from app.core.redis_client import cache_response
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ class ReadingResponse(BaseModel):
     battery: Optional[float] = None
     max_static_pressure: Optional[float] = None
     min_static_pressure: Optional[float] = None
-    # T18-T114 Analytics parameters - Optional to preserve actual values
+    # T18-T114 Analytics parameters
     last_hour_flow_time: Optional[float] = None
     last_hour_diff_pressure: Optional[float] = None
     last_hour_static_pressure: Optional[float] = None
@@ -41,33 +42,6 @@ class ReadingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-    @staticmethod
-    def from_orm_with_defaults(obj):
-        """Convert ORM object to response model, replacing None with 0 for analytics fields"""
-        data = {
-            "id": obj.id,
-            "device_id": obj.device_id,
-            "client_id": obj.client_id,
-            "temperature": obj.temperature,
-            "static_pressure": obj.static_pressure,
-            "differential_pressure": obj.differential_pressure,
-            "volume": obj.volume,
-            "total_volume_flow": obj.total_volume_flow,
-            "battery": obj.battery,
-            "max_static_pressure": obj.max_static_pressure,
-            "min_static_pressure": obj.min_static_pressure,
-            # Replace None with 0 for analytics fields to fix chart rendering
-            "last_hour_flow_time": obj.last_hour_flow_time if obj.last_hour_flow_time is not None else 0,
-            "last_hour_diff_pressure": obj.last_hour_diff_pressure if obj.last_hour_diff_pressure is not None else 0,
-            "last_hour_static_pressure": obj.last_hour_static_pressure if obj.last_hour_static_pressure is not None else 0,
-            "last_hour_temperature": obj.last_hour_temperature if obj.last_hour_temperature is not None else 0,
-            "last_hour_volume": obj.last_hour_volume if obj.last_hour_volume is not None else 0,
-            "last_hour_energy": obj.last_hour_energy if obj.last_hour_energy is not None else 0,
-            "specific_gravity": obj.specific_gravity if obj.specific_gravity is not None else 0,
-            "timestamp": obj.timestamp
-        }
-        return ReadingResponse(**data)
-
 
 class PaginatedResponse(BaseModel):
     """Paginated response model"""
@@ -79,6 +53,7 @@ class PaginatedResponse(BaseModel):
 
 
 @router.get("/readings", response_model=PaginatedResponse)
+@cache_response("analytics:readings", ttl=120)  # Cache for 2 minutes - optimized for 10-min data intervals
 async def get_readings(
     device_id: Optional[int] = None,
     client_id: Optional[str] = None,
@@ -88,7 +63,7 @@ async def get_readings(
     page_size: int = Query(100, ge=1, le=1000, description="Items per page (max 1000)"),
     db: Session = Depends(get_db)
 ):
-    """Get device readings with pagination and filters - Public endpoint. Can filter by device_id OR client_id"""
+    """Get device readings with pagination and filters - Public endpoint with Redis caching (2min TTL). Can filter by device_id OR client_id"""
     from app.models.models import Device
     query = db.query(DeviceReading)
 
@@ -114,16 +89,31 @@ async def get_readings(
     # Get paginated data
     readings = query.order_by(DeviceReading.timestamp.desc()).offset(offset).limit(page_size).all()
 
-    # Convert readings with null-to-zero conversion for analytics fields
-    converted_readings = [ReadingResponse.from_orm_with_defaults(r) for r in readings]
-
     return {
         "total": total,
         "page": page,
         "page_size": page_size,
         "total_pages": total_pages,
-        "data": converted_readings
+        "data": readings
     }
+
+
+@router.get("/device/{device_id}/latest", response_model=ReadingResponse)
+@cache_response("analytics:latest", ttl=120)  # Cache for 2 minutes
+async def get_device_latest_reading(
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get latest reading for a specific device - Public endpoint with Redis caching (2min TTL)"""
+    reading = db.query(DeviceReading).filter(
+        DeviceReading.device_id == device_id
+    ).order_by(DeviceReading.timestamp.desc()).first()
+
+    if not reading:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="No readings found for this device")
+
+    return reading
 
 
 @router.get("/device/{device_id}/recent", response_model=List[ReadingResponse])
@@ -138,8 +128,7 @@ async def get_device_recent_readings(
         DeviceReading.device_id == device_id
     ).order_by(DeviceReading.timestamp.desc()).limit(limit).all()
 
-    # Convert readings with null-to-zero conversion for analytics fields
-    return [ReadingResponse.from_orm_with_defaults(r) for r in readings]
+    return readings
 
 
 @router.get("/readings/export/csv")
