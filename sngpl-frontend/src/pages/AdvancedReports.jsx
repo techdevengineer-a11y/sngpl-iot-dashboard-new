@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { FileSpreadsheet, Building2, Gauge, WifiOff, Activity, Download, Calendar, ChevronDown, ChevronUp, CheckSquare, Square, X, BarChart3, Thermometer, Wind, Droplets, Battery, TrendingUp, MapPin, Clock } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { getReadings } from '../services/api';
 
 const AdvancedReports = () => {
   const navigate = useNavigate();
@@ -15,15 +16,7 @@ const AdvancedReports = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
 
   // Report generation state
-  const [selectedParameters, setSelectedParameters] = useState({
-    'Last Hour Flow Time': true,
-    'Last Hour Differential Pressure': true,
-    'Last Hour Static Pressure': true,
-    'Last Hour Temperature': true,
-    'Last Hour Volume': true,
-    'Last Hour Energy': true,
-    'Specific Gravity In Use': true,
-  });
+  const [comparisonType, setComparisonType] = useState('15days'); // '15days', '30days', or 'midmonth'
   const [generatingReport, setGeneratingReport] = useState(false);
 
   // Section colors matching the Sections page
@@ -34,17 +27,6 @@ const AdvancedReports = () => {
     'from-orange-600 to-orange-700',
     'from-pink-600 to-pink-700',
   ];
-
-  // Map parameter names to database fields
-  const parameterFieldMap = {
-    'Last Hour Flow Time': 'last_hour_flow_time',
-    'Last Hour Differential Pressure': 'last_hour_diff_pressure',
-    'Last Hour Static Pressure': 'last_hour_static_pressure',
-    'Last Hour Temperature': 'last_hour_temperature',
-    'Last Hour Volume': 'last_hour_volume',
-    'Last Hour Energy': 'last_hour_energy',
-    'Specific Gravity In Use': 'specific_gravity',
-  };
 
   useEffect(() => {
     fetchSectionData();
@@ -103,132 +85,135 @@ const AdvancedReports = () => {
 
   const handleDeviceClick = (device) => {
     setSelectedDevice(device);
+    setComparisonType('15days'); // Default to 15 days
     setShowReportModal(true);
-  };
-
-  const toggleParameter = (param) => {
-    setSelectedParameters(prev => ({
-      ...prev,
-      [param]: !prev[param]
-    }));
-  };
-
-  const toggleAllParameters = () => {
-    const allSelected = Object.values(selectedParameters).every(v => v);
-    const newState = {};
-    Object.keys(selectedParameters).forEach(key => {
-      newState[key] = !allSelected;
-    });
-    setSelectedParameters(newState);
   };
 
   const generateReport = async () => {
     if (!selectedDevice) return;
 
-    const selectedParams = Object.keys(selectedParameters).filter(key => selectedParameters[key]);
-    if (selectedParams.length === 0) {
-      toast.error('Please select at least one parameter');
-      return;
-    }
-
     setGeneratingReport(true);
 
     try {
-      // Automatically use last 1 month date range
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1); // 1 month ago
+      const now = new Date();
+      let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel;
 
-      const startDateStr = startDate.toISOString();
-      const endDateStr = endDate.toISOString();
+      // Define date ranges based on comparison type
+      if (comparisonType === '15days') {
+        // Period A: Last 15 days
+        periodB_end = new Date(now);
+        periodB_start = new Date(now);
+        periodB_start.setDate(periodB_start.getDate() - 15);
 
-      // Fetch readings for the selected device and date range (last 1 month)
-      const response = await fetch(
-        `/api/analytics/readings?client_id=${selectedDevice.client_id}&start_date=${startDateStr}&end_date=${endDateStr}&page=1&page_size=10000`
-      );
+        // Period B: Previous 15 days (16-30 days ago)
+        periodA_end = new Date(periodB_start);
+        periodA_start = new Date(periodA_end);
+        periodA_start.setDate(periodA_start.getDate() - 15);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch readings');
+        comparisonLabel = '15 Days';
+      } else if (comparisonType === '30days') {
+        // Period A: Last 30 days
+        periodB_end = new Date(now);
+        periodB_start = new Date(now);
+        periodB_start.setDate(periodB_start.getDate() - 30);
+
+        // Period B: Previous 30 days (31-60 days ago)
+        periodA_end = new Date(periodB_start);
+        periodA_start = new Date(periodA_end);
+        periodA_start.setDate(periodA_start.getDate() - 30);
+
+        comparisonLabel = '30 Days';
+      } else if (comparisonType === 'midmonth') {
+        // Mid-month comparison (1st to 15th of current month vs same period last month)
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        // Period B: 1st to 15th of current month
+        periodB_start = new Date(currentYear, currentMonth, 1);
+        periodB_end = new Date(currentYear, currentMonth, 15, 23, 59, 59);
+
+        // Period A: 1st to 15th of previous month
+        periodA_start = new Date(currentYear, currentMonth - 1, 1);
+        periodA_end = new Date(currentYear, currentMonth - 1, 15, 23, 59, 59);
+
+        comparisonLabel = 'Mid-Month';
       }
 
-      const data = await response.json();
-      const readings = data.data || [];
-
-      if (readings.length === 0) {
-        toast.error('No data found for selected date range');
-        setGeneratingReport(false);
-        return;
-      }
-
-      // Format timestamp helper
-      const formatTimestamp = (timestamp) => {
-        if (!timestamp) return 'N/A';
-        const date = new Date(timestamp);
-        return date.toLocaleString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true
-        });
+      // Format dates for display
+      const formatDate = (date) => {
+        return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
       };
 
-      // Prepare Excel data
-      const excelData = readings.map(reading => {
-        const row = {
-          'Date': formatTimestamp(reading.timestamp).split(', ')[0], // MM/DD/YYYY
-          'Time': formatTimestamp(reading.timestamp).split(', ')[1], // HH:MM:SS AM/PM
-          'Device ID': selectedDevice.client_id,
+      // Fetch data for both periods
+      const fetchPeriodData = async (startDate, endDate) => {
+        const params = {
+          client_id: selectedDevice.client_id,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          page: 1,
+          page_size: 100000
         };
 
-        // Add selected parameters using the field map
-        Object.keys(selectedParameters).forEach(paramName => {
-          if (selectedParameters[paramName]) {
-            const fieldName = parameterFieldMap[paramName];
-            const value = reading[fieldName];
-            // Format numbers to 2 decimal places, or show N/A
-            row[paramName] = value !== null && value !== undefined ? Number(value).toFixed(2) : 'N/A';
-          }
-        });
+        const data = await getReadings(params);
+        return data.data || [];
+      };
 
-        return row;
-      });
+      toast.info('Fetching data for both periods...');
+
+      const [periodA_data, periodB_data] = await Promise.all([
+        fetchPeriodData(periodA_start, periodA_end),
+        fetchPeriodData(periodB_start, periodB_end)
+      ]);
+
+      // Calculate total volume for each period
+      const calculateTotalVolume = (readings) => {
+        return readings.reduce((sum, reading) => {
+          const volume = reading.last_hour_volume || 0;
+          return sum + volume;
+        }, 0);
+      };
+
+      const periodA_volume = calculateTotalVolume(periodA_data);
+      const periodB_volume = calculateTotalVolume(periodB_data);
+      const difference = periodB_volume - periodA_volume;
+
+      // Prepare Excel data
+      const excelData = [{
+        'Device Name': selectedDevice.device_name || selectedDevice.client_id,
+        'SMS Name': selectedDevice.client_id,
+        [`Volume for ${formatDate(periodA_start)} to ${formatDate(periodA_end)} (MMCF) [A]`]: periodA_volume.toFixed(3),
+        [`Volume for ${formatDate(periodB_start)} to ${formatDate(periodB_end)} (MMCF) [B]`]: periodB_volume.toFixed(3),
+        'Difference [B - A]': difference.toFixed(3)
+      }];
 
       // Create worksheet
       const worksheet = XLSX.utils.json_to_sheet(excelData);
 
       // Set column widths
       const columnWidths = [
-        { wch: 12 }, // Date
-        { wch: 15 }, // Time
-        { wch: 18 }, // Device ID
-        { wch: 20 }, // Parameters...
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 20 },
+        { wch: 25 }, // Device Name
+        { wch: 18 }, // SMS Name
+        { wch: 35 }, // Period A
+        { wch: 35 }, // Period B
+        { wch: 20 }, // Difference
       ];
       worksheet['!cols'] = columnWidths;
 
       // Create workbook
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+      XLSX.utils.book_append_sheet(workbook, worksheet, `${comparisonLabel} Comparison`);
 
       // Generate filename
-      const filename = `${selectedDevice.client_id}_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const filename = `${selectedDevice.client_id}_${comparisonLabel}_Comparison_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
       // Download
       XLSX.writeFile(workbook, filename);
 
-      toast.success(`Report generated successfully! (${readings.length} records from last 1 month)`);
+      toast.success(`${comparisonLabel} comparison report generated successfully!`);
       setShowReportModal(false);
     } catch (error) {
       console.error('Error generating report:', error);
-      toast.error('Failed to generate report');
+      toast.error('Failed to generate comparison report');
     } finally {
       setGeneratingReport(false);
     }
@@ -663,47 +648,92 @@ const AdvancedReports = () => {
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-semibold text-blue-900 mb-1">Report Date Range</h4>
+                    <h4 className="text-sm font-semibold text-blue-900 mb-1">Volume Comparison Report</h4>
                     <p className="text-sm text-blue-700">
-                      This report will include data from the <strong>last 1 month</strong> for device <strong>{selectedDevice?.client_id}</strong>
+                      Compare volume data between two time periods for device <strong>{selectedDevice?.client_id}</strong>
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Parameter Selection */}
+              {/* Comparison Type Selection */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                    Select Parameters
-                  </h4>
-                  <button
-                    onClick={toggleAllParameters}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                  <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+                  Select Comparison Type
+                </h4>
+                <div className="grid grid-cols-1 gap-4">
+                  {/* 15 Days Comparison */}
+                  <div
+                    onClick={() => setComparisonType('15days')}
+                    className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                      comparisonType === '15days'
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow'
+                    }`}
                   >
-                    {Object.values(selectedParameters).every(v => v) ? 'Deselect All' : 'Select All'}
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {Object.keys(selectedParameters).map((param) => (
-                    <div
-                      key={param}
-                      onClick={() => toggleParameter(param)}
-                      className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedParameters[param]
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {selectedParameters[param] ? (
-                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                    <div className="mt-1">
+                      {comparisonType === '15days' ? (
+                        <CheckSquare className="w-6 h-6 text-blue-600" />
                       ) : (
-                        <Square className="w-5 h-5 text-gray-400" />
+                        <Square className="w-6 h-6 text-gray-400" />
                       )}
-                      <div className="font-semibold text-gray-900">{param}</div>
                     </div>
-                  ))}
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg mb-1">15 Days Comparison</div>
+                      <p className="text-sm text-gray-600">
+                        Compare volume between the <strong>last 15 days</strong> and the <strong>previous 15 days</strong> (16-30 days ago)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 30 Days Comparison */}
+                  <div
+                    onClick={() => setComparisonType('30days')}
+                    className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                      comparisonType === '30days'
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow'
+                    }`}
+                  >
+                    <div className="mt-1">
+                      {comparisonType === '30days' ? (
+                        <CheckSquare className="w-6 h-6 text-blue-600" />
+                      ) : (
+                        <Square className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg mb-1">30 Days Comparison</div>
+                      <p className="text-sm text-gray-600">
+                        Compare volume between the <strong>last 30 days</strong> and the <strong>previous 30 days</strong> (31-60 days ago)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Mid-Month Comparison */}
+                  <div
+                    onClick={() => setComparisonType('midmonth')}
+                    className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                      comparisonType === 'midmonth'
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow'
+                    }`}
+                  >
+                    <div className="mt-1">
+                      {comparisonType === 'midmonth' ? (
+                        <CheckSquare className="w-6 h-6 text-blue-600" />
+                      ) : (
+                        <Square className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg mb-1">Mid-Month Comparison</div>
+                      <p className="text-sm text-gray-600">
+                        Compare volume for <strong>1st to 15th of current month</strong> vs <strong>1st to 15th of previous month</strong>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -725,12 +755,12 @@ const AdvancedReports = () => {
                   {generatingReport ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Generating...
+                      Generating Comparison...
                     </>
                   ) : (
                     <>
                       <Download className="w-5 h-5" />
-                      Generate Excel Report
+                      Generate Comparison Report
                     </>
                   )}
                 </button>
