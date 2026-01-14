@@ -123,20 +123,6 @@ const AdvancedReports = () => {
         periodA_start.setDate(periodA_start.getDate() - 30);
 
         comparisonLabel = '30 Days';
-      } else if (comparisonType === 'midmonth') {
-        // Mid-month comparison (1st to 15th of current month vs same period last month)
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        // Period B: 1st to 15th of current month
-        periodB_start = new Date(currentYear, currentMonth, 1);
-        periodB_end = new Date(currentYear, currentMonth, 15, 23, 59, 59);
-
-        // Period A: 1st to 15th of previous month
-        periodA_start = new Date(currentYear, currentMonth - 1, 1);
-        periodA_end = new Date(currentYear, currentMonth - 1, 15, 23, 59, 59);
-
-        comparisonLabel = 'Mid-Month';
       }
 
       // Format dates for display
@@ -707,30 +693,6 @@ const AdvancedReports = () => {
                       <div className="font-bold text-gray-900 text-lg mb-1">30 Days Comparison</div>
                       <p className="text-sm text-gray-600">
                         Compare volume between the <strong>last 30 days</strong> and the <strong>previous 30 days</strong> (31-60 days ago)
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Mid-Month Comparison */}
-                  <div
-                    onClick={() => setComparisonType('midmonth')}
-                    className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      comparisonType === 'midmonth'
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow'
-                    }`}
-                  >
-                    <div className="mt-1">
-                      {comparisonType === 'midmonth' ? (
-                        <CheckSquare className="w-6 h-6 text-blue-600" />
-                      ) : (
-                        <Square className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-bold text-gray-900 text-lg mb-1">Mid-Month Comparison</div>
-                      <p className="text-sm text-gray-600">
-                        Compare volume for <strong>1st to 15th of current month</strong> vs <strong>1st to 15th of previous month</strong>
                       </p>
                     </div>
                   </div>
