@@ -47,23 +47,23 @@ jobs:
             echo "📦 Deploying backend..."
 
             # Backup .env file
-            if [ -f /var/www/sngpl-iot-dashboard/sngpl-iot-fastapi/.env ]; then
-              cp /var/www/sngpl-iot-dashboard/sngpl-iot-fastapi/.env /tmp/backend-env.backup
+            if [ -f /var/www/sngpl-dashboard/backend/app/.env ]; then
+              cp /var/www/sngpl-dashboard/backend/app/.env /tmp/backend-env.backup
               echo "✅ Backed up .env file"
             fi
 
             # Copy new backend files (preserve venv and .env)
-            sudo rsync -av --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' /tmp/deploy-backend/ /var/www/sngpl-iot-dashboard/sngpl-iot-fastapi/
+            sudo rsync -av --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' /tmp/deploy-backend/ /var/www/sngpl-dashboard/backend/
 
             # Restore .env file
             if [ -f /tmp/backend-env.backup ]; then
-              sudo cp /tmp/backend-env.backup /var/www/sngpl-iot-dashboard/sngpl-iot-fastapi/.env
-              sudo chown ubuntu:ubuntu /var/www/sngpl-iot-dashboard/sngpl-iot-fastapi/.env
+              sudo cp /tmp/backend-env.backup /var/www/sngpl-dashboard/backend/app/.env
+              sudo chown ubuntu:ubuntu /var/www/sngpl-dashboard/backend/app/.env
               echo "✅ Restored .env file"
             fi
 
             # Install Python dependencies
-            cd /var/www/sngpl-iot-dashboard/sngpl-iot-fastapi
+            cd /var/www/sngpl-dashboard/backend
             source venv/bin/activate
             pip install -r requirements.txt --quiet
             echo "✅ Python dependencies installed"
@@ -77,19 +77,21 @@ jobs:
             echo "📦 Deploying frontend..."
 
             # Copy new frontend files
-            sudo rsync -av --exclude='node_modules' --exclude='dist' /tmp/deploy-frontend/ /var/www/sngpl-iot-dashboard/sngpl-frontend/
+            sudo rsync -av --exclude='node_modules' --exclude='dist' /tmp/deploy-frontend/ /var/www/sngpl-dashboard/frontend/
 
             # Install dependencies and build
-            cd /var/www/sngpl-iot-dashboard/sngpl-frontend
+            cd /var/www/sngpl-dashboard/frontend
             npm install --silent
             npm run build
             echo "✅ Frontend built successfully"
 
             # Copy build to web root
+            sudo rm -rf /var/www/html/*
             sudo cp -r dist/* /var/www/html/
 
             # Set permissions
-            sudo chown -R ubuntu:ubuntu /var/www/sngpl-iot-dashboard
+            sudo chown -R ubuntu:ubuntu /var/www/sngpl-dashboard
+            sudo chown -R www-data:www-data /var/www/html
 
             # Reload nginx
             sudo nginx -t && sudo systemctl reload nginx
