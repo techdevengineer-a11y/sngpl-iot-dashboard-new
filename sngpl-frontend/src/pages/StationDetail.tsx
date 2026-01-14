@@ -780,12 +780,6 @@ const StationDetail = () => {
                 <Maximize2 className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <CustomDateRangeSelector
-              startDate={tempStartDate}
-              endDate={tempEndDate}
-              onStartChange={setTempStartDate}
-              onEndChange={setTempEndDate}
-            />
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={filterDataByDateRange(tempStartDate, tempEndDate, 20)}>
                 <defs>
@@ -876,12 +870,6 @@ const StationDetail = () => {
                 <Maximize2 className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <CustomDateRangeSelector
-              startDate={staticPStartDate}
-              endDate={staticPEndDate}
-              onStartChange={setStaticPStartDate}
-              onEndChange={setStaticPEndDate}
-            />
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -939,12 +927,6 @@ const StationDetail = () => {
                 <Maximize2 className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <CustomDateRangeSelector
-              startDate={diffPStartDate}
-              endDate={diffPEndDate}
-              onStartChange={setDiffPStartDate}
-              onEndChange={setDiffPEndDate}
-            />
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 20)}>
                 <defs>
@@ -1011,12 +993,6 @@ const StationDetail = () => {
                 <Maximize2 className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <CustomDateRangeSelector
-              startDate={volumeStartDate}
-              endDate={volumeEndDate}
-              onStartChange={setVolumeStartDate}
-              onEndChange={setVolumeEndDate}
-            />
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 20)}>
                 <defs>
@@ -1065,12 +1041,6 @@ const StationDetail = () => {
                 <Maximize2 className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <CustomDateRangeSelector
-              startDate={flowStartDate}
-              endDate={flowEndDate}
-              onStartChange={setFlowStartDate}
-              onEndChange={setFlowEndDate}
-            />
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={filterDataByDateRange(flowStartDate, flowEndDate, 20)}>
                 <defs>
@@ -1120,12 +1090,6 @@ const StationDetail = () => {
               <Maximize2 className="w-5 h-5 text-gray-600" />
             </button>
           </div>
-          <CustomDateRangeSelector
-            startDate={batteryStartDate}
-            endDate={batteryEndDate}
-            onStartChange={setBatteryStartDate}
-            onEndChange={setBatteryEndDate}
-          />
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 20)} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
