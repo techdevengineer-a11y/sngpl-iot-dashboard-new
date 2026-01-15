@@ -130,18 +130,23 @@ const AdvancedReports = () => {
         return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
       };
 
-      // Fetch data for both periods
+      // Fetch data for both periods using device_id
       const fetchPeriodData = async (startDate, endDate) => {
-        const params = {
-          client_id: selectedDevice.client_id,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          page: 1,
-          page_size: 100000
-        };
+        try {
+          const params = {
+            device_id: selectedDevice.id,
+            start_date: startDate.toISOString(),
+            end_date: endDate.toISOString(),
+            page: 1,
+            page_size: 100000
+          };
 
-        const data = await getReadings(params);
-        return data.data || [];
+          const data = await getReadings(params);
+          return data.data || data || [];
+        } catch (err) {
+          console.error('Error fetching period data:', err);
+          return [];
+        }
       };
 
       toast.info('Fetching data for both periods...');
@@ -151,10 +156,14 @@ const AdvancedReports = () => {
         fetchPeriodData(periodB_start, periodB_end)
       ]);
 
+      console.log('Period A data count:', periodA_data.length);
+      console.log('Period B data count:', periodB_data.length);
+
       // Calculate total volume for each period
       const calculateTotalVolume = (readings) => {
+        if (!Array.isArray(readings)) return 0;
         return readings.reduce((sum, reading) => {
-          const volume = reading.last_hour_volume || 0;
+          const volume = reading.last_hour_volume || reading.volume || 0;
           return sum + volume;
         }, 0);
       };
