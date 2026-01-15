@@ -149,7 +149,7 @@ const AdvancedReports = () => {
         }
       };
 
-      toast.info('Fetching data for both periods...');
+      toast('Fetching data for both periods...', { icon: 'ℹ️' });
 
       const [periodA_data, periodB_data] = await Promise.all([
         fetchPeriodData(periodA_start, periodA_end),
