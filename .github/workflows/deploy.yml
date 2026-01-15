@@ -8,99 +8,74 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy Backend to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "sngpl-backend/*"
-          target: "/tmp/deploy-backend/"
-          strip_components: 1
+      - name: Deploy Application
+        run: |
+          echo "🚀 Starting deployment..."
 
-      - name: Deploy Frontend to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "sngpl-frontend/*"
-          target: "/tmp/deploy-frontend/"
-          strip_components: 1
+          # Backend deployment
+          echo "📦 Deploying backend..."
 
-      - name: Install and Restart Services
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "🚀 Starting deployment..."
+          # Backup .env file
+          if [ -f /var/www/sngpl-dashboard/backend/app/.env ]; then
+            cp /var/www/sngpl-dashboard/backend/app/.env /tmp/backend-env.backup
+            echo "✅ Backed up .env file"
+          fi
 
-            # Backend deployment
-            echo "📦 Deploying backend..."
+          # Copy new backend files (preserve venv and .env)
+          sudo rsync -av --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' $GITHUB_WORKSPACE/sngpl-backend/ /var/www/sngpl-dashboard/backend/
 
-            # Backup .env file
-            if [ -f /var/www/sngpl-dashboard/backend/app/.env ]; then
-              cp /var/www/sngpl-dashboard/backend/app/.env /tmp/backend-env.backup
-              echo "✅ Backed up .env file"
-            fi
+          # Restore .env file
+          if [ -f /tmp/backend-env.backup ]; then
+            sudo cp /tmp/backend-env.backup /var/www/sngpl-dashboard/backend/app/.env
+            sudo chown ubuntu:ubuntu /var/www/sngpl-dashboard/backend/app/.env
+            echo "✅ Restored .env file"
+          fi
 
-            # Copy new backend files (preserve venv and .env)
-            sudo rsync -av --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' /tmp/deploy-backend/ /var/www/sngpl-dashboard/backend/
+          # Install Python dependencies
+          cd /var/www/sngpl-dashboard/backend
+          source venv/bin/activate
+          pip install -r requirements.txt --quiet
+          echo "✅ Python dependencies installed"
 
-            # Restore .env file
-            if [ -f /tmp/backend-env.backup ]; then
-              sudo cp /tmp/backend-env.backup /var/www/sngpl-dashboard/backend/app/.env
-              sudo chown ubuntu:ubuntu /var/www/sngpl-dashboard/backend/app/.env
-              echo "✅ Restored .env file"
-            fi
+          # Restart backend services
+          sudo systemctl restart sngpl-backend
+          sudo systemctl restart mqtt-listener 2>/dev/null || echo "⚠️ mqtt-listener service not found"
+          echo "✅ Backend services restarted"
 
-            # Install Python dependencies
-            cd /var/www/sngpl-dashboard/backend
-            source venv/bin/activate
-            pip install -r requirements.txt --quiet
-            echo "✅ Python dependencies installed"
+          # Frontend deployment
+          echo "📦 Deploying frontend..."
 
-            # Restart backend services
-            sudo systemctl restart sngpl-backend
-            sudo systemctl restart mqtt-listener 2>/dev/null || echo "⚠️ mqtt-listener service not found"
-            echo "✅ Backend services restarted"
+          # Copy new frontend files
+          sudo rsync -av --exclude='node_modules' --exclude='dist' $GITHUB_WORKSPACE/sngpl-frontend/ /var/www/sngpl-dashboard/frontend/
 
-            # Frontend deployment
-            echo "📦 Deploying frontend..."
+          # Install dependencies and build
+          cd /var/www/sngpl-dashboard/frontend
+          npm install --silent
+          npm run build
+          echo "✅ Frontend built successfully"
 
-            # Copy new frontend files
-            sudo rsync -av --exclude='node_modules' --exclude='dist' /tmp/deploy-frontend/ /var/www/sngpl-dashboard/frontend/
+          # Copy build to web root
+          sudo rm -rf /var/www/html/*
+          sudo cp -r dist/* /var/www/html/
 
-            # Install dependencies and build
-            cd /var/www/sngpl-dashboard/frontend
-            npm install --silent
-            npm run build
-            echo "✅ Frontend built successfully"
+          # Set permissions
+          sudo chown -R ubuntu:ubuntu /var/www/sngpl-dashboard
+          sudo chown -R www-data:www-data /var/www/html
 
-            # Copy build to web root
-            sudo rm -rf /var/www/html/*
-            sudo cp -r dist/* /var/www/html/
+          # Reload nginx
+          sudo nginx -t && sudo systemctl reload nginx
+          echo "✅ Nginx reloaded"
 
-            # Set permissions
-            sudo chown -R ubuntu:ubuntu /var/www/sngpl-dashboard
-            sudo chown -R www-data:www-data /var/www/html
+          # Cleanup
+          rm -f /tmp/backend-env.backup
 
-            # Reload nginx
-            sudo nginx -t && sudo systemctl reload nginx
-            echo "✅ Nginx reloaded"
-
-            # Cleanup temp files
-            rm -rf /tmp/deploy-backend /tmp/deploy-frontend /tmp/backend-env.backup
-
-            echo "🎉 Deployment complete!"
+          echo "🎉 Deployment complete!"
 
       - name: Deployment Status
         if: success()
