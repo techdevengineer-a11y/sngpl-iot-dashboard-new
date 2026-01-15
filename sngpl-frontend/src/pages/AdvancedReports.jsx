@@ -130,19 +130,38 @@ const AdvancedReports = () => {
         return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
       };
 
-      // Fetch data for both periods using device_id
+      // Fetch data for both periods using device_id (fetch all pages)
       const fetchPeriodData = async (startDate, endDate) => {
         try {
-          const params = {
-            device_id: selectedDevice.id,
-            start_date: startDate.toISOString(),
-            end_date: endDate.toISOString(),
-            page: 1,
-            page_size: 100000
-          };
+          let allData = [];
+          let page = 1;
+          let hasMore = true;
 
-          const data = await getReadings(params);
-          return data.data || data || [];
+          while (hasMore) {
+            const params = {
+              device_id: selectedDevice.id,
+              start_date: startDate.toISOString(),
+              end_date: endDate.toISOString(),
+              page: page,
+              page_size: 1000
+            };
+
+            const response = await getReadings(params);
+            const data = response.data || response || [];
+
+            if (Array.isArray(data) && data.length > 0) {
+              allData = [...allData, ...data];
+              page++;
+              // Stop if we got less than page_size (no more data)
+              if (data.length < 1000) {
+                hasMore = false;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+
+          return allData;
         } catch (err) {
           console.error('Error fetching period data:', err);
           return [];
