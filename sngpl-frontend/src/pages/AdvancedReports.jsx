@@ -89,8 +89,9 @@ const AdvancedReports = () => {
     setShowReportModal(true);
   };
 
-  const generateReport = async () => {
-    if (!selectedDevice) return;
+  // Generate Section Report - All devices in the section
+  const generateSectionReport = async () => {
+    if (!selectedSection || sectionDevices.length === 0) return;
 
     setGeneratingReport(true);
 
@@ -100,24 +101,24 @@ const AdvancedReports = () => {
 
       // Define date ranges based on comparison type
       if (comparisonType === '15days') {
-        // Period A: Last 15 days
+        // Period B: Last 15 days (current period)
         periodB_end = new Date(now);
         periodB_start = new Date(now);
         periodB_start.setDate(periodB_start.getDate() - 15);
 
-        // Period B: Previous 15 days (16-30 days ago)
+        // Period A: Previous 15 days
         periodA_end = new Date(periodB_start);
         periodA_start = new Date(periodA_end);
         periodA_start.setDate(periodA_start.getDate() - 15);
 
         comparisonLabel = '15 Days';
       } else if (comparisonType === '30days') {
-        // Period A: Last 30 days
+        // Period B: Last 30 days (current period)
         periodB_end = new Date(now);
         periodB_start = new Date(now);
         periodB_start.setDate(periodB_start.getDate() - 30);
 
-        // Period B: Previous 30 days (31-60 days ago)
+        // Period A: Previous 30 days
         periodA_end = new Date(periodB_start);
         periodA_start = new Date(periodA_end);
         periodA_start.setDate(periodA_start.getDate() - 30);
@@ -125,12 +126,180 @@ const AdvancedReports = () => {
         comparisonLabel = '30 Days';
       }
 
-      // Format dates for display
-      const formatDate = (date) => {
-        return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+      // Format dates for display in header
+      const formatDateShort = (date) => {
+        return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
       };
 
-      // Fetch data for both periods using device_id (fetch all pages)
+      // Fetch data for a device for both periods
+      const fetchDeviceData = async (deviceId, startDate, endDate) => {
+        try {
+          let allData = [];
+          let page = 1;
+          let hasMore = true;
+
+          while (hasMore) {
+            const params = {
+              device_id: deviceId,
+              start_date: startDate.toISOString(),
+              end_date: endDate.toISOString(),
+              page: page,
+              page_size: 1000
+            };
+
+            const response = await getReadings(params);
+            const data = response.data || response || [];
+
+            if (Array.isArray(data) && data.length > 0) {
+              allData = [...allData, ...data];
+              page++;
+              if (data.length < 1000) hasMore = false;
+            } else {
+              hasMore = false;
+            }
+          }
+          return allData;
+        } catch (err) {
+          console.error('Error fetching device data:', err);
+          return [];
+        }
+      };
+
+      // Calculate total volume
+      const calculateTotalVolume = (readings) => {
+        if (!Array.isArray(readings)) return 0;
+        return readings.reduce((sum, reading) => {
+          const volume = reading.last_hour_volume || reading.volume || 0;
+          return sum + volume;
+        }, 0);
+      };
+
+      toast('Generating report for all devices in section...', { icon: 'ℹ️' });
+
+      // Group devices by region/location
+      const devicesByRegion = {};
+      sectionDevices.forEach(device => {
+        const region = device.location || 'Unknown';
+        if (!devicesByRegion[region]) {
+          devicesByRegion[region] = [];
+        }
+        devicesByRegion[region].push(device);
+      });
+
+      // Process all devices and collect data
+      const excelData = [];
+      let srNo = 1;
+      let grandTotalA = 0;
+      let grandTotalB = 0;
+
+      for (const region of Object.keys(devicesByRegion)) {
+        let regionTotalA = 0;
+        let regionTotalB = 0;
+        const regionDevices = devicesByRegion[region];
+
+        for (const device of regionDevices) {
+          // Fetch data for both periods
+          const [periodA_data, periodB_data] = await Promise.all([
+            fetchDeviceData(device.id, periodA_start, periodA_end),
+            fetchDeviceData(device.id, periodB_start, periodB_end)
+          ]);
+
+          const volumeA = calculateTotalVolume(periodA_data);
+          const volumeB = calculateTotalVolume(periodB_data);
+          const difference = volumeB - volumeA;
+
+          regionTotalA += volumeA;
+          regionTotalB += volumeB;
+
+          excelData.push({
+            'Sr. No.': srNo++,
+            'Region': region,
+            'SMSs Name': device.device_name || device.client_id,
+            [`Volume for ${formatDateShort(periodA_start)} to ${formatDateShort(periodA_end)} (MMCF) [A]`]: volumeA.toFixed(3),
+            [`Volume for ${formatDateShort(periodB_start)} to ${formatDateShort(periodB_end)} (MMCF) [B]`]: volumeB.toFixed(3),
+            'Difference (B - A)': difference.toFixed(3)
+          });
+        }
+
+        // Add region subtotal row
+        excelData.push({
+          'Sr. No.': '',
+          'Region': '',
+          'SMSs Name': '',
+          [`Volume for ${formatDateShort(periodA_start)} to ${formatDateShort(periodA_end)} (MMCF) [A]`]: regionTotalA.toFixed(3),
+          [`Volume for ${formatDateShort(periodB_start)} to ${formatDateShort(periodB_end)} (MMCF) [B]`]: regionTotalB.toFixed(3),
+          'Difference (B - A)': (regionTotalB - regionTotalA).toFixed(3)
+        });
+
+        grandTotalA += regionTotalA;
+        grandTotalB += regionTotalB;
+      }
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 8 },   // Sr. No.
+        { wch: 20 },  // Region
+        { wch: 30 },  // SMSs Name
+        { wch: 25 },  // Volume A
+        { wch: 25 },  // Volume B
+        { wch: 18 },  // Difference
+      ];
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, `Section ${selectedSection.section_id}`);
+
+      // Generate filename
+      const filename = `Section_${selectedSection.section_id}_${comparisonLabel}_Comparison_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      // Download
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(`Section ${selectedSection.section_id} report generated successfully!`);
+      setShowReportModal(false);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast.error('Failed to generate section report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  // Generate Single Device Report
+  const generateReport = async () => {
+    if (!selectedDevice) return;
+
+    setGeneratingReport(true);
+
+    try {
+      const now = new Date();
+      let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel;
+
+      if (comparisonType === '15days') {
+        periodB_end = new Date(now);
+        periodB_start = new Date(now);
+        periodB_start.setDate(periodB_start.getDate() - 15);
+        periodA_end = new Date(periodB_start);
+        periodA_start = new Date(periodA_end);
+        periodA_start.setDate(periodA_start.getDate() - 15);
+        comparisonLabel = '15 Days';
+      } else if (comparisonType === '30days') {
+        periodB_end = new Date(now);
+        periodB_start = new Date(now);
+        periodB_start.setDate(periodB_start.getDate() - 30);
+        periodA_end = new Date(periodB_start);
+        periodA_start = new Date(periodA_end);
+        periodA_start.setDate(periodA_start.getDate() - 30);
+        comparisonLabel = '30 Days';
+      }
+
+      const formatDateShort = (date) => {
+        return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+      };
+
       const fetchPeriodData = async (startDate, endDate) => {
         try {
           let allData = [];
@@ -152,15 +321,11 @@ const AdvancedReports = () => {
             if (Array.isArray(data) && data.length > 0) {
               allData = [...allData, ...data];
               page++;
-              // Stop if we got less than page_size (no more data)
-              if (data.length < 1000) {
-                hasMore = false;
-              }
+              if (data.length < 1000) hasMore = false;
             } else {
               hasMore = false;
             }
           }
-
           return allData;
         } catch (err) {
           console.error('Error fetching period data:', err);
@@ -168,17 +333,13 @@ const AdvancedReports = () => {
         }
       };
 
-      toast('Fetching data for both periods...', { icon: 'ℹ️' });
+      toast('Fetching data...', { icon: 'ℹ️' });
 
       const [periodA_data, periodB_data] = await Promise.all([
         fetchPeriodData(periodA_start, periodA_end),
         fetchPeriodData(periodB_start, periodB_end)
       ]);
 
-      console.log('Period A data count:', periodA_data.length);
-      console.log('Period B data count:', periodB_data.length);
-
-      // Calculate total volume for each period
       const calculateTotalVolume = (readings) => {
         if (!Array.isArray(readings)) return 0;
         return readings.reduce((sum, reading) => {
@@ -191,43 +352,36 @@ const AdvancedReports = () => {
       const periodB_volume = calculateTotalVolume(periodB_data);
       const difference = periodB_volume - periodA_volume;
 
-      // Prepare Excel data
       const excelData = [{
-        'Device Name': selectedDevice.device_name || selectedDevice.client_id,
-        'SMS Name': selectedDevice.client_id,
-        [`Volume for ${formatDate(periodA_start)} to ${formatDate(periodA_end)} (MMCF) [A]`]: periodA_volume.toFixed(3),
-        [`Volume for ${formatDate(periodB_start)} to ${formatDate(periodB_end)} (MMCF) [B]`]: periodB_volume.toFixed(3),
-        'Difference [B - A]': difference.toFixed(3)
+        'Sr. No.': 1,
+        'Region': selectedDevice.location || 'Unknown',
+        'SMSs Name': selectedDevice.device_name || selectedDevice.client_id,
+        [`Volume for ${formatDateShort(periodA_start)} to ${formatDateShort(periodA_end)} (MMCF) [A]`]: periodA_volume.toFixed(3),
+        [`Volume for ${formatDateShort(periodB_start)} to ${formatDateShort(periodB_end)} (MMCF) [B]`]: periodB_volume.toFixed(3),
+        'Difference (B - A)': difference.toFixed(3)
       }];
 
-      // Create worksheet
       const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-      // Set column widths
-      const columnWidths = [
-        { wch: 25 }, // Device Name
-        { wch: 18 }, // SMS Name
-        { wch: 35 }, // Period A
-        { wch: 35 }, // Period B
-        { wch: 20 }, // Difference
+      worksheet['!cols'] = [
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 30 },
+        { wch: 25 },
+        { wch: 25 },
+        { wch: 18 },
       ];
-      worksheet['!cols'] = columnWidths;
 
-      // Create workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, `${comparisonLabel} Comparison`);
 
-      // Generate filename
       const filename = `${selectedDevice.client_id}_${comparisonLabel}_Comparison_${new Date().toISOString().slice(0, 10)}.xlsx`;
-
-      // Download
       XLSX.writeFile(workbook, filename);
 
-      toast.success(`${comparisonLabel} comparison report generated successfully!`);
+      toast.success(`Report generated successfully!`);
       setShowReportModal(false);
     } catch (error) {
       console.error('Error generating report:', error);
-      toast.error('Failed to generate comparison report');
+      toast.error('Failed to generate report');
     } finally {
       setGeneratingReport(false);
     }
@@ -409,6 +563,43 @@ const AdvancedReports = () => {
                   <div className="text-xs text-gray-600">Reports</div>
                 </div>
                 <div className="text-2xl font-bold text-cyan-600">{sectionDevices.length}</div>
+              </div>
+            </div>
+
+            {/* Generate Section Report Button */}
+            <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Generate Section Report</h3>
+                  <p className="text-sm text-gray-600">Download volume comparison for all {sectionDevices.length} devices</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={comparisonType}
+                    onChange={(e) => setComparisonType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="15days">15 Days Comparison</option>
+                    <option value="30days">30 Days Comparison</option>
+                  </select>
+                  <button
+                    onClick={generateSectionReport}
+                    disabled={generatingReport}
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg transition-all font-semibold flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {generatingReport ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Download Report
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
