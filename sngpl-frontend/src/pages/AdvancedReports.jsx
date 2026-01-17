@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { FileSpreadsheet, Building2, Gauge, WifiOff, Activity, Download, Calendar, ChevronDown, ChevronUp, CheckSquare, Square, X, BarChart3, Thermometer, Wind, Droplets, Battery, TrendingUp, MapPin, Clock } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { getReadings } from '../services/api';
 
 const AdvancedReports = () => {
@@ -222,9 +222,11 @@ const AdvancedReports = () => {
         devicesByRegion[region].push(device);
       });
 
-      // Column headers matching the format
-      const colA = `Volume for the month of ${monthA}-${periodA_start.getFullYear()} ${periodType}.${String(periodA_start.getMonth() + 1).padStart(2, '0')}.${periodA_start.getFullYear()} (MMCF) (A)`;
-      const colB = `Volume for the month of ${monthB}-${periodB_start.getFullYear()} ${periodType}.${String(periodB_start.getMonth() + 1).padStart(2, '0')}.${periodB_start.getFullYear()} (MMCF) (B)`;
+      // Column headers matching the format - dates as 01*15.12.2024
+      const dateFormatA = `${periodType}.${String(periodA_start.getMonth() + 1).padStart(2, '0')}.${periodA_start.getFullYear()}`;
+      const dateFormatB = `${periodType}.${String(periodB_start.getMonth() + 1).padStart(2, '0')}.${periodB_start.getFullYear()}`;
+      const colA = `Volume for the month of ${monthA}-${periodA_start.getFullYear()} ${dateFormatA} (MMCF) (A)`;
+      const colB = `Volume for the month of ${monthB}-${periodB_start.getFullYear()} ${dateFormatB} (MMCF) (B)`;
 
       // Process all devices and collect data
       const excelData = [];
@@ -283,27 +285,107 @@ const AdvancedReports = () => {
         grandTotalB += regionTotalB;
       }
 
-      // Create worksheet with title rows
-      const titleRows = [
-        [`VOLUMES COMPARISON OF SMSs OF SECTION-${selectedSection.section_id}`],
-        [`BETWEEN THE ${comparisonLabel} OF ${monthA}-${yearA} VS ${monthB}-${yearB}`],
-        [] // Empty row before data
-      ];
+      // Create worksheet with styled title rows
+      const worksheet = XLSX.utils.aoa_to_sheet([]);
 
-      // Create worksheet from title rows first
-      const worksheet = XLSX.utils.aoa_to_sheet(titleRows);
+      // Define styles
+      const darkRedHeaderStyle = {
+        fill: { fgColor: { rgb: '8B0000' } }, // Dark red background
+        font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 14 },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
 
-      // Add data starting from row 4
-      XLSX.utils.sheet_add_json(worksheet, excelData, { origin: 'A4' });
+      const columnHeaderStyle = {
+        fill: { fgColor: { rgb: 'FFFFFF' } },
+        font: { color: { rgb: '8B0000' }, bold: true, sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        }
+      };
+
+      const dataStyle = {
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+
+      const subtotalStyle = {
+        fill: { fgColor: { rgb: 'FFFF00' } }, // Yellow background for subtotals
+        font: { bold: true },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+
+      // Row 1: Main title (dark red background, white text)
+      worksheet['A1'] = {
+        v: `VOLUMES COMPARISON OF SMSs OF SECTION-${selectedSection.section_id}`,
+        s: darkRedHeaderStyle
+      };
+
+      // Row 2: Subtitle with red MID-MONTH text
+      worksheet['A2'] = {
+        v: `BETWEEN THE ${comparisonLabel} OF ${monthA}-${yearA} VS ${monthB}-${yearB}`,
+        s: {
+          font: { bold: true, sz: 12 },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        }
+      };
+
+      // Row 3: Empty row
+      // Row 4: Column headers
+      const headers = ['Sr. No.', 'Region', 'SMSs Name', colA, colB, 'Difference (B - A)'];
+      headers.forEach((header, idx) => {
+        const col = String.fromCharCode(65 + idx); // A, B, C, D, E, F
+        worksheet[`${col}4`] = { v: header, s: columnHeaderStyle };
+      });
+
+      // Add data starting from row 5
+      let rowNum = 5;
+      excelData.forEach((row) => {
+        const isSubtotal = row['Sr. No.'] === '' && row['Region'] === '' && row['SMSs Name'] === '';
+        const cellStyle = isSubtotal ? subtotalStyle : dataStyle;
+
+        worksheet[`A${rowNum}`] = { v: row['Sr. No.'], s: cellStyle };
+        worksheet[`B${rowNum}`] = { v: row['Region'], s: cellStyle };
+        worksheet[`C${rowNum}`] = { v: row['SMSs Name'], s: cellStyle };
+        worksheet[`D${rowNum}`] = { v: row[colA], s: cellStyle };
+        worksheet[`E${rowNum}`] = { v: row[colB], s: cellStyle };
+        worksheet[`F${rowNum}`] = { v: row['Difference (B - A)'], s: cellStyle };
+        rowNum++;
+      });
+
+      // Set the range of the worksheet
+      worksheet['!ref'] = `A1:F${rowNum - 1}`;
 
       // Set column widths
       worksheet['!cols'] = [
         { wch: 8 },   // Sr. No.
         { wch: 18 },  // Region
-        { wch: 28 },  // SMSs Name
-        { wch: 32 },  // Volume A
-        { wch: 32 },  // Volume B
-        { wch: 16 },  // Difference
+        { wch: 30 },  // SMSs Name
+        { wch: 28 },  // Volume A
+        { wch: 28 },  // Volume B
+        { wch: 14 },  // Difference
+      ];
+
+      // Set row heights
+      worksheet['!rows'] = [
+        { hpt: 30 },  // Row 1: Title
+        { hpt: 25 },  // Row 2: Subtitle
+        { hpt: 15 },  // Row 3: Empty
+        { hpt: 50 },  // Row 4: Column headers (taller for multi-line)
       ];
 
       // Merge title cells

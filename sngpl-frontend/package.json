@@ -27,6 +27,7 @@
     "recharts": "^3.5.1",
     "typescript": "^5.9.3",
     "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
