@@ -98,39 +98,43 @@ const AdvancedReports = () => {
 
     try {
       const now = new Date();
-      let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel;
+      let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel, periodType;
+
+      // Get month names
+      const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
       // Define date ranges based on comparison type
       if (sectionComparisonType === '15days') {
-        // Period B: Last 15 days (current period)
-        periodB_end = new Date(now);
-        periodB_start = new Date(now);
-        periodB_start.setDate(periodB_start.getDate() - 15);
+        // Period B: Current month 1st to 15th
+        periodB_end = new Date(now.getFullYear(), now.getMonth(), 15, 23, 59, 59);
+        periodB_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
 
-        // Period A: Previous 15 days
-        periodA_end = new Date(periodB_start);
-        periodA_start = new Date(periodA_end);
-        periodA_start.setDate(periodA_start.getDate() - 15);
+        // Period A: Previous year same period (1st to 15th)
+        periodA_end = new Date(now.getFullYear() - 1, now.getMonth(), 15, 23, 59, 59);
+        periodA_start = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0);
 
-        comparisonLabel = '15 Days';
+        comparisonLabel = 'MID-MONTH';
+        periodType = '01*15';
       } else if (sectionComparisonType === '30days') {
-        // Period B: Last 30 days (current period)
-        periodB_end = new Date(now);
-        periodB_start = new Date(now);
-        periodB_start.setDate(periodB_start.getDate() - 30);
+        // Period B: Full current month
+        const lastDayB = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        periodB_end = new Date(now.getFullYear(), now.getMonth(), lastDayB, 23, 59, 59);
+        periodB_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
 
-        // Period A: Previous 30 days
-        periodA_end = new Date(periodB_start);
-        periodA_start = new Date(periodA_end);
-        periodA_start.setDate(periodA_start.getDate() - 30);
+        // Period A: Previous year same month
+        const lastDayA = new Date(now.getFullYear() - 1, now.getMonth() + 1, 0).getDate();
+        periodA_end = new Date(now.getFullYear() - 1, now.getMonth(), lastDayA, 23, 59, 59);
+        periodA_start = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0);
 
-        comparisonLabel = '30 Days';
+        comparisonLabel = 'FULL-MONTH';
+        periodType = '01*' + lastDayB;
       }
 
-      // Format dates for display in header
-      const formatDateShort = (date) => {
-        return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
-      };
+      // Format for column headers
+      const monthA = monthNames[periodA_start.getMonth()];
+      const yearA = periodA_start.getFullYear().toString().slice(-2);
+      const monthB = monthNames[periodB_start.getMonth()];
+      const yearB = periodB_start.getFullYear().toString().slice(-2);
 
       // Fetch data for a device for both periods
       const fetchDeviceData = async (deviceId, startDate, endDate) => {
@@ -187,16 +191,23 @@ const AdvancedReports = () => {
         devicesByRegion[region].push(device);
       });
 
+      // Column headers matching the format
+      const colA = `Volume for the month of ${monthA}-${periodA_start.getFullYear()} ${periodType}.${String(periodA_start.getMonth() + 1).padStart(2, '0')}.${periodA_start.getFullYear()} (MMCF) (A)`;
+      const colB = `Volume for the month of ${monthB}-${periodB_start.getFullYear()} ${periodType}.${String(periodB_start.getMonth() + 1).padStart(2, '0')}.${periodB_start.getFullYear()} (MMCF) (B)`;
+
       // Process all devices and collect data
       const excelData = [];
       let srNo = 1;
       let grandTotalA = 0;
       let grandTotalB = 0;
 
-      for (const region of Object.keys(devicesByRegion)) {
+      const regions = Object.keys(devicesByRegion).sort();
+
+      for (const region of regions) {
         let regionTotalA = 0;
         let regionTotalB = 0;
         const regionDevices = devicesByRegion[region];
+        let isFirstInRegion = true;
 
         for (const device of regionDevices) {
           // Fetch data for both periods
@@ -214,21 +225,23 @@ const AdvancedReports = () => {
 
           excelData.push({
             'Sr. No.': srNo++,
-            'Region': region,
+            'Region': isFirstInRegion ? region.toUpperCase() : '',
             'SMSs Name': device.device_name || device.client_id,
-            [`Volume for ${formatDateShort(periodA_start)} to ${formatDateShort(periodA_end)} (MMCF) [A]`]: volumeA.toFixed(3),
-            [`Volume for ${formatDateShort(periodB_start)} to ${formatDateShort(periodB_end)} (MMCF) [B]`]: volumeB.toFixed(3),
+            [colA]: volumeA.toFixed(3),
+            [colB]: volumeB.toFixed(3),
             'Difference (B - A)': difference.toFixed(3)
           });
+
+          isFirstInRegion = false;
         }
 
-        // Add region subtotal row
+        // Add region subtotal row (highlighted row)
         excelData.push({
           'Sr. No.': '',
           'Region': '',
           'SMSs Name': '',
-          [`Volume for ${formatDateShort(periodA_start)} to ${formatDateShort(periodA_end)} (MMCF) [A]`]: regionTotalA.toFixed(3),
-          [`Volume for ${formatDateShort(periodB_start)} to ${formatDateShort(periodB_end)} (MMCF) [B]`]: regionTotalB.toFixed(3),
+          [colA]: regionTotalA.toFixed(3),
+          [colB]: regionTotalB.toFixed(3),
           'Difference (B - A)': (regionTotalB - regionTotalA).toFixed(3)
         });
 
@@ -236,17 +249,33 @@ const AdvancedReports = () => {
         grandTotalB += regionTotalB;
       }
 
-      // Create worksheet
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      // Create worksheet with title rows
+      const titleRows = [
+        [`VOLUMES COMPARISON OF SMSs OF SECTION-${selectedSection.section_id}`],
+        [`BETWEEN THE ${comparisonLabel} OF ${monthA}-${yearA} VS ${monthB}-${yearB}`],
+        [] // Empty row before data
+      ];
+
+      // Create worksheet from title rows first
+      const worksheet = XLSX.utils.aoa_to_sheet(titleRows);
+
+      // Add data starting from row 4
+      XLSX.utils.sheet_add_json(worksheet, excelData, { origin: 'A4' });
 
       // Set column widths
       worksheet['!cols'] = [
         { wch: 8 },   // Sr. No.
-        { wch: 20 },  // Region
-        { wch: 30 },  // SMSs Name
-        { wch: 25 },  // Volume A
-        { wch: 25 },  // Volume B
-        { wch: 18 },  // Difference
+        { wch: 18 },  // Region
+        { wch: 28 },  // SMSs Name
+        { wch: 32 },  // Volume A
+        { wch: 32 },  // Volume B
+        { wch: 16 },  // Difference
+      ];
+
+      // Merge title cells
+      worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // Title row 1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // Title row 2
       ];
 
       // Create workbook
@@ -254,13 +283,12 @@ const AdvancedReports = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, `Section ${selectedSection.section_id}`);
 
       // Generate filename
-      const filename = `Section_${selectedSection.section_id}_${comparisonLabel}_Comparison_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const filename = `Section_${selectedSection.section_id}_${comparisonLabel}_${monthA}${yearA}_vs_${monthB}${yearB}.xlsx`;
 
       // Download
       XLSX.writeFile(workbook, filename);
 
       toast.success(`Section ${selectedSection.section_id} report generated successfully!`);
-      setShowReportModal(false);
     } catch (error) {
       console.error('Error generating report:', error);
       toast.error('Failed to generate section report');
@@ -617,8 +645,8 @@ const AdvancedReports = () => {
                     onChange={(e) => setSectionComparisonType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="15days">15 Days Comparison</option>
-                    <option value="30days">30 Days Comparison</option>
+                    <option value="15days">Mid-Month (1st-15th) vs Last Year</option>
+                    <option value="30days">Full Month vs Last Year</option>
                   </select>
                   <button
                     onClick={generateSectionReport}
