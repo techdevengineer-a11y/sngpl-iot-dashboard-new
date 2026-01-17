@@ -416,8 +416,8 @@ const Trends = () => {
   };
 
   // Filter data based on custom date range
-  // OPTIMIZATION: Filter data for charts (latest 50 readings max)
-  const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 50) => {
+  // OPTIMIZATION: Filter data for charts (latest 20 readings max)
+  const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 20) => {
     if (!historyData || historyData.length === 0) {
       return [];
     }
@@ -732,39 +732,13 @@ const Trends = () => {
               onEndChange={setT18EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={(() => {
-                const chartData = filterDataByDateRange(t18StartDate, t18EndDate, 50);
-                console.log('[T18 Chart] Data points:', chartData.length);
-                if (chartData.length > 0) {
-                  const values = chartData.map(d => d.last_hour_flow_time);
-                  console.log('[T18 Chart] First 5 values:', values.slice(0, 5));
-                  console.log('[T18 Chart] Min/Max:', {
-                    min: Math.min(...values),
-                    max: Math.max(...values),
-                    allSame: values.every(v => v === values[0])
-                  });
-                }
-                return chartData;
-              })()}>
-                <defs>
-                  <linearGradient id="colorT18" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t18StartDate, t18EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t18StartDate);
-                    const end = new Date(t18EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -775,14 +749,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(2) || '0.00'} hours`, 'Flow Time']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="last_hour_flow_time"
-                  stroke="#3b82f6"
+                  stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT18)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
@@ -801,26 +776,13 @@ const Trends = () => {
               onEndChange={setT19EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t19StartDate, t19EndDate, 50)}>
-                <defs>
-                  <linearGradient id="colorT19" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t19StartDate, t19EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t19StartDate);
-                    const end = new Date(t19EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -831,14 +793,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(2) || '0.00'} IWC`, 'Diff Pressure']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="last_hour_diff_pressure"
-                  stroke="#a855f7"
+                  stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT19)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
@@ -857,26 +820,13 @@ const Trends = () => {
               onEndChange={setT110EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t110StartDate, t110EndDate, 50)}>
-                <defs>
-                  <linearGradient id="colorT110" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t110StartDate, t110EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t110StartDate);
-                    const end = new Date(t110EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -887,14 +837,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(1) || '0.0'} PSI`, 'Static Pressure']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="last_hour_static_pressure"
                   stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT110)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
@@ -913,26 +864,13 @@ const Trends = () => {
               onEndChange={setT111EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t111StartDate, t111EndDate, 50)}>
-                <defs>
-                  <linearGradient id="colorT111" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t111StartDate, t111EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t111StartDate);
-                    const end = new Date(t111EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -943,14 +881,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(1) || '0.0'} °F`, 'Temperature']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="last_hour_temperature"
-                  stroke="#f97316"
+                  stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT111)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
@@ -969,26 +908,13 @@ const Trends = () => {
               onEndChange={setT112EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t112StartDate, t112EndDate, 50)}>
-                <defs>
-                  <linearGradient id="colorT112" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t112StartDate, t112EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t112StartDate);
-                    const end = new Date(t112EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -999,14 +925,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(2) || '0.00'} MCF`, 'Volume']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="last_hour_volume"
-                  stroke="#06b6d4"
+                  stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT112)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
@@ -1025,26 +952,13 @@ const Trends = () => {
               onEndChange={setT113EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t113StartDate, t113EndDate, 50)}>
-                <defs>
-                  <linearGradient id="colorT113" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t113StartDate, t113EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t113StartDate);
-                    const end = new Date(t113EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -1055,14 +969,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(2) || '0.00'}`, 'Energy']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="last_hour_energy"
-                  stroke="#eab308"
+                  stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT113)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
@@ -1081,26 +996,13 @@ const Trends = () => {
               onEndChange={setT114EndDate}
             />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
-              <AreaChart data={filterDataByDateRange(t114StartDate, t114EndDate, 50)}>
-                <defs>
-                  <linearGradient id="colorT114" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={filterDataByDateRange(t114StartDate, t114EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value) => {
                     const date = new Date(value);
-                    const start = new Date(t114StartDate);
-                    const end = new Date(t114EndDate);
-                    const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()}`;
-                    } else {
-                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
@@ -1111,14 +1013,15 @@ const Trends = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value?.toFixed(4) || '0.0000'}`, 'Specific Gravity']}
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="specific_gravity"
-                  stroke="#6366f1"
+                  stroke="#16a34a"
                   strokeWidth={2}
-                  fill="url(#colorT114)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#16a34a' }}
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
