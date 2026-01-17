@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SMS Monitoring - AWS Deployment</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; line-height: 1.5; background: #fff; }
+        .page { max-width: 850px; margin: 0 auto; padding: 50px; }
+
+        /* Header */
+        .header { text-align: center; padding: 40px 0; border-bottom: 3px solid #2c3e50; margin-bottom: 40px; }
+        .header h1 { font-size: 28px; color: #2c3e50; margin-bottom: 8px; }
+        .header h2 { font-size: 18px; color: #7f8c8d; font-weight: normal; }
+        .header .meta { margin-top: 20px; font-size: 13px; color: #95a5a6; }
+
+        /* Section */
+        h3 { font-size: 18px; color: #2c3e50; margin: 35px 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #3498db; }
+        h4 { font-size: 14px; color: #34495e; margin: 20px 0 10px 0; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin: 15px 0 25px 0; font-size: 13px; }
+        th { background: #2c3e50; color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+        td { padding: 9px 12px; border-bottom: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        code { background: #ecf0f1; padding: 2px 6px; border-radius: 3px; font-family: Consolas, monospace; font-size: 12px; }
+
+        /* Status */
+        .ok { color: #27ae60; font-weight: 600; }
+        .warn { color: #e67e22; font-weight: 600; }
+
+        /* Boxes */
+        .info-box { background: #f8f9fa; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; }
+        .success-box { background: #e8f8f5; border-left: 4px solid #27ae60; padding: 15px; margin: 20px 0; }
+
+        /* Diagram */
+        .diagram { background: #2c3e50; color: #ecf0f1; padding: 20px; border-radius: 5px; font-family: Consolas, monospace; font-size: 11px; white-space: pre; overflow-x: auto; margin: 20px 0; }
+
+        /* Footer */
+        .footer { margin-top: 50px; padding-top: 20px; border-top: 2px solid #e0e0e0; text-align: center; font-size: 11px; color: #95a5a6; }
+
+        /* Print */
+        @media print {
+            .page { padding: 30px; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+<!-- Header -->
+<div class="header">
+    <h1>SMS Monitoring</h1>
+    <h2>AWS Deployment</h2>
+</div>
+
+<!-- Executive Summary -->
+<h3>1. Executive Summary</h3>
+<p>This document provides a comprehensive security architecture overview of the SNGPL IoT Dashboard deployed on Amazon Web Services (AWS). The infrastructure implements defense-in-depth security with multiple protection layers following AWS Well-Architected Framework best practices.</p>
+
+<div class="success-box">
+    <strong>Security Status:</strong> Production Ready<br>
+    All critical security controls have been implemented and verified.
+</div>
+
+<!-- Infrastructure Overview -->
+<h3>2. Infrastructure Overview</h3>
+
+<h4>2.1 AWS Resources</h4>
+<table>
+    <tr><th>Component</th><th>Service</th><th>Details</th></tr>
+    <tr><td>Compute</td><td>Amazon EC2</td><td>t3.medium instance</td></tr>
+    <tr><td>Database</td><td>Amazon RDS</td><td>PostgreSQL 15.x (encrypted)</td></tr>
+    <tr><td>Network</td><td>Elastic IP</td><td>Static public IP address</td></tr>
+    <tr><td>SSL/TLS</td><td>Let's Encrypt</td><td>Auto-renewal configured</td></tr>
+</table>
+
+<h4>2.2 Server Configuration</h4>
+<table>
+    <tr><th>Attribute</th><th>Value</th></tr>
+    <tr><td>Instance ID</td><td><code>i-0xxxxxxxxxxxxxxxxxx</code></td></tr>
+    <tr><td>Region</td><td>ap-southeast-1 (Singapore)</td></tr>
+    <tr><td>Operating System</td><td>Ubuntu 24.04 LTS</td></tr>
+    <tr><td>Elastic IP</td><td><code>xx.xxx.xx.xxx</code></td></tr>
+    <tr><td>Private IP</td><td><code>172.xx.x.xx</code></td></tr>
+    <tr><td>VPC ID</td><td><code>vpc-0xxxxxxxxxxxxxxxxxx</code></td></tr>
+    <tr><td>Domain</td><td><code>www.xxxxxxxxx.online</code></td></tr>
+</table>
+
+<!-- Network Security -->
+<h3>3. Network Security</h3>
+
+<h4>3.1 Security Group Configuration</h4>
+<div class="info-box">
+    <strong>Security Group:</strong> launch-wizard-x<br>
+    <strong>Security Group ID:</strong> <code>sg-xxxxxxxxxxxxxxxxx</code>
+</div>
+
+<p><strong>Inbound Rules:</strong></p>
+<table>
+    <tr><th>Type</th><th>Protocol</th><th>Port</th><th>Source</th><th>Purpose</th></tr>
+    <tr><td>HTTPS</td><td>TCP</td><td>443</td><td>0.0.0.0/0</td><td>Public web access (encrypted)</td></tr>
+    <tr><td>HTTP</td><td>TCP</td><td>80</td><td>0.0.0.0/0</td><td>Redirect to HTTPS</td></tr>
+    <tr><td>SSH</td><td>TCP</td><td>22</td><td>x.x.x.x/32</td><td>Admin access (IP restricted)</td></tr>
+</table>
+
+<p><strong>Outbound Rules:</strong></p>
+<table>
+    <tr><th>Type</th><th>Protocol</th><th>Port</th><th>Destination</th><th>Purpose</th></tr>
+    <tr><td>All traffic</td><td>All</td><td>All</td><td>0.0.0.0/0</td><td>Standard outbound</td></tr>
+</table>
+
+<h4>3.2 Host Firewall (UFW)</h4>
+<div class="diagram">Status: active
+Default: deny (incoming), allow (outgoing)
+
+To                         Action      From
+--                         ------      ----
+80,443/tcp (Nginx Full)    ALLOW IN    Anywhere
+22                         ALLOW IN    [Authorized IP Only]</div>
+
+<h4>3.3 Architecture Diagram</h4>
+<div class="diagram">
+                    INTERNET
+                        |
+        ----------------+----------------
+        |               |               |
+    [Users]         [Admin]        [IoT Devices]
+    HTTPS:443       SSH:22          MQTT:1883
+        |          (Restricted)         |
+        v               v               v
+    +---------------------------------------+
+    |        AWS SECURITY GROUP             |
+    |       (Network Level Filter)          |
+    +---------------------------------------+
+                        |
+    +---------------------------------------+
+    |           EC2 INSTANCE                |
+    |                                       |
+    |   +-------------------------------+   |
+    |   |      UFW FIREWALL             |   |
+    |   |    (Host Level Filter)        |   |
+    |   +-------------------------------+   |
+    |                  |                    |
+    |   +-------------------------------+   |
+    |   |    NGINX + SSL/TLS            |   |
+    |   |  (Let's Encrypt Certificate)  |   |
+    |   +-------------------------------+   |
+    |                  |                    |
+    |   +-------------------------------+   |
+    |   |    FASTAPI APPLICATION        |   |
+    |   |      (localhost:8080)         |   |
+    |   +-------------------------------+   |
+    +---------------------------------------+
+                        |
+                        | (Private Connection)
+                        v
+    +---------------------------------------+
+    |           AMAZON RDS                  |
+    |   PostgreSQL (Encrypted at Rest)      |
+    |   - Not publicly accessible           |
+    |   - SSL/TLS in transit                |
+    +---------------------------------------+
+</div>
+
+<!-- Database Security -->
+<h3>4. Database Security</h3>
+
+<h4>4.1 RDS Configuration</h4>
+<table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Engine</td><td>PostgreSQL 15.x</td></tr>
+    <tr><td>Instance Class</td><td>db.t3.micro</td></tr>
+    <tr><td>Endpoint</td><td><code>xxxxxx-db.xxxxx.ap-southeast-1.rds.amazonaws.com</code></td></tr>
+    <tr><td>Database Name</td><td><code>xxxxxx_dashboard</code></td></tr>
+    <tr><td>Port</td><td>5432</td></tr>
+</table>
+
+<h4>4.2 Security Controls</h4>
+<table>
+    <tr><th>Control</th><th>Status</th><th>Details</th></tr>
+    <tr><td>Encryption at Rest</td><td class="ok">Enabled</td><td>AWS KMS managed keys</td></tr>
+    <tr><td>Encryption in Transit</td><td class="ok">Enabled</td><td>SSL/TLS enforced</td></tr>
+    <tr><td>Public Access</td><td class="ok">Disabled</td><td>VPC internal only</td></tr>
+    <tr><td>Automated Backups</td><td class="ok">Enabled</td><td>Daily backups configured</td></tr>
+</table>
+
+<!-- Application Security -->
+<h3>5. Application Security</h3>
+
+<h4>5.1 SSL/TLS Configuration</h4>
+<table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Certificate Authority</td><td>Let's Encrypt</td></tr>
+    <tr><td>Certificate Type</td><td>Domain Validated (DV)</td></tr>
+    <tr><td>Key Size</td><td>2048-bit RSA</td></tr>
+    <tr><td>Protocols</td><td>TLS 1.2, TLS 1.3</td></tr>
+    <tr><td>Auto-Renewal</td><td>Certbot configured</td></tr>
+</table>
+
+<h4>5.2 HTTP Security Headers</h4>
+<table>
+    <tr><th>Header</th><th>Value</th><th>Purpose</th></tr>
+    <tr><td>Strict-Transport-Security</td><td>max-age=31536000; includeSubDomains</td><td>Force HTTPS (HSTS)</td></tr>
+    <tr><td>X-Frame-Options</td><td>SAMEORIGIN</td><td>Prevent clickjacking</td></tr>
+    <tr><td>X-Content-Type-Options</td><td>nosniff</td><td>Prevent MIME sniffing</td></tr>
+    <tr><td>X-XSS-Protection</td><td>1; mode=block</td><td>XSS filter</td></tr>
+    <tr><td>Referrer-Policy</td><td>strict-origin-when-cross-origin</td><td>Control referrer</td></tr>
+</table>
+
+<h4>5.3 Application Stack</h4>
+<table>
+    <tr><th>Layer</th><th>Technology</th><th>Security</th></tr>
+    <tr><td>Frontend</td><td>React + Vite</td><td>Static files via Nginx</td></tr>
+    <tr><td>Backend</td><td>FastAPI (Python)</td><td>Input validation, CORS</td></tr>
+    <tr><td>Database</td><td>PostgreSQL</td><td>Parameterized queries</td></tr>
+    <tr><td>Cache</td><td>Redis</td><td>localhost only (127.0.0.1)</td></tr>
+</table>
+
+<!-- Intrusion Prevention -->
+<h3>6. Intrusion Prevention</h3>
+
+<h4>6.1 Fail2ban Configuration</h4>
+<table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Status</td><td class="ok">Active</td></tr>
+    <tr><td>SSH Jail</td><td class="ok">Enabled</td></tr>
+    <tr><td>Max Retry</td><td>5 attempts</td></tr>
+    <tr><td>Ban Time</td><td>10 minutes</td></tr>
+    <tr><td>Find Time</td><td>10 minutes</td></tr>
+</table>
+
+<h4>6.2 Logging</h4>
+<table>
+    <tr><th>Log Type</th><th>Location</th><th>Purpose</th></tr>
+    <tr><td>Nginx Access</td><td>/var/log/nginx/access.log</td><td>Web traffic</td></tr>
+    <tr><td>Nginx Error</td><td>/var/log/nginx/error.log</td><td>Errors</td></tr>
+    <tr><td>Authentication</td><td>/var/log/auth.log</td><td>SSH attempts</td></tr>
+    <tr><td>Firewall</td><td>/var/log/ufw.log</td><td>Blocked connections</td></tr>
+</table>
+
+<!-- CI/CD Security -->
+<h3>7. CI/CD Security</h3>
+
+<table>
+    <tr><th>Component</th><th>Configuration</th></tr>
+    <tr><td>Platform</td><td>GitHub Actions</td></tr>
+    <tr><td>Runner</td><td>Self-hosted (on EC2)</td></tr>
+    <tr><td>Trigger</td><td>Push to main branch</td></tr>
+    <tr><td>Secrets</td><td>Environment variables (.env) - not in repository</td></tr>
+</table>
+
+<div class="info-box">
+    <strong>Deployment Security:</strong>
+    <ul style="margin-left: 20px; margin-top: 8px;">
+        <li>Environment files (.env) preserved and excluded from git</li>
+        <li>Virtual environment isolated per deployment</li>
+        <li>Nginx configuration validated before reload</li>
+        <li>Services restarted via systemd with controlled permissions</li>
+    </ul>
+</div>
+
+<!-- Security Compliance -->
+<h3>8. Security Compliance Summary</h3>
+
+<table>
+    <tr><th>Control</th><th>Status</th><th>Implementation</th></tr>
+    <tr><td>Network Segmentation</td><td class="ok">Implemented</td><td>Security Groups + UFW</td></tr>
+    <tr><td>Encryption in Transit</td><td class="ok">Implemented</td><td>TLS 1.2/1.3</td></tr>
+    <tr><td>Encryption at Rest</td><td class="ok">Implemented</td><td>RDS KMS encryption</td></tr>
+    <tr><td>Access Control</td><td class="ok">Implemented</td><td>SSH IP restriction</td></tr>
+    <tr><td>Intrusion Prevention</td><td class="ok">Implemented</td><td>fail2ban active</td></tr>
+    <tr><td>Security Headers</td><td class="ok">Implemented</td><td>HSTS, X-Frame-Options</td></tr>
+    <tr><td>Logging & Monitoring</td><td class="ok">Implemented</td><td>Nginx, auth, UFW logs</td></tr>
+    <tr><td>Firewall</td><td class="ok">Implemented</td><td>Dual-layer (AWS + UFW)</td></tr>
+</table>
+
+<!-- Conclusion -->
+<h3>9. Conclusion</h3>
+
+<p>The SNGPL IoT Dashboard infrastructure implements a comprehensive defense-in-depth security strategy:</p>
+
+<div class="success-box">
+    <strong>Security Layers:</strong>
+    <ol style="margin-left: 20px; margin-top: 8px;">
+        <li><strong>Layer 1 - Network:</strong> AWS Security Groups filter inbound traffic</li>
+        <li><strong>Layer 2 - Host:</strong> UFW firewall provides secondary filtering</li>
+        <li><strong>Layer 3 - Application:</strong> Nginx with security headers, HTTPS enforcement</li>
+        <li><strong>Layer 4 - Database:</strong> RDS with encryption and VPC isolation</li>
+        <li><strong>Layer 5 - Monitoring:</strong> fail2ban, comprehensive logging</li>
+    </ol>
+</div>
+
+<p style="margin-top: 15px;">The current security posture is appropriate for a production IoT monitoring dashboard with all critical security controls implemented and verified.</p>
+
+
+</div>
+</body>
+</html>

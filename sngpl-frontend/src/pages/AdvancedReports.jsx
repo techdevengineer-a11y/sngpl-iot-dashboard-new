@@ -173,13 +173,41 @@ const AdvancedReports = () => {
         }
       };
 
-      // Calculate total volume
+      // Calculate total volume using 6 AM daily readings only
       const calculateTotalVolume = (readings) => {
-        if (!Array.isArray(readings)) return 0;
-        return readings.reduce((sum, reading) => {
+        if (!Array.isArray(readings) || readings.length === 0) return 0;
+
+        // Group readings by date and pick the one closest to 6 AM
+        const readingsByDate = {};
+
+        readings.forEach(reading => {
+          const readingDate = new Date(reading.timestamp || reading.created_at);
+          const dateKey = `${readingDate.getFullYear()}-${String(readingDate.getMonth() + 1).padStart(2, '0')}-${String(readingDate.getDate()).padStart(2, '0')}`;
+          const hour = readingDate.getHours();
+          const minutes = readingDate.getMinutes();
+          const timeInMinutes = hour * 60 + minutes;
+          const targetTime = 6 * 60; // 6 AM in minutes
+          const timeDiff = Math.abs(timeInMinutes - targetTime);
+
+          // Only consider readings between 5 AM and 7 AM
+          if (hour >= 5 && hour <= 7) {
+            if (!readingsByDate[dateKey] || timeDiff < readingsByDate[dateKey].timeDiff) {
+              readingsByDate[dateKey] = {
+                reading,
+                timeDiff
+              };
+            }
+          }
+        });
+
+        // Sum the 6 AM daily volumes
+        let totalVolume = 0;
+        Object.values(readingsByDate).forEach(({ reading }) => {
           const volume = reading.last_hour_volume || reading.volume || 0;
-          return sum + volume;
-        }, 0);
+          totalVolume += volume;
+        });
+
+        return totalVolume;
       };
 
       toast('Generating report for all devices in section...', { icon: 'ℹ️' });

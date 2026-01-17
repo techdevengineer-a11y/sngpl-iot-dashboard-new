@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SNGPL IoT Dashboard - Security Architecture</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }
+        h1 { color: #1a5276; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2c3e50; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border: 1px solid #ddd; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .ok { color: #27ae60; font-weight: bold; }
+        .header { text-align: center; margin-bottom: 40px; padding: 30px; background: #f8f9fa; border-radius: 8px; }
+        .header h1 { border: none; margin-bottom: 10px; }
+        .section { margin: 25px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #3498db; }
+        pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .footer { margin-top: 50px; text-align: center; color: #7f8c8d; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>SNGPL IoT Dashboard</h1>
+    <p><strong>AWS Security Architecture Report</strong></p>
+    <p>Version 1.0 | January 16, 2026</p>
+</div>
+
+<h1>1. Infrastructure Overview</h1>
+
+<table>
+    <tr><th>Component</th><th>Details</th></tr>
+    <tr><td>Instance ID</td><td>i-0c9be221a7e7a3bc5</td></tr>
+    <tr><td>Region</td><td>ap-southeast-1 (Singapore)</td></tr>
+    <tr><td>Elastic IP</td><td>47.130.53.251</td></tr>
+    <tr><td>Operating System</td><td>Ubuntu 24.04 LTS</td></tr>
+    <tr><td>Domain</td><td>www.sngpldashboard.online</td></tr>
+    <tr><td>Database</td><td>Amazon RDS PostgreSQL</td></tr>
+</table>
+
+<h1>2. Security Group Rules</h1>
+
+<p><strong>Security Group:</strong> launch-wizard-2 (sg-02c35a4cac9018f9f)</p>
+
+<table>
+    <tr><th>Type</th><th>Port</th><th>Source</th><th>Status</th></tr>
+    <tr><td>HTTPS</td><td>443</td><td>0.0.0.0/0</td><td class="ok">Public Web</td></tr>
+    <tr><td>HTTP</td><td>80</td><td>0.0.0.0/0</td><td class="ok">Redirect to HTTPS</td></tr>
+    <tr><td>SSH</td><td>22</td><td>Restricted IP</td><td class="ok">Admin Only</td></tr>
+</table>
+
+<h1>3. UFW Firewall (Server Level)</h1>
+
+<pre>Status: active
+Default: deny (incoming), allow (outgoing)
+
+Port 80/443    ALLOW    Anywhere (Web Traffic)
+Port 22        ALLOW    Authorized IP Only (SSH)</pre>
+
+<h1>4. Security Controls</h1>
+
+<table>
+    <tr><th>Control</th><th>Status</th></tr>
+    <tr><td>AWS Security Groups</td><td class="ok">Configured</td></tr>
+    <tr><td>UFW Firewall</td><td class="ok">Active</td></tr>
+    <tr><td>SSH Access Restriction</td><td class="ok">IP Restricted</td></tr>
+    <tr><td>fail2ban (Brute-force Protection)</td><td class="ok">Active</td></tr>
+    <tr><td>SSL/TLS Certificate</td><td class="ok">Let's Encrypt</td></tr>
+    <tr><td>HSTS Header</td><td class="ok">Enabled</td></tr>
+    <tr><td>X-Frame-Options</td><td class="ok">SAMEORIGIN</td></tr>
+    <tr><td>X-Content-Type-Options</td><td class="ok">nosniff</td></tr>
+    <tr><td>Database Encryption</td><td class="ok">RDS Encrypted</td></tr>
+</table>
+
+<h1>5. Architecture Diagram</h1>
+
+<pre>
+    Internet
+        |
+        v
+  [Security Group] ---- Port 443 (HTTPS) ----> Public Access
+        |                Port 80 (HTTP)  ----> Redirect to HTTPS
+        |                Port 22 (SSH)   ----> Restricted IP Only
+        |
+        v
+  [EC2 Instance]
+        |
+   [UFW Firewall] ---- Secondary protection layer
+        |
+   [Nginx + SSL] ---- Let's Encrypt certificate
+        |
+   [FastAPI App] ---- localhost:8080
+        |
+        v
+  [Amazon RDS] ---- PostgreSQL (Encrypted, Private)
+</pre>
+
+<h1>6. Database Security</h1>
+
+<table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Engine</td><td>PostgreSQL 15.x</td></tr>
+    <tr><td>Encryption at Rest</td><td class="ok">Enabled (AWS KMS)</td></tr>
+    <tr><td>Encryption in Transit</td><td class="ok">SSL/TLS</td></tr>
+    <tr><td>Public Access</td><td class="ok">Disabled</td></tr>
+</table>
+
+<h1>7. Recommendations</h1>
+
+<table>
+    <tr><th>Item</th><th>Priority</th></tr>
+    <tr><td>Enable RDS automated backups</td><td>High</td></tr>
+    <tr><td>Set up CloudWatch monitoring</td><td>Medium</td></tr>
+    <tr><td>Consider AWS WAF</td><td>Optional</td></tr>
+</table>
+
+<div class="section">
+    <strong>Summary:</strong> The infrastructure implements defense-in-depth security with multiple layers of protection including network-level (Security Groups), host-level (UFW), application-level (Nginx security headers), and database-level (RDS encryption) controls.
+</div>
+
+<div class="footer">
+    <p>SNGPL IoT Dashboard - Security Architecture Report</p>
+    <p>Document Classification: Internal | Review: Quarterly</p>
+</div>
+
+</body>
+</html>
