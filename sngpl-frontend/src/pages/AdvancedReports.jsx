@@ -16,7 +16,8 @@ const AdvancedReports = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
 
   // Report generation state
-  const [comparisonType, setComparisonType] = useState('15days'); // '15days', '30days', or 'midmonth'
+  const [reportDays, setReportDays] = useState(30); // 15 or 30 days
+  const [sectionComparisonType, setSectionComparisonType] = useState('15days'); // For section reports
   const [generatingReport, setGeneratingReport] = useState(false);
 
   // Section colors matching the Sections page
@@ -85,7 +86,7 @@ const AdvancedReports = () => {
 
   const handleDeviceClick = (device) => {
     setSelectedDevice(device);
-    setComparisonType('15days'); // Default to 15 days
+    setReportDays(30); // Default to 30 days
     setShowReportModal(true);
   };
 
@@ -100,7 +101,7 @@ const AdvancedReports = () => {
       let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel;
 
       // Define date ranges based on comparison type
-      if (comparisonType === '15days') {
+      if (sectionComparisonType === '15days') {
         // Period B: Last 15 days (current period)
         periodB_end = new Date(now);
         periodB_start = new Date(now);
@@ -112,7 +113,7 @@ const AdvancedReports = () => {
         periodA_start.setDate(periodA_start.getDate() - 15);
 
         comparisonLabel = '15 Days';
-      } else if (comparisonType === '30days') {
+      } else if (sectionComparisonType === '30days') {
         // Period B: Last 30 days (current period)
         periodB_end = new Date(now);
         periodB_start = new Date(now);
@@ -268,7 +269,7 @@ const AdvancedReports = () => {
     }
   };
 
-  // Generate Single Device Report
+  // Generate Single Device Monthly Report with 6 AM readings
   const generateReport = async () => {
     if (!selectedDevice) return;
 
@@ -276,31 +277,15 @@ const AdvancedReports = () => {
 
     try {
       const now = new Date();
-      let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel;
+      const endDate = new Date(now);
+      const startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - reportDays);
 
-      if (comparisonType === '15days') {
-        periodB_end = new Date(now);
-        periodB_start = new Date(now);
-        periodB_start.setDate(periodB_start.getDate() - 15);
-        periodA_end = new Date(periodB_start);
-        periodA_start = new Date(periodA_end);
-        periodA_start.setDate(periodA_start.getDate() - 15);
-        comparisonLabel = '15 Days';
-      } else if (comparisonType === '30days') {
-        periodB_end = new Date(now);
-        periodB_start = new Date(now);
-        periodB_start.setDate(periodB_start.getDate() - 30);
-        periodA_end = new Date(periodB_start);
-        periodA_start = new Date(periodA_end);
-        periodA_start.setDate(periodA_start.getDate() - 30);
-        comparisonLabel = '30 Days';
-      }
-
-      const formatDateShort = (date) => {
-        return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+      const formatDate = (date) => {
+        return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
       };
 
-      const fetchPeriodData = async (startDate, endDate) => {
+      const fetchAllData = async () => {
         try {
           let allData = [];
           let page = 1;
@@ -328,56 +313,109 @@ const AdvancedReports = () => {
           }
           return allData;
         } catch (err) {
-          console.error('Error fetching period data:', err);
+          console.error('Error fetching data:', err);
           return [];
         }
       };
 
       toast('Fetching data...', { icon: 'ℹ️' });
 
-      const [periodA_data, periodB_data] = await Promise.all([
-        fetchPeriodData(periodA_start, periodA_end),
-        fetchPeriodData(periodB_start, periodB_end)
-      ]);
+      const allReadings = await fetchAllData();
 
-      const calculateTotalVolume = (readings) => {
-        if (!Array.isArray(readings)) return 0;
-        return readings.reduce((sum, reading) => {
-          const volume = reading.last_hour_volume || reading.volume || 0;
-          return sum + volume;
-        }, 0);
-      };
+      // Filter for 6 AM readings (between 5:30 AM and 6:30 AM to catch closest reading)
+      // Group by date and pick the reading closest to 6 AM
+      const readingsByDate = {};
 
-      const periodA_volume = calculateTotalVolume(periodA_data);
-      const periodB_volume = calculateTotalVolume(periodB_data);
-      const difference = periodB_volume - periodA_volume;
+      allReadings.forEach(reading => {
+        const readingDate = new Date(reading.timestamp || reading.created_at);
+        const dateKey = `${readingDate.getFullYear()}-${String(readingDate.getMonth() + 1).padStart(2, '0')}-${String(readingDate.getDate()).padStart(2, '0')}`;
+        const hour = readingDate.getHours();
+        const minutes = readingDate.getMinutes();
+        const timeInMinutes = hour * 60 + minutes;
+        const targetTime = 6 * 60; // 6 AM in minutes
+        const timeDiff = Math.abs(timeInMinutes - targetTime);
 
-      const excelData = [{
-        'Sr. No.': 1,
-        'Region': selectedDevice.location || 'Unknown',
-        'SMSs Name': selectedDevice.device_name || selectedDevice.client_id,
-        [`Volume for ${formatDateShort(periodA_start)} to ${formatDateShort(periodA_end)} (MMCF) [A]`]: periodA_volume.toFixed(3),
-        [`Volume for ${formatDateShort(periodB_start)} to ${formatDateShort(periodB_end)} (MMCF) [B]`]: periodB_volume.toFixed(3),
-        'Difference (B - A)': difference.toFixed(3)
-      }];
+        // Only consider readings between 5 AM and 7 AM
+        if (hour >= 5 && hour <= 7) {
+          if (!readingsByDate[dateKey] || timeDiff < readingsByDate[dateKey].timeDiff) {
+            readingsByDate[dateKey] = {
+              reading,
+              timeDiff
+            };
+          }
+        }
+      });
+
+      // Convert to sorted array
+      const dailyReadings = Object.entries(readingsByDate)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([dateKey, { reading }]) => reading);
+
+      if (dailyReadings.length === 0) {
+        toast.error('No 6 AM readings found for the selected period');
+        setGeneratingReport(false);
+        return;
+      }
+
+      // Create Excel data with all parameters
+      const excelData = dailyReadings.map((reading, index) => {
+        const readingDate = new Date(reading.timestamp || reading.created_at);
+        return {
+          'Sr. No.': index + 1,
+          'Date': formatDate(readingDate),
+          'Time': `${String(readingDate.getHours()).padStart(2, '0')}:${String(readingDate.getMinutes()).padStart(2, '0')}`,
+          'Flow Time (hrs)': reading.last_hour_flow_time?.toFixed(2) || '-',
+          'Diff Pressure (IWC)': reading.last_hour_diff_pressure?.toFixed(2) || '-',
+          'Static Pressure (PSI)': reading.last_hour_static_pressure?.toFixed(1) || '-',
+          'Temperature (°F)': reading.last_hour_temperature?.toFixed(1) || '-',
+          'Volume (MCF)': reading.last_hour_volume?.toFixed(3) || '-',
+          'Energy': reading.last_hour_energy?.toFixed(2) || '-',
+          'Specific Gravity': reading.specific_gravity?.toFixed(4) || '-',
+          'Battery (V)': reading.battery?.toFixed(2) || '-'
+        };
+      });
+
+      // Add summary row
+      const totalVolume = dailyReadings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
+      const avgTemp = dailyReadings.reduce((sum, r) => sum + (r.last_hour_temperature || 0), 0) / dailyReadings.length;
+      const avgPressure = dailyReadings.reduce((sum, r) => sum + (r.last_hour_static_pressure || 0), 0) / dailyReadings.length;
+
+      excelData.push({
+        'Sr. No.': '',
+        'Date': 'TOTAL/AVG',
+        'Time': '',
+        'Flow Time (hrs)': '',
+        'Diff Pressure (IWC)': '',
+        'Static Pressure (PSI)': avgPressure.toFixed(1),
+        'Temperature (°F)': avgTemp.toFixed(1),
+        'Volume (MCF)': totalVolume.toFixed(3),
+        'Energy': '',
+        'Specific Gravity': '',
+        'Battery (V)': ''
+      });
 
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       worksheet['!cols'] = [
-        { wch: 8 },
-        { wch: 20 },
-        { wch: 30 },
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 18 },
+        { wch: 8 },   // Sr. No.
+        { wch: 12 },  // Date
+        { wch: 8 },   // Time
+        { wch: 14 },  // Flow Time
+        { wch: 18 },  // Diff Pressure
+        { wch: 18 },  // Static Pressure
+        { wch: 16 },  // Temperature
+        { wch: 14 },  // Volume
+        { wch: 10 },  // Energy
+        { wch: 14 },  // Specific Gravity
+        { wch: 12 },  // Battery
       ];
 
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `${comparisonLabel} Comparison`);
+      XLSX.utils.book_append_sheet(workbook, worksheet, `${reportDays} Days Report`);
 
-      const filename = `${selectedDevice.client_id}_${comparisonLabel}_Comparison_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const filename = `${selectedDevice.client_id}_${reportDays}Days_6AM_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
       XLSX.writeFile(workbook, filename);
 
-      toast.success(`Report generated successfully!`);
+      toast.success(`Report generated successfully! (${dailyReadings.length} days of data)`);
       setShowReportModal(false);
     } catch (error) {
       console.error('Error generating report:', error);
@@ -575,8 +613,8 @@ const AdvancedReports = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <select
-                    value={comparisonType}
-                    onChange={(e) => setComparisonType(e.target.value)}
+                    value={sectionComparisonType}
+                    onChange={(e) => setSectionComparisonType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="15days">15 Days Comparison</option>
@@ -831,11 +869,11 @@ const AdvancedReports = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 rounded-t-2xl">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-white">Generate Report</h3>
-                  <p className="text-blue-100 mt-1">{selectedDevice?.client_id}</p>
+                  <h3 className="text-2xl font-bold text-white">Monthly Data Report</h3>
+                  <p className="text-green-100 mt-1">{selectedDevice?.device_name || selectedDevice?.client_id}</p>
                 </div>
                 <button
                   onClick={() => setShowReportModal(false)}
@@ -849,72 +887,85 @@ const AdvancedReports = () => {
             {/* Modal Body */}
             <div className="p-6 space-y-6">
               {/* Info Banner */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <Calendar className="w-5 h-5 text-green-600 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-semibold text-blue-900 mb-1">Volume Comparison Report</h4>
-                    <p className="text-sm text-blue-700">
-                      Compare volume data between two time periods for device <strong>{selectedDevice?.client_id}</strong>
+                    <h4 className="text-sm font-semibold text-green-900 mb-1">Daily 6 AM Readings Report</h4>
+                    <p className="text-sm text-green-700">
+                      Download raw data with one reading per day (6 AM) for device <strong>{selectedDevice?.client_id}</strong>
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Comparison Type Selection */}
+              {/* Report Duration Selection */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                  <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                  Select Comparison Type
+                  <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                  Select Report Duration
                 </h4>
                 <div className="grid grid-cols-1 gap-4">
-                  {/* 15 Days Comparison */}
+                  {/* 15 Days Report */}
                   <div
-                    onClick={() => setComparisonType('15days')}
+                    onClick={() => setReportDays(15)}
                     className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      comparisonType === '15days'
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                      reportDays === 15
+                        ? 'border-green-500 bg-green-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow'
                     }`}
                   >
                     <div className="mt-1">
-                      {comparisonType === '15days' ? (
-                        <CheckSquare className="w-6 h-6 text-blue-600" />
+                      {reportDays === 15 ? (
+                        <CheckSquare className="w-6 h-6 text-green-600" />
                       ) : (
                         <Square className="w-6 h-6 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-bold text-gray-900 text-lg mb-1">15 Days Comparison</div>
+                      <div className="font-bold text-gray-900 text-lg mb-1">15 Days Report</div>
                       <p className="text-sm text-gray-600">
-                        Compare volume between the <strong>last 15 days</strong> and the <strong>previous 15 days</strong> (16-30 days ago)
+                        Download <strong>15 days</strong> of data with one 6 AM reading per day
                       </p>
                     </div>
                   </div>
 
-                  {/* 30 Days Comparison */}
+                  {/* 30 Days Report */}
                   <div
-                    onClick={() => setComparisonType('30days')}
+                    onClick={() => setReportDays(30)}
                     className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      comparisonType === '30days'
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                      reportDays === 30
+                        ? 'border-green-500 bg-green-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow'
                     }`}
                   >
                     <div className="mt-1">
-                      {comparisonType === '30days' ? (
-                        <CheckSquare className="w-6 h-6 text-blue-600" />
+                      {reportDays === 30 ? (
+                        <CheckSquare className="w-6 h-6 text-green-600" />
                       ) : (
                         <Square className="w-6 h-6 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-bold text-gray-900 text-lg mb-1">30 Days Comparison</div>
+                      <div className="font-bold text-gray-900 text-lg mb-1">30 Days Report</div>
                       <p className="text-sm text-gray-600">
-                        Compare volume between the <strong>last 30 days</strong> and the <strong>previous 30 days</strong> (31-60 days ago)
+                        Download <strong>30 days</strong> of data with one 6 AM reading per day
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Data included info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Report includes:</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> Flow Time</div>
+                  <div className="flex items-center gap-1"><Wind className="w-3 h-3" /> Diff Pressure</div>
+                  <div className="flex items-center gap-1"><Gauge className="w-3 h-3" /> Static Pressure</div>
+                  <div className="flex items-center gap-1"><Thermometer className="w-3 h-3" /> Temperature</div>
+                  <div className="flex items-center gap-1"><Droplets className="w-3 h-3" /> Volume</div>
+                  <div className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Energy & Sp. Gravity</div>
                 </div>
               </div>
             </div>
@@ -931,17 +982,17 @@ const AdvancedReports = () => {
                 <button
                   onClick={generateReport}
                   disabled={generatingReport}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg transition-all font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg transition-all font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {generatingReport ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Generating Comparison...
+                      Downloading Data...
                     </>
                   ) : (
                     <>
                       <Download className="w-5 h-5" />
-                      Generate Comparison Report
+                      Download {reportDays} Days Report
                     </>
                   )}
                 </button>
