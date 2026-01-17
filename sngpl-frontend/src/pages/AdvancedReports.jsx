@@ -105,26 +105,29 @@ const AdvancedReports = () => {
 
       // Define date ranges based on comparison type
       if (sectionComparisonType === '15days') {
-        // Period B: Current month 1st to 15th
-        periodB_end = new Date(now.getFullYear(), now.getMonth(), 15, 23, 59, 59);
+        // Period B: Current month 1st to 15th (or up to today if before 15th)
+        const currentDay = now.getDate();
+        const periodBEndDay = Math.min(currentDay, 15);
+        periodB_end = new Date(now.getFullYear(), now.getMonth(), periodBEndDay, 23, 59, 59);
         periodB_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
 
-        // Period A: Previous year same period (1st to 15th)
-        periodA_end = new Date(now.getFullYear() - 1, now.getMonth(), 15, 23, 59, 59);
-        periodA_start = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0);
+        // Period A: Previous month 1st to 15th
+        periodA_end = new Date(now.getFullYear(), now.getMonth() - 1, 15, 23, 59, 59);
+        periodA_start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
 
         comparisonLabel = 'MID-MONTH';
         periodType = '01*15';
       } else if (sectionComparisonType === '30days') {
-        // Period B: Full current month
+        // Period B: Current month (full month or up to today)
         const lastDayB = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        periodB_end = new Date(now.getFullYear(), now.getMonth(), lastDayB, 23, 59, 59);
+        const currentDay = now.getDate();
+        periodB_end = new Date(now.getFullYear(), now.getMonth(), currentDay, 23, 59, 59);
         periodB_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
 
-        // Period A: Previous year same month
-        const lastDayA = new Date(now.getFullYear() - 1, now.getMonth() + 1, 0).getDate();
-        periodA_end = new Date(now.getFullYear() - 1, now.getMonth(), lastDayA, 23, 59, 59);
-        periodA_start = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0);
+        // Period A: Previous month (full month)
+        const lastDayA = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        periodA_end = new Date(now.getFullYear(), now.getMonth() - 1, lastDayA, 23, 59, 59);
+        periodA_start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
 
         comparisonLabel = 'FULL-MONTH';
         periodType = '01*' + lastDayB;
@@ -216,8 +219,11 @@ const AdvancedReports = () => {
             fetchDeviceData(device.id, periodB_start, periodB_end)
           ]);
 
-          const volumeA = calculateTotalVolume(periodA_data);
-          const volumeB = calculateTotalVolume(periodB_data);
+          // Calculate volume in MCF then convert to MMCF (divide by 1000)
+          const volumeA_MCF = calculateTotalVolume(periodA_data);
+          const volumeB_MCF = calculateTotalVolume(periodB_data);
+          const volumeA = volumeA_MCF / 1000; // Convert to MMCF
+          const volumeB = volumeB_MCF / 1000; // Convert to MMCF
           const difference = volumeB - volumeA;
 
           regionTotalA += volumeA;
@@ -645,8 +651,8 @@ const AdvancedReports = () => {
                     onChange={(e) => setSectionComparisonType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="15days">Mid-Month (1st-15th) vs Last Year</option>
-                    <option value="30days">Full Month vs Last Year</option>
+                    <option value="15days">Mid-Month (1st-15th) vs Previous Month</option>
+                    <option value="30days">Full Month vs Previous Month</option>
                   </select>
                   <button
                     onClick={generateSectionReport}
