@@ -218,7 +218,54 @@ const AdvancedReports = () => {
         return totalVolume;
       };
 
-      toast('Generating report for all devices in section...', { icon: 'ℹ️' });
+      // Column headers matching the format - dates as 01*15.12.2024
+      const dateFormatA = `${periodType}.${String(periodA_start.getMonth() + 1).padStart(2, '0')}.${periodA_start.getFullYear()}`;
+      const dateFormatB = `${periodType}.${String(periodB_start.getMonth() + 1).padStart(2, '0')}.${periodB_start.getFullYear()}`;
+      const colA = `Volume for the month of ${monthA}-${periodA_start.getFullYear()} ${dateFormatA} (MMCF) (A)`;
+      const colB = `Volume for the month of ${monthB}-${periodB_start.getFullYear()} ${dateFormatB} (MMCF) (B)`;
+
+      // OPTIMIZED: Fetch all device data in parallel batches
+      const BATCH_SIZE = 5; // Process 5 devices at a time
+      const totalDevices = sectionDevices.length;
+
+      toast.loading(`Fetching data for ${totalDevices} devices...`, { id: 'section-report' });
+
+      // Process devices in parallel batches
+      const deviceResults = new Map();
+
+      for (let i = 0; i < totalDevices; i += BATCH_SIZE) {
+        const batch = sectionDevices.slice(i, i + BATCH_SIZE);
+        const progress = Math.min(i + BATCH_SIZE, totalDevices);
+
+        toast.loading(`Processing devices ${progress}/${totalDevices}...`, { id: 'section-report' });
+
+        // Fetch data for all devices in this batch in parallel
+        const batchPromises = batch.map(async (device) => {
+          const [periodA_data, periodB_data] = await Promise.all([
+            fetchDeviceData(device.id, periodA_start, periodA_end),
+            fetchDeviceData(device.id, periodB_start, periodB_end)
+          ]);
+
+          const volumeA_MCF = calculateTotalVolume(periodA_data);
+          const volumeB_MCF = calculateTotalVolume(periodB_data);
+          const volumeA = volumeA_MCF / 1000; // Convert to MMCF
+          const volumeB = volumeB_MCF / 1000; // Convert to MMCF
+
+          return {
+            device,
+            volumeA,
+            volumeB,
+            difference: volumeB - volumeA
+          };
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        batchResults.forEach(result => {
+          deviceResults.set(result.device.id, result);
+        });
+      }
+
+      toast.loading('Building report...', { id: 'section-report' });
 
       // Group devices by region/location
       const devicesByRegion = {};
@@ -229,12 +276,6 @@ const AdvancedReports = () => {
         }
         devicesByRegion[region].push(device);
       });
-
-      // Column headers matching the format - dates as 01*15.12.2024
-      const dateFormatA = `${periodType}.${String(periodA_start.getMonth() + 1).padStart(2, '0')}.${periodA_start.getFullYear()}`;
-      const dateFormatB = `${periodType}.${String(periodB_start.getMonth() + 1).padStart(2, '0')}.${periodB_start.getFullYear()}`;
-      const colA = `Volume for the month of ${monthA}-${periodA_start.getFullYear()} ${dateFormatA} (MMCF) (A)`;
-      const colB = `Volume for the month of ${monthB}-${periodB_start.getFullYear()} ${dateFormatB} (MMCF) (B)`;
 
       // Process all devices and collect data
       const excelData = [];
@@ -251,18 +292,11 @@ const AdvancedReports = () => {
         let isFirstInRegion = true;
 
         for (const device of regionDevices) {
-          // Fetch data for both periods
-          const [periodA_data, periodB_data] = await Promise.all([
-            fetchDeviceData(device.id, periodA_start, periodA_end),
-            fetchDeviceData(device.id, periodB_start, periodB_end)
-          ]);
-
-          // Calculate volume in MCF then convert to MMCF (divide by 1000)
-          const volumeA_MCF = calculateTotalVolume(periodA_data);
-          const volumeB_MCF = calculateTotalVolume(periodB_data);
-          const volumeA = volumeA_MCF / 1000; // Convert to MMCF
-          const volumeB = volumeB_MCF / 1000; // Convert to MMCF
-          const difference = volumeB - volumeA;
+          // Get pre-fetched data from map
+          const result = deviceResults.get(device.id);
+          const volumeA = result?.volumeA || 0;
+          const volumeB = result?.volumeB || 0;
+          const difference = result?.difference || 0;
 
           regionTotalA += volumeA;
           regionTotalB += volumeB;
@@ -412,9 +446,11 @@ const AdvancedReports = () => {
       // Download
       XLSX.writeFile(workbook, filename);
 
+      toast.dismiss('section-report');
       toast.success(`Section ${selectedSection.section_id} report generated successfully!`);
     } catch (error) {
       console.error('Error generating report:', error);
+      toast.dismiss('section-report');
       toast.error('Failed to generate section report');
     } finally {
       setGeneratingReport(false);
