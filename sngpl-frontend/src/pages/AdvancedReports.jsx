@@ -579,8 +579,7 @@ const AdvancedReports = () => {
           temperature: reading.last_hour_temperature?.toFixed(1) || '-',
           volume: reading.last_hour_volume?.toFixed(3) || '-',
           energy: reading.last_hour_energy?.toFixed(2) || '-',
-          specificGravity: reading.specific_gravity?.toFixed(4) || '-',
-          battery: reading.battery?.toFixed(2) || '-'
+          specificGravity: reading.specific_gravity?.toFixed(4) || '-'
         };
       });
 
@@ -657,7 +656,7 @@ const AdvancedReports = () => {
       const headers = [
         'Sr. No.', 'Date', 'Time', 'Flow Time (hrs)', 'Diff Pressure (IWC)',
         'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
-        'Energy', 'Specific Gravity', 'Battery (V)'
+        'Energy', 'Specific Gravity'
       ];
       headers.forEach((header, idx) => {
         const col = String.fromCharCode(65 + idx); // A, B, C...
@@ -677,7 +676,6 @@ const AdvancedReports = () => {
         worksheet[`H${rowNum}`] = { v: row.volume, s: dataStyle };
         worksheet[`I${rowNum}`] = { v: row.energy, s: dataStyle };
         worksheet[`J${rowNum}`] = { v: row.specificGravity, s: dataStyle };
-        worksheet[`K${rowNum}`] = { v: row.battery, s: dataStyle };
         rowNum++;
       });
 
@@ -692,10 +690,9 @@ const AdvancedReports = () => {
       worksheet[`H${rowNum}`] = { v: totalVolume.toFixed(3), s: totalRowStyle };
       worksheet[`I${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
-      worksheet[`K${rowNum}`] = { v: '', s: totalRowStyle };
 
       // Set the range of the worksheet
-      worksheet['!ref'] = `A1:K${rowNum}`;
+      worksheet['!ref'] = `A1:J${rowNum}`;
 
       // Set column widths
       worksheet['!cols'] = [
@@ -709,7 +706,6 @@ const AdvancedReports = () => {
         { wch: 14 },  // Volume
         { wch: 10 },  // Energy
         { wch: 14 },  // Specific Gravity
-        { wch: 12 },  // Battery
       ];
 
       // Set row heights
@@ -722,8 +718,8 @@ const AdvancedReports = () => {
 
       // Merge title cells
       worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }, // Title row 1
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } }, // Title row 2
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title row 1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, // Title row 2
       ];
 
       const workbook = XLSX.utils.book_new();
