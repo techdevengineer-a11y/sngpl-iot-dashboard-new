@@ -16,7 +16,9 @@ const AdvancedReports = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
 
   // Report generation state
-  const [reportDays, setReportDays] = useState(30); // 15 or 30 days
+  const [reportType, setReportType] = useState('30days'); // 15days, 30days, or custom
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [sectionComparisonType, setSectionComparisonType] = useState('15days'); // For section reports
   const [generatingReport, setGeneratingReport] = useState(false);
 
@@ -86,7 +88,13 @@ const AdvancedReports = () => {
 
   const handleDeviceClick = (device) => {
     setSelectedDevice(device);
-    setReportDays(30); // Default to 30 days
+    setReportType('30days'); // Default to 30 days
+    // Set default custom dates (last 30 days)
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - 30);
+    setCustomStartDate(startDate.toISOString().split('T')[0]);
+    setCustomEndDate(now.toISOString().split('T')[0]);
     setShowReportModal(true);
   };
 
@@ -421,13 +429,34 @@ const AdvancedReports = () => {
 
     try {
       const now = new Date();
-      const endDate = new Date(now);
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - reportDays);
+      let startDate, endDate;
+
+      // Determine date range based on report type
+      if (reportType === 'custom') {
+        if (!customStartDate || !customEndDate) {
+          toast.error('Please select both start and end dates');
+          setGeneratingReport(false);
+          return;
+        }
+        startDate = new Date(customStartDate);
+        endDate = new Date(customEndDate);
+        endDate.setHours(23, 59, 59);
+      } else {
+        const days = reportType === '15days' ? 15 : 30;
+        endDate = new Date(now);
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - days);
+      }
 
       const formatDate = (date) => {
         return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
       };
+
+      const formatDateShort = (date) => {
+        return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+      };
+
+      const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
       const fetchAllData = async () => {
         try {
@@ -466,7 +495,7 @@ const AdvancedReports = () => {
 
       const allReadings = await fetchAllData();
 
-      // Filter for 6 AM readings (between 5:30 AM and 6:30 AM to catch closest reading)
+      // Filter for 6 AM readings (between 5 AM and 7 AM to catch closest reading)
       // Group by date and pick the reading closest to 6 AM
       const readingsByDate = {};
 
@@ -493,7 +522,7 @@ const AdvancedReports = () => {
       // Convert to sorted array
       const dailyReadings = Object.entries(readingsByDate)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([dateKey, { reading }]) => reading);
+        .map(([, { reading }]) => reading);
 
       if (dailyReadings.length === 0) {
         toast.error('No 6 AM readings found for the selected period');
@@ -505,40 +534,134 @@ const AdvancedReports = () => {
       const excelData = dailyReadings.map((reading, index) => {
         const readingDate = new Date(reading.timestamp || reading.created_at);
         return {
-          'Sr. No.': index + 1,
-          'Date': formatDate(readingDate),
-          'Time': `${String(readingDate.getHours()).padStart(2, '0')}:${String(readingDate.getMinutes()).padStart(2, '0')}`,
-          'Flow Time (hrs)': reading.last_hour_flow_time?.toFixed(2) || '-',
-          'Diff Pressure (IWC)': reading.last_hour_diff_pressure?.toFixed(2) || '-',
-          'Static Pressure (PSI)': reading.last_hour_static_pressure?.toFixed(1) || '-',
-          'Temperature (°F)': reading.last_hour_temperature?.toFixed(1) || '-',
-          'Volume (MCF)': reading.last_hour_volume?.toFixed(3) || '-',
-          'Energy': reading.last_hour_energy?.toFixed(2) || '-',
-          'Specific Gravity': reading.specific_gravity?.toFixed(4) || '-',
-          'Battery (V)': reading.battery?.toFixed(2) || '-'
+          srNo: index + 1,
+          date: formatDate(readingDate),
+          time: `${String(readingDate.getHours()).padStart(2, '0')}:${String(readingDate.getMinutes()).padStart(2, '0')}`,
+          flowTime: reading.last_hour_flow_time?.toFixed(2) || '-',
+          diffPressure: reading.last_hour_diff_pressure?.toFixed(2) || '-',
+          staticPressure: reading.last_hour_static_pressure?.toFixed(1) || '-',
+          temperature: reading.last_hour_temperature?.toFixed(1) || '-',
+          volume: reading.last_hour_volume?.toFixed(3) || '-',
+          energy: reading.last_hour_energy?.toFixed(2) || '-',
+          specificGravity: reading.specific_gravity?.toFixed(4) || '-',
+          battery: reading.battery?.toFixed(2) || '-'
         };
       });
 
-      // Add summary row
+      // Calculate summary
       const totalVolume = dailyReadings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
       const avgTemp = dailyReadings.reduce((sum, r) => sum + (r.last_hour_temperature || 0), 0) / dailyReadings.length;
       const avgPressure = dailyReadings.reduce((sum, r) => sum + (r.last_hour_static_pressure || 0), 0) / dailyReadings.length;
 
-      excelData.push({
-        'Sr. No.': '',
-        'Date': 'TOTAL/AVG',
-        'Time': '',
-        'Flow Time (hrs)': '',
-        'Diff Pressure (IWC)': '',
-        'Static Pressure (PSI)': avgPressure.toFixed(1),
-        'Temperature (°F)': avgTemp.toFixed(1),
-        'Volume (MCF)': totalVolume.toFixed(3),
-        'Energy': '',
-        'Specific Gravity': '',
-        'Battery (V)': ''
+      // Create worksheet with styled headers
+      const worksheet = XLSX.utils.aoa_to_sheet([]);
+
+      // Define styles
+      const darkRedHeaderStyle = {
+        fill: { fgColor: { rgb: '8B0000' } },
+        font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 14 },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+
+      const columnHeaderStyle = {
+        fill: { fgColor: { rgb: 'FFFFFF' } },
+        font: { color: { rgb: '8B0000' }, bold: true, sz: 10 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        }
+      };
+
+      const dataStyle = {
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+
+      const totalRowStyle = {
+        fill: { fgColor: { rgb: 'FFFF00' } },
+        font: { bold: true },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+
+      // Device name for title
+      const deviceName = selectedDevice.device_name || selectedDevice.client_id;
+      const dateRangeText = `${formatDateShort(startDate)} TO ${formatDateShort(endDate)}`;
+
+      // Row 1: Main title with device name (dark red background)
+      worksheet['A1'] = {
+        v: `DAILY 6 AM READINGS REPORT - ${deviceName.toUpperCase()}`,
+        s: darkRedHeaderStyle
+      };
+
+      // Row 2: Date range subtitle
+      worksheet['A2'] = {
+        v: `PERIOD: ${dateRangeText}`,
+        s: {
+          font: { bold: true, sz: 12 },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        }
+      };
+
+      // Row 3: Empty row
+      // Row 4: Column headers
+      const headers = [
+        'Sr. No.', 'Date', 'Time', 'Flow Time (hrs)', 'Diff Pressure (IWC)',
+        'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
+        'Energy', 'Specific Gravity', 'Battery (V)'
+      ];
+      headers.forEach((header, idx) => {
+        const col = String.fromCharCode(65 + idx); // A, B, C...
+        worksheet[`${col}4`] = { v: header, s: columnHeaderStyle };
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      // Add data starting from row 5
+      let rowNum = 5;
+      excelData.forEach((row) => {
+        worksheet[`A${rowNum}`] = { v: row.srNo, s: dataStyle };
+        worksheet[`B${rowNum}`] = { v: row.date, s: dataStyle };
+        worksheet[`C${rowNum}`] = { v: row.time, s: dataStyle };
+        worksheet[`D${rowNum}`] = { v: row.flowTime, s: dataStyle };
+        worksheet[`E${rowNum}`] = { v: row.diffPressure, s: dataStyle };
+        worksheet[`F${rowNum}`] = { v: row.staticPressure, s: dataStyle };
+        worksheet[`G${rowNum}`] = { v: row.temperature, s: dataStyle };
+        worksheet[`H${rowNum}`] = { v: row.volume, s: dataStyle };
+        worksheet[`I${rowNum}`] = { v: row.energy, s: dataStyle };
+        worksheet[`J${rowNum}`] = { v: row.specificGravity, s: dataStyle };
+        worksheet[`K${rowNum}`] = { v: row.battery, s: dataStyle };
+        rowNum++;
+      });
+
+      // Add total/average row with yellow background
+      worksheet[`A${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`B${rowNum}`] = { v: 'TOTAL/AVG', s: totalRowStyle };
+      worksheet[`C${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`D${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`E${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`F${rowNum}`] = { v: avgPressure.toFixed(1), s: totalRowStyle };
+      worksheet[`G${rowNum}`] = { v: avgTemp.toFixed(1), s: totalRowStyle };
+      worksheet[`H${rowNum}`] = { v: totalVolume.toFixed(3), s: totalRowStyle };
+      worksheet[`I${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`K${rowNum}`] = { v: '', s: totalRowStyle };
+
+      // Set the range of the worksheet
+      worksheet['!ref'] = `A1:K${rowNum}`;
+
+      // Set column widths
       worksheet['!cols'] = [
         { wch: 8 },   // Sr. No.
         { wch: 12 },  // Date
@@ -553,10 +676,25 @@ const AdvancedReports = () => {
         { wch: 12 },  // Battery
       ];
 
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `${reportDays} Days Report`);
+      // Set row heights
+      worksheet['!rows'] = [
+        { hpt: 30 },  // Row 1: Title
+        { hpt: 22 },  // Row 2: Subtitle
+        { hpt: 15 },  // Row 3: Empty
+        { hpt: 35 },  // Row 4: Column headers
+      ];
 
-      const filename = `${selectedDevice.client_id}_${reportDays}Days_6AM_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      // Merge title cells
+      worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }, // Title row 1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } }, // Title row 2
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      const sheetName = reportType === 'custom' ? 'Custom Report' : `${reportType === '15days' ? '15' : '30'} Days Report`;
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+      const filename = `${selectedDevice.client_id}_6AM_Report_${formatDateShort(startDate)}_to_${formatDateShort(endDate)}.xlsx`;
       XLSX.writeFile(workbook, filename);
 
       toast.success(`Report generated successfully! (${dailyReadings.length} days of data)`);
@@ -1049,18 +1187,18 @@ const AdvancedReports = () => {
                   <FileSpreadsheet className="w-5 h-5 text-green-600" />
                   Select Report Duration
                 </h4>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {/* 15 Days Report */}
                   <div
-                    onClick={() => setReportDays(15)}
-                    className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      reportDays === 15
+                    onClick={() => setReportType('15days')}
+                    className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      reportType === '15days'
                         ? 'border-green-500 bg-green-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow'
                     }`}
                   >
                     <div className="mt-1">
-                      {reportDays === 15 ? (
+                      {reportType === '15days' ? (
                         <CheckSquare className="w-6 h-6 text-green-600" />
                       ) : (
                         <Square className="w-6 h-6 text-gray-400" />
@@ -1076,15 +1214,15 @@ const AdvancedReports = () => {
 
                   {/* 30 Days Report */}
                   <div
-                    onClick={() => setReportDays(30)}
-                    className={`flex items-start gap-4 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      reportDays === 30
+                    onClick={() => setReportType('30days')}
+                    className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      reportType === '30days'
                         ? 'border-green-500 bg-green-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow'
                     }`}
                   >
                     <div className="mt-1">
-                      {reportDays === 30 ? (
+                      {reportType === '30days' ? (
                         <CheckSquare className="w-6 h-6 text-green-600" />
                       ) : (
                         <Square className="w-6 h-6 text-gray-400" />
@@ -1095,6 +1233,54 @@ const AdvancedReports = () => {
                       <p className="text-sm text-gray-600">
                         Download <strong>30 days</strong> of data with one 6 AM reading per day
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Custom Date Range */}
+                  <div
+                    onClick={() => setReportType('custom')}
+                    className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      reportType === 'custom'
+                        ? 'border-green-500 bg-green-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow'
+                    }`}
+                  >
+                    <div className="mt-1">
+                      {reportType === 'custom' ? (
+                        <CheckSquare className="w-6 h-6 text-green-600" />
+                      ) : (
+                        <Square className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg mb-1">Custom Date Range</div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Select your own start and end dates
+                      </p>
+                      {reportType === 'custom' && (
+                        <div className="grid grid-cols-2 gap-3 mt-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+                            <input
+                              type="date"
+                              value={customStartDate}
+                              onChange={(e) => setCustomStartDate(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+                            <input
+                              type="date"
+                              value={customEndDate}
+                              onChange={(e) => setCustomEndDate(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1125,7 +1311,7 @@ const AdvancedReports = () => {
                 </button>
                 <button
                   onClick={generateReport}
-                  disabled={generatingReport}
+                  disabled={generatingReport || (reportType === 'custom' && (!customStartDate || !customEndDate))}
                   className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg transition-all font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {generatingReport ? (
@@ -1136,7 +1322,7 @@ const AdvancedReports = () => {
                   ) : (
                     <>
                       <Download className="w-5 h-5" />
-                      Download {reportDays} Days Report
+                      Download {reportType === 'custom' ? 'Custom' : reportType === '15days' ? '15 Days' : '30 Days'} Report
                     </>
                   )}
                 </button>
