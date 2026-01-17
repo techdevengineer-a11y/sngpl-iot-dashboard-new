@@ -208,10 +208,10 @@ const AdvancedReports = () => {
           }
         });
 
-        // Sum the 6 AM daily volumes
+        // Sum the 6 AM daily volumes (only use last_hour_volume, not cumulative volume)
         let totalVolume = 0;
         Object.values(readingsByDate).forEach(({ reading }) => {
-          const volume = reading.last_hour_volume || reading.volume || 0;
+          const volume = reading.last_hour_volume || 0;
           totalVolume += volume;
         });
 
