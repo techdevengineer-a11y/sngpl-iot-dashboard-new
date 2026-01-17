@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import csv
 import io
@@ -17,6 +17,19 @@ from app.core.logging_config import get_logger
 
 logger = get_logger("export_api")
 router = APIRouter()
+
+# Pakistan Standard Time (PKT) is UTC+5
+PKT = timezone(timedelta(hours=5))
+
+
+def convert_to_pkt(dt: datetime) -> datetime:
+    """Convert datetime to Pakistan Standard Time (UTC+5)"""
+    if dt is None:
+        return None
+    # If datetime is naive (no timezone), assume it's UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(PKT)
 
 
 def create_csv_export(readings: list, device_info: dict) -> str:
@@ -39,10 +52,12 @@ def create_csv_export(readings: list, device_info: dict) -> str:
 
     # Write data rows
     for reading in readings:
+        # Convert timestamp to Pakistan Standard Time (UTC+5)
+        pkt_timestamp = convert_to_pkt(reading.timestamp)
         writer.writerow([
             device_info.get('client_id', ''),
             device_info.get('device_name', ''),
-            reading.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '',
             f"{reading.temperature:.2f}",
             f"{reading.static_pressure:.2f}",
             f"{reading.differential_pressure:.2f}",
@@ -86,9 +101,11 @@ def create_excel_export(readings: list, device_info: dict) -> bytes:
 
     # Write data rows
     for row_num, reading in enumerate(readings, 2):
+        # Convert timestamp to Pakistan Standard Time (UTC+5)
+        pkt_timestamp = convert_to_pkt(reading.timestamp)
         ws.cell(row=row_num, column=1, value=device_info.get('client_id', ''))
         ws.cell(row=row_num, column=2, value=device_info.get('device_name', ''))
-        ws.cell(row=row_num, column=3, value=reading.timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+        ws.cell(row=row_num, column=3, value=pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '')
         ws.cell(row=row_num, column=4, value=f"{reading.temperature:.2f}")
         ws.cell(row=row_num, column=5, value=f"{reading.static_pressure:.2f}")
         ws.cell(row=row_num, column=6, value=f"{reading.differential_pressure:.2f}")
@@ -140,12 +157,14 @@ def create_multi_device_csv_export(devices_data: list) -> str:
     for device_data in devices_data:
         device = device_data['device']
         for reading in device_data['readings']:
+            # Convert timestamp to Pakistan Standard Time (UTC+5)
+            pkt_timestamp = convert_to_pkt(reading.timestamp)
             writer.writerow([
                 device.client_id,
                 device.device_name,
                 device.client_id.split('-')[0] if '-' in device.client_id else 'N/A',
                 device.location,
-                reading.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '',
                 f"{reading.temperature:.2f}",
                 f"{reading.static_pressure:.2f}",
                 f"{reading.differential_pressure:.2f}",
@@ -194,11 +213,13 @@ def create_multi_device_excel_export(devices_data: list) -> bytes:
     for device_data in devices_data:
         device = device_data['device']
         for reading in device_data['readings']:
+            # Convert timestamp to Pakistan Standard Time (UTC+5)
+            pkt_timestamp = convert_to_pkt(reading.timestamp)
             ws.cell(row=row_num, column=1, value=device.client_id)
             ws.cell(row=row_num, column=2, value=device.device_name)
             ws.cell(row=row_num, column=3, value=device.client_id.split('-')[0] if '-' in device.client_id else 'N/A')
             ws.cell(row=row_num, column=4, value=device.location)
-            ws.cell(row=row_num, column=5, value=reading.timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+            ws.cell(row=row_num, column=5, value=pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '')
             ws.cell(row=row_num, column=6, value=f"{reading.temperature:.2f}")
             ws.cell(row=row_num, column=7, value=f"{reading.static_pressure:.2f}")
             ws.cell(row=row_num, column=8, value=f"{reading.differential_pressure:.2f}")
