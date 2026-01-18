@@ -86,3 +86,11 @@ alembic/versions/*.py
 *.temp
 tmp/
 temp/
+
+# Backup files
+*.backup
+*.bak
+*.orig
+*.original
+*.clean
+*.old

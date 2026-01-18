@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNGPL IoT Dashboard - Frontend Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+
+        h1 {
+            color: #1e40af;
+            font-size: 28px;
+            border-bottom: 3px solid #1e40af;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #1e3a8a;
+            font-size: 22px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: #eff6ff;
+            border-left: 4px solid #1e40af;
+        }
+
+        h3 {
+            color: #374151;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #1e40af;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tr:hover {
+            background: #eff6ff;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            color: #dc2626;
+        }
+
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+            margin: 20px 0;
+        }
+
+        .section-box {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #e5e7eb;
+        }
+
+        .file-path {
+            background: #ecfdf5;
+            color: #059669;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .toc {
+            background: #f9fafb;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+
+        .toc ol {
+            columns: 2;
+            column-gap: 40px;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #1e40af;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .header-info div {
+            text-align: center;
+        }
+
+        .header-info strong {
+            display: block;
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        @media print {
+            body {
+                padding: 20px;
+            }
+
+            h2 {
+                page-break-after: avoid;
+            }
+
+            table, pre {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>SNGPL IoT Dashboard - Frontend Documentation</h1>
+
+<div class="header-info">
+    <div>
+        <strong>PROJECT</strong>
+        SNGPL IoT Monitoring Dashboard
+    </div>
+    <div>
+        <strong>TECHNOLOGY</strong>
+        React 18 + Vite + TypeScript
+    </div>
+    <div>
+        <strong>STYLING</strong>
+        Tailwind CSS
+    </div>
+    <div>
+        <strong>UPDATED</strong>
+        January 2026
+    </div>
+</div>
+
+<div class="toc">
+    <h3>Table of Contents</h3>
+    <ol>
+        <li><a href="#overview">Project Overview</a></li>
+        <li><a href="#directory">Directory Structure</a></li>
+        <li><a href="#libraries">Main Libraries</a></li>
+        <li><a href="#pages">All Pages & Locations</a></li>
+        <li><a href="#components">All Components</a></li>
+        <li><a href="#api">Services & API Layer</a></li>
+        <li><a href="#state">State Management</a></li>
+        <li><a href="#hooks">Custom Hooks</a></li>
+        <li><a href="#utils">Utilities</a></li>
+        <li><a href="#types">Type Definitions</a></li>
+        <li><a href="#routing">Routing Structure</a></li>
+        <li><a href="#config">Configuration Files</a></li>
+        <li><a href="#dataflow">Data Flow</a></li>
+        <li><a href="#commands">Development Commands</a></li>
+    </ol>
+</div>
+
+<h2 id="overview">1. Project Overview</h2>
+
+<p>This is a <strong>React-based IoT monitoring dashboard</strong> for SNGPL (Sui Northern Gas Pipelines Limited). The application monitors gas pipeline devices, displays real-time sensor data, manages alarms, and generates reports.</p>
+
+<div class="highlight">
+    <strong>Key Features:</strong>
+    <ul>
+        <li>Real-time device monitoring via WebSocket</li>
+        <li>Interactive maps with Leaflet</li>
+        <li>Data visualization with Recharts and Chart.js</li>
+        <li>Excel/CSV/PDF export capabilities</li>
+        <li>Dark/Light theme support</li>
+        <li>Role-based access control</li>
+    </ul>
+</div>
+
+<h2 id="directory">2. Directory Structure</h2>
+
+<pre>
+e:\final\github-backup\sngpl-frontend\
+|
++-- src/
+|   +-- pages/                    # Full-page components (23 pages)
+|   |   +-- StationDetail/        # Sub-components for station page
+|   |
+|   +-- components/               # Reusable UI components (17 components)
+|   |
+|   +-- services/                 # API service layer
+|   |   +-- api.js                # Axios API functions
+|   |
+|   +-- contexts/                 # React Context providers
+|   |   +-- AuthContext.jsx       # Authentication state
+|   |   +-- ThemeContext.jsx      # Theme state (dark/light)
+|   |
+|   +-- hooks/                    # Custom React hooks
+|   |   +-- useDashboardData.ts   # React Query hooks
+|   |
+|   +-- utils/                    # Utility functions
+|   |   +-- alarmZones.ts         # Alarm threshold utilities
+|   |   +-- exportUtils.ts        # Export functions
+|   |
+|   +-- types/                    # TypeScript type definitions
+|   |   +-- dashboard.ts          # Dashboard interfaces
+|   |
+|   +-- App.jsx                   # Root component with routing
+|   +-- main.jsx                  # React DOM entry point
+|   +-- index.css                 # Global Tailwind styles
+|
++-- public/                       # Static assets
++-- index.html                    # HTML entry point
++-- package.json                  # Dependencies
++-- vite.config.js                # Vite configuration
++-- tailwind.config.js            # Tailwind CSS config
++-- postcss.config.js             # PostCSS config
+</pre>
+
+<p><strong>Total Source Files:</strong> 52 TypeScript/JavaScript files</p>
+
+<h2 id="libraries">3. Main Libraries & Dependencies</h2>
+
+<h3>Core Framework</h3>
+<table>
+    <tr><th>Library</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>React</td><td>18.2.0</td><td>UI library</td></tr>
+    <tr><td>React Router DOM</td><td>6.21.1</td><td>Client-side routing</td></tr>
+    <tr><td>Vite</td><td>5.0.11</td><td>Build tool & dev server</td></tr>
+    <tr><td>TypeScript</td><td>5.9.3</td><td>Type checking</td></tr>
+</table>
+
+<h3>State Management & Data Fetching</h3>
+<table>
+    <tr><th>Library</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>TanStack React Query</td><td>5.90.11</td><td>Server state & caching</td></tr>
+    <tr><td>Zustand</td><td>4.4.7</td><td>Client state</td></tr>
+    <tr><td>Axios</td><td>1.6.5</td><td>HTTP client</td></tr>
+</table>
+
+<h3>UI & Visualization</h3>
+<table>
+    <tr><th>Library</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>Tailwind CSS</td><td>3.4.1</td><td>Utility-first CSS</td></tr>
+    <tr><td>Framer Motion</td><td>10.18.0</td><td>Animations</td></tr>
+    <tr><td>Lucide React</td><td>0.307.0</td><td>Icons</td></tr>
+    <tr><td>Recharts</td><td>3.5.1</td><td>Charts</td></tr>
+    <tr><td>Chart.js + react-chartjs-2</td><td>4.5.1 / 5.3.1</td><td>Charts</td></tr>
+    <tr><td>Leaflet + react-leaflet</td><td>1.9.4 / 4.2.1</td><td>Maps</td></tr>
+    <tr><td>react-force-graph-2d</td><td>1.29.0</td><td>Network graphs</td></tr>
+</table>
+
+<h3>Utilities</h3>
+<table>
+    <tr><th>Library</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>date-fns</td><td>3.0.6</td><td>Date formatting</td></tr>
+    <tr><td>xlsx</td><td>0.18.5</td><td>Excel export</td></tr>
+    <tr><td>xlsx-js-style</td><td>1.2.0</td><td>Styled Excel export</td></tr>
+    <tr><td>react-hot-toast</td><td>2.4.1</td><td>Toast notifications</td></tr>
+</table>
+
+<h2 id="pages">4. All Pages & Their Locations</h2>
+
+<p><span class="file-path">Location: src/pages/</span></p>
+
+<table>
+    <tr><th>Page Name</th><th>File</th><th>Route</th><th>Description</th></tr>
+    <tr><td><strong>Login</strong></td><td>Login.jsx</td><td>/login</td><td>Authentication page with animated background</td></tr>
+    <tr><td><strong>Dashboard</strong></td><td>Dashboard.tsx</td><td>/dashboard</td><td>Main dashboard with real-time metrics</td></tr>
+    <tr><td><strong>Sections</strong></td><td>Sections.jsx</td><td>/sections</td><td>Overview of all pipeline sections (I-V)</td></tr>
+    <tr><td><strong>Section Detail</strong></td><td>SectionDetail.tsx</td><td>/sections/:sectionId</td><td>Detailed view of specific section</td></tr>
+    <tr><td><strong>Station Detail</strong></td><td>StationDetail.tsx</td><td>/stations/:stationId</td><td>Individual device monitoring with charts</td></tr>
+    <tr><td><strong>Trends</strong></td><td>Trends.tsx</td><td>/trends/:deviceId</td><td>Historical trend analysis</td></tr>
+    <tr><td><strong>Devices</strong></td><td>Devices.jsx</td><td>/devices</td><td>Device listing with search & filters</td></tr>
+    <tr><td><strong>Device Management</strong></td><td>DeviceManagement.jsx</td><td>/device-management</td><td>CRUD operations for devices</td></tr>
+    <tr><td><strong>Analytics</strong></td><td>Analytics.jsx</td><td>/analytics</td><td>Legacy analytics dashboard</td></tr>
+    <tr><td><strong>Deep Analytics</strong></td><td>DeepAnalytics.jsx</td><td>/deep-analytics</td><td>Advanced analytics features</td></tr>
+    <tr><td><strong>Analytics Page</strong></td><td>AnalyticsPage.jsx</td><td>/analytics-page</td><td>Modern analytics interface</td></tr>
+    <tr><td><strong>Alarms</strong></td><td>Alarms.jsx</td><td>/alarms</td><td>Alarm management & monitoring</td></tr>
+    <tr><td><strong>Section Alarms</strong></td><td>SectionAlarms.jsx</td><td>/alarms/:sectionId</td><td>Section-specific alarms</td></tr>
+    <tr><td><strong>Map</strong></td><td>Map.jsx</td><td>/map</td><td>Geographic visualization with Leaflet</td></tr>
+    <tr><td><strong>Live Monitor</strong></td><td>LiveMonitor.jsx</td><td>/live-monitor</td><td>Real-time device monitoring</td></tr>
+    <tr><td><strong>Reports</strong></td><td>Reports.jsx</td><td>/reports</td><td>Standard report generation</td></tr>
+    <tr><td><strong>Advanced Reports</strong></td><td>AdvancedReports.jsx</td><td>/advanced-reports</td><td>6 AM reports, section comparison</td></tr>
+    <tr><td><strong>Odorant Drum</strong></td><td>OdorantDrumNew.jsx</td><td>/odorant-drum</td><td>Odorant drum monitoring</td></tr>
+    <tr><td><strong>Settings</strong></td><td>Settings.jsx</td><td>/settings</td><td>Application settings</td></tr>
+    <tr><td><strong>Notifications</strong></td><td>Notifications.jsx</td><td>/notifications</td><td>Notification center</td></tr>
+    <tr><td><strong>User Management</strong></td><td>UserManagement.jsx</td><td>/users</td><td>User administration</td></tr>
+    <tr><td><strong>Favourites</strong></td><td>Favourites.jsx</td><td>/favourites</td><td>Saved/favorited items</td></tr>
+    <tr><td><strong>Under Observation</strong></td><td>UnderObservation.jsx</td><td>/under-observation</td><td>Items being monitored</td></tr>
+</table>
+
+<h2 id="components">5. All Components & Their Locations</h2>
+
+<p><span class="file-path">Location: src/components/</span></p>
+
+<table>
+    <tr><th>Component</th><th>File</th><th>Purpose</th><th>Used In</th></tr>
+    <tr><td><strong>Layout</strong></td><td>Layout.jsx</td><td>Main layout with sidebar navigation</td><td>All pages</td></tr>
+    <tr><td><strong>GlobalSearch</strong></td><td>GlobalSearch.jsx</td><td>Search component (Ctrl+K)</td><td>Layout</td></tr>
+    <tr><td><strong>ThemeToggle</strong></td><td>ThemeToggle.jsx</td><td>Dark/light mode switcher</td><td>Layout</td></tr>
+    <tr><td><strong>LoadingScreen</strong></td><td>LoadingScreen.jsx</td><td>Loading/splash screen</td><td>App.jsx</td></tr>
+    <tr><td><strong>ExportModal</strong></td><td>ExportModal.tsx</td><td>Export data modal (CSV/Excel)</td><td>StationDetail, Reports</td></tr>
+    <tr><td><strong>AlarmIndicator</strong></td><td>AlarmIndicator.tsx</td><td>Visual alarm status indicator</td><td>Dashboard, Cards</td></tr>
+    <tr><td><strong>AlarmDistributionChart</strong></td><td>AlarmDistributionChart.tsx</td><td>Alarm distribution pie chart</td><td>Dashboard, Analytics</td></tr>
+    <tr><td><strong>AlarmZoneChart</strong></td><td>AlarmZoneChart.tsx</td><td>Chart with colored alarm zones</td><td>StationDetail</td></tr>
+    <tr><td><strong>AverageValuesChart</strong></td><td>AverageValuesChart.tsx</td><td>Average parameter values</td><td>Dashboard</td></tr>
+    <tr><td><strong>TotalVolumeFlowChart</strong></td><td>TotalVolumeFlowChart.tsx</td><td>Volume flow line chart</td><td>Dashboard</td></tr>
+    <tr><td><strong>TopAlertingDevices</strong></td><td>TopAlertingDevices.tsx</td><td>List of devices with most alerts</td><td>Dashboard</td></tr>
+    <tr><td><strong>TrendSparkline</strong></td><td>TrendSparkline.tsx</td><td>Inline mini trend chart</td><td>Cards, Tables</td></tr>
+    <tr><td><strong>SystemToolbox</strong></td><td>SystemToolbox.tsx</td><td>System tools dropdown</td><td>Dashboard</td></tr>
+    <tr><td><strong>SiteOverview</strong></td><td>SiteOverview.jsx</td><td>High-level site summary</td><td>Dashboard</td></tr>
+    <tr><td><strong>StatusIndicatorsTable</strong></td><td>StatusIndicatorsTable.jsx</td><td>Device/parameter status table</td><td>Dashboard</td></tr>
+    <tr><td><strong>OdorantDrumSidebar</strong></td><td>OdorantDrumSidebar.jsx</td><td>Sidebar for odorant page</td><td>OdorantDrum</td></tr>
+</table>
+
+<h2 id="api">6. Services & API Layer</h2>
+
+<p><span class="file-path">Location: src/services/api.js</span></p>
+
+<h3>Axios Configuration</h3>
+<pre>
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Auto-attach Bearer token from sessionStorage
+API.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+</pre>
+
+<h3>API Functions - Authentication</h3>
+<table>
+    <tr><th>Function</th><th>Method</th><th>Endpoint</th></tr>
+    <tr><td>login(email, password)</td><td>POST</td><td>/auth/login</td></tr>
+    <tr><td>register(userData)</td><td>POST</td><td>/auth/register</td></tr>
+    <tr><td>getCurrentUser()</td><td>GET</td><td>/auth/me</td></tr>
+</table>
+
+<h3>API Functions - Devices</h3>
+<table>
+    <tr><th>Function</th><th>Method</th><th>Endpoint</th></tr>
+    <tr><td>getDevices(params)</td><td>GET</td><td>/devices</td></tr>
+    <tr><td>getDeviceStats()</td><td>GET</td><td>/devices/stats</td></tr>
+    <tr><td>createDevice(data)</td><td>POST</td><td>/devices</td></tr>
+    <tr><td>updateDevice(id, data)</td><td>PUT</td><td>/devices/{id}</td></tr>
+    <tr><td>deleteDevice(id)</td><td>DELETE</td><td>/devices/{id}</td></tr>
+    <tr><td>getDeviceReadings(id, params)</td><td>GET</td><td>/devices/{id}/readings</td></tr>
+</table>
+
+<h3>API Functions - Alarms</h3>
+<table>
+    <tr><th>Function</th><th>Method</th><th>Endpoint</th></tr>
+    <tr><td>getAlarms(params)</td><td>GET</td><td>/alarms</td></tr>
+    <tr><td>getAlarmStats()</td><td>GET</td><td>/alarms/stats</td></tr>
+    <tr><td>getAlarmsBySection(sectionId)</td><td>GET</td><td>/alarms/section/{id}</td></tr>
+    <tr><td>acknowledgeAlarm(id)</td><td>POST</td><td>/alarms/{id}/acknowledge</td></tr>
+    <tr><td>deleteAlarm(id)</td><td>DELETE</td><td>/alarms/{id}</td></tr>
+</table>
+
+<h3>API Functions - Analytics & Readings</h3>
+<table>
+    <tr><th>Function</th><th>Method</th><th>Endpoint</th></tr>
+    <tr><td>getReadings(params)</td><td>GET</td><td>/readings</td></tr>
+    <tr><td>getAnalyticsSummary(params)</td><td>GET</td><td>/analytics/summary</td></tr>
+    <tr><td>exportReadingsCSV(params)</td><td>GET</td><td>/readings/export</td></tr>
+</table>
+
+<h2 id="state">7. State Management</h2>
+
+<p><span class="file-path">Location: src/contexts/</span></p>
+
+<h3>AuthContext.jsx</h3>
+<div class="section-box">
+    <p><strong>Provides:</strong></p>
+    <ul>
+        <li><code>user</code> - Current logged-in user object</li>
+        <li><code>token</code> - JWT token string</li>
+        <li><code>login(email, password)</code> - Login function</li>
+        <li><code>logout()</code> - Logout function</li>
+        <li><code>loading</code> - Auth loading state</li>
+    </ul>
+    <p><strong>Storage:</strong> sessionStorage</p>
+</div>
+
+<h3>ThemeContext.jsx</h3>
+<div class="section-box">
+    <p><strong>Provides:</strong></p>
+    <ul>
+        <li><code>theme</code> - 'light' | 'dark'</li>
+        <li><code>toggleTheme()</code> - Switch theme function</li>
+    </ul>
+    <p><strong>Storage:</strong> localStorage</p>
+</div>
+
+<h2 id="hooks">8. Custom Hooks</h2>
+
+<p><span class="file-path">Location: src/hooks/useDashboardData.ts</span></p>
+
+<table>
+    <tr><th>Hook</th><th>Refetch Interval</th><th>Returns</th></tr>
+    <tr><td>useDeviceStats()</td><td>5 seconds</td><td>Device count statistics</td></tr>
+    <tr><td>useAlarmStats()</td><td>5 seconds</td><td>Alarm statistics by severity</td></tr>
+    <tr><td>useHealth()</td><td>5 seconds</td><td>System health status</td></tr>
+    <tr><td>useRecentReadings(limit)</td><td>5 seconds</td><td>Recent sensor readings</td></tr>
+    <tr><td>useRecentAlarms(limit)</td><td>5 seconds</td><td>Recent alarms</td></tr>
+    <tr><td>useSystemMetrics()</td><td>5 seconds</td><td>System metrics</td></tr>
+    <tr><td>useParameterAverages(hours)</td><td>5 seconds</td><td>Parameter averages</td></tr>
+    <tr><td>useDevices()</td><td>10 seconds</td><td>All devices list</td></tr>
+</table>
+
+<h3>Usage Example</h3>
+<pre>
+import { useDeviceStats, useAlarmStats } from '../hooks/useDashboardData';
+
+function Dashboard() {
+  const { data: deviceStats, isLoading } = useDeviceStats();
+  const { data: alarmStats } = useAlarmStats();
+
+  if (isLoading) return &lt;LoadingScreen /&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Total Devices: {deviceStats?.total}&lt;/p&gt;
+      &lt;p&gt;Active Alarms: {alarmStats?.active}&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}
+</pre>
+
+<h2 id="utils">9. Utilities & Helpers</h2>
+
+<p><span class="file-path">Location: src/utils/</span></p>
+
+<h3>alarmZones.ts</h3>
+<pre>
+// Constants
+ALARM_THRESHOLDS = {
+  temperature: { low: 32, high: 120 },
+  static_pressure: { low: 10, high: 100 },
+  differential_pressure: { low: 0, high: 300 },
+  volume: { low: 0, high: 1000 }
+}
+
+// Functions
+getAlarmSeverity(parameter, value)  // Returns: 'normal' | 'low' | 'medium' | 'high'
+getAlarmZoneColor(severity)         // Returns: hex color string
+countAlarmsBySeverity(alarms)       // Returns: { low, medium, high }
+getMostSevereAlarm(alarms)          // Returns: most critical alarm
+</pre>
+
+<h3>exportUtils.ts</h3>
+<pre>
+// Export Functions
+exportToCSV(data, filename)    // Download as CSV
+exportToJSON(data, filename)   // Download as JSON
+exportToExcel(data, filename)  // Download as Excel (XML)
+exportToPDF(data, title)       // Opens print dialog
+
+// Formatting
+formatDeviceDataForExport(readings)  // Format readings for export
+exportStationSummary(station, data)  // Create station summary
+</pre>
+
+<h2 id="types">10. Type Definitions</h2>
+
+<p><span class="file-path">Location: src/types/dashboard.ts</span></p>
+
+<pre>
+interface Reading {
+  id: number;
+  device_id: number;
+  timestamp: string;
+  temperature: number;
+  static_pressure: number;
+  differential_pressure: number;
+  volume: number;
+  total_volume_flow: number;
+  battery?: number;
+}
+
+interface Alarm {
+  id: number;
+  device_id: number;
+  client_id: string;
+  parameter: string;
+  value: number;
+  threshold_value: number;
+  severity: 'low' | 'medium' | 'high';
+  is_acknowledged: boolean;
+  triggered_at: string;
+}
+
+interface Device {
+  id: number;
+  client_id: string;
+  device_name: string;
+  location: string;
+  is_active: boolean;
+  last_seen: string | null;
+  device_type: 'SMS' | 'OTHER';
+}
+
+interface DeviceStats {
+  total: number;
+  active: number;
+  inactive: number;
+  sms_count: number;
+  other_count: number;
+}
+
+interface AlarmStats {
+  total: number;
+  active: number;
+  acknowledged: number;
+  by_severity: { low: number; medium: number; high: number; };
+}
+</pre>
+
+<h2 id="routing">11. Routing Structure</h2>
+
+<p><span class="file-path">Location: src/App.jsx</span></p>
+
+<h3>Public Routes (No Auth Required)</h3>
+<table>
+    <tr><th>Route</th><th>Component</th></tr>
+    <tr><td>/login</td><td>Login.jsx</td></tr>
+    <tr><td>/welcome</td><td>LoadingScreen.jsx</td></tr>
+</table>
+
+<h3>Protected Routes (Auth Required)</h3>
+<table>
+    <tr><th>Route</th><th>Component</th></tr>
+    <tr><td>/dashboard</td><td>Dashboard.tsx</td></tr>
+    <tr><td>/sections</td><td>Sections.jsx</td></tr>
+    <tr><td>/sections/:sectionId</td><td>SectionDetail.tsx</td></tr>
+    <tr><td>/stations/:stationId</td><td>StationDetail.tsx</td></tr>
+    <tr><td>/trends/:deviceId</td><td>Trends.tsx</td></tr>
+    <tr><td>/devices</td><td>Devices.jsx</td></tr>
+    <tr><td>/device-management</td><td>DeviceManagement.jsx</td></tr>
+    <tr><td>/map</td><td>Map.jsx</td></tr>
+    <tr><td>/live-monitor</td><td>LiveMonitor.jsx</td></tr>
+    <tr><td>/analytics</td><td>Analytics.jsx</td></tr>
+    <tr><td>/deep-analytics</td><td>DeepAnalytics.jsx</td></tr>
+    <tr><td>/analytics-page</td><td>AnalyticsPage.jsx</td></tr>
+    <tr><td>/alarms</td><td>Alarms.jsx</td></tr>
+    <tr><td>/alarms/:sectionId</td><td>SectionAlarms.jsx</td></tr>
+    <tr><td>/reports</td><td>Reports.jsx</td></tr>
+    <tr><td>/advanced-reports</td><td>AdvancedReports.jsx</td></tr>
+    <tr><td>/odorant-drum</td><td>OdorantDrumNew.jsx</td></tr>
+    <tr><td>/settings</td><td>Settings.jsx</td></tr>
+    <tr><td>/notifications</td><td>Notifications.jsx</td></tr>
+    <tr><td>/users</td><td>UserManagement.jsx</td></tr>
+    <tr><td>/favourites</td><td>Favourites.jsx</td></tr>
+    <tr><td>/under-observation</td><td>UnderObservation.jsx</td></tr>
+</table>
+
+<h2 id="config">12. Configuration Files</h2>
+
+<h3>vite.config.js</h3>
+<pre>
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://localhost:8080'
+    }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets'
+  }
+});
+</pre>
+
+<h3>tailwind.config.js</h3>
+<pre>
+module.exports = {
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        sngpl: {
+          blue: '#1e40af',
+          darkblue: '#1e3a8a',
+          lightblue: '#3b82f6',
+          green: '#16a34a'
+        }
+      }
+    }
+  }
+};
+</pre>
+
+<h3>Environment Variables (.env)</h3>
+<pre>
+VITE_API_URL=/api
+VITE_WS_URL=wss://sngpldashboard.online/ws
+</pre>
+
+<h2 id="dataflow">13. Data Flow Architecture</h2>
+
+<pre>
++-----------------------------------------------------------+
+|                     USER LOGIN                             |
+|                         |                                  |
+|              Token stored in sessionStorage                |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                    AUTH CONTEXT                            |
+|           (user info, login/logout functions)              |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                  PROTECTED ROUTES                          |
+|                (PrivateRoute component)                    |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                   PAGE COMPONENTS                          |
+|             (Dashboard, Sections, etc.)                    |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                REACT QUERY HOOKS                           |
+|          (useDeviceStats, useAlarmStats, etc.)             |
+|          Auto-refetch every 5-10 seconds                   |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                   API SERVICE                              |
+|                (src/services/api.js)                       |
+|             Axios with Bearer token header                 |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                  BACKEND API                               |
+|               (FastAPI on port 8080)                       |
++-----------------------------------------------------------+
+                          |
++-----------------------------------------------------------+
+|                     RESPONSE                               |
+|                        |                                   |
+|             React Query Cache --> UI Update                |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+|                    WEBSOCKET                               |
+|           (Real-time updates on Dashboard)                 |
+|            wss://sngpldashboard.online/ws                  |
++-----------------------------------------------------------+
+</pre>
+
+<h2 id="commands">14. Development Commands</h2>
+
+<pre>
+# Install dependencies
+npm install
+
+# Start development server (port 5173)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+</pre>
+
+<h3>Development URLs</h3>
+<table>
+    <tr><th>Service</th><th>URL</th></tr>
+    <tr><td>Frontend</td><td>http://localhost:5173</td></tr>
+    <tr><td>API Proxy</td><td>http://localhost:8080/api</td></tr>
+    <tr><td>WebSocket</td><td>wss://sngpldashboard.online/ws</td></tr>
+</table>
+
+<hr style="margin-top: 50px;">
+
+<h2>Quick Reference: File Locations</h2>
+
+<table>
+    <tr><th>What You're Looking For</th><th>File Location</th></tr>
+    <tr><td>Main routing</td><td><code>src/App.jsx</code></td></tr>
+    <tr><td>API functions</td><td><code>src/services/api.js</code></td></tr>
+    <tr><td>Auth logic</td><td><code>src/contexts/AuthContext.jsx</code></td></tr>
+    <tr><td>Theme logic</td><td><code>src/contexts/ThemeContext.jsx</code></td></tr>
+    <tr><td>Dashboard page</td><td><code>src/pages/Dashboard.tsx</code></td></tr>
+    <tr><td>Device detail page</td><td><code>src/pages/StationDetail.tsx</code></td></tr>
+    <tr><td>Report generation</td><td><code>src/pages/AdvancedReports.jsx</code></td></tr>
+    <tr><td>Main layout/sidebar</td><td><code>src/components/Layout.jsx</code></td></tr>
+    <tr><td>Export modal</td><td><code>src/components/ExportModal.tsx</code></td></tr>
+    <tr><td>Chart components</td><td><code>src/components/*Chart.tsx</code></td></tr>
+    <tr><td>React Query hooks</td><td><code>src/hooks/useDashboardData.ts</code></td></tr>
+    <tr><td>TypeScript types</td><td><code>src/types/dashboard.ts</code></td></tr>
+    <tr><td>Utility functions</td><td><code>src/utils/*.ts</code></td></tr>
+    <tr><td>Tailwind config</td><td><code>tailwind.config.js</code></td></tr>
+    <tr><td>Vite config</td><td><code>vite.config.js</code></td></tr>
+</table>
+
+<div style="margin-top: 50px; padding: 20px; background: #f3f4f6; border-radius: 8px; text-align: center;">
+    <p><strong>GitHub Repository:</strong> https://github.com/techdevengineer-a11y/sngpl-iot-dashboard</p>
+    <p style="margin-top: 10px; color: #6b7280; font-size: 14px;">This documentation was generated for onboarding frontend engineers to the SNGPL IoT Dashboard project.</p>
+</div>
+
+</body>
+</html>
