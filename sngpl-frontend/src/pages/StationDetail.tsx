@@ -391,7 +391,7 @@ const StationDetail = () => {
   };
 
   // Filter data based on custom date range
-  // Filter data for charts (latest N readings)
+  // Filter data for charts (latest N readings, sorted oldest to newest for chart display)
   const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 50) => {
     if (!historyData || historyData.length === 0) {
       return [];
@@ -407,15 +407,21 @@ const StationDetail = () => {
       return timestamp >= start && timestamp <= endWithBuffer;
     });
 
-    // Limit to latest N readings for performance and clarity
+    // Limit to latest N readings (historyData is sorted newest first, so slice from start)
     const limited = filtered.slice(0, limit);
 
     // If filter returns nothing but we have data, show latest readings as fallback
     if (limited.length === 0 && historyData.length > 0) {
-      return historyData.slice(0, limit);
+      // Sort ascending for charts (oldest to newest, so latest is on right side)
+      return historyData.slice(0, limit).sort((a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
     }
 
-    return limited;
+    // Sort ascending for charts (oldest to newest, so latest reading appears on right side)
+    return limited.sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
   };
 
   // Calculate dynamic Y-axis domain with padding above max value
