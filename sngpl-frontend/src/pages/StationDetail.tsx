@@ -156,12 +156,11 @@ const StationDetail = () => {
     fetchDeviceData();
     fetchHistoricalData();
 
-    // Auto-refresh device data every 30 seconds for better performance
-    // Historical data is only fetched once on mount to avoid wasteful API calls
+    // Auto-refresh device data and historical data every 30 seconds
     const dataInterval = setInterval(() => {
-      fetchDeviceData(); // Only fetch device metadata
-      // Removed: fetchHistoricalData() - no need to refetch 1000 records
-    }, 30000); // Increased from 10s to 30s
+      fetchDeviceData();
+      fetchHistoricalData(); // Fetch new readings to update charts
+    }, 30000);
 
     // Auto-update date range end times every 5 seconds to show real-time data
     const dateInterval = setInterval(() => {
@@ -392,7 +391,7 @@ const StationDetail = () => {
   };
 
   // Filter data based on custom date range
-  // Filter data for charts (latest 50 readings max)
+  // Filter data for charts (latest N readings)
   const filterDataByDateRange = (startDate: string, endDate: string, limit: number = 50) => {
     if (!historyData || historyData.length === 0) {
       return [];
@@ -400,28 +399,20 @@ const StationDetail = () => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+    // Add 1 hour buffer to end date for timezone differences
+    const endWithBuffer = new Date(end.getTime() + 60 * 60 * 1000);
 
     const filtered = historyData.filter(d => {
       const timestamp = new Date(d.timestamp);
-      return timestamp >= start && timestamp <= end;
+      return timestamp >= start && timestamp <= endWithBuffer;
     });
 
     // Limit to latest N readings for performance and clarity
     const limited = filtered.slice(0, limit);
 
-    // If filter returns nothing but we have data, show last 24 hours as fallback
+    // If filter returns nothing but we have data, show latest readings as fallback
     if (limited.length === 0 && historyData.length > 0) {
-      // Removed excessive console logging to prevent spam
-      const now = new Date();
-      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-      const fallbackFiltered = historyData.filter(d => {
-        const timestamp = new Date(d.timestamp);
-        return timestamp >= twentyFourHoursAgo && timestamp <= now;
-      });
-
-      // Apply limit to fallback data as well
-      return fallbackFiltered.slice(0, limit);
+      return historyData.slice(0, limit);
     }
 
     return limited;
