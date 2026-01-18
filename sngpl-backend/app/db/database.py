@@ -1,12 +1,18 @@
 """Database configuration and session management - PostgreSQL + TimescaleDB"""
 
-from sqlalchemy import create_engine, text
+import time
+import logging
+from sqlalchemy import create_engine, text, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
+slow_query_logger = get_logger("slow_queries")
+
+# Slow query threshold in seconds
+SLOW_QUERY_THRESHOLD = 1.0
 
 # Create PostgreSQL engine optimized for TimescaleDB
 engine = create_engine(
@@ -22,6 +28,22 @@ engine = create_engine(
         "application_name": "sngpl_iot_platform"
     }
 )
+
+
+# Slow query logging
+@event.listens_for(engine, "before_cursor_execute")
+def receive_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    conn.info.setdefault("query_start_time", []).append(time.time())
+
+
+@event.listens_for(engine, "after_cursor_execute")
+def receive_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    total_time = time.time() - conn.info["query_start_time"].pop(-1)
+    if total_time > SLOW_QUERY_THRESHOLD:
+        slow_query_logger.warning(
+            f"Slow query ({total_time:.2f}s): {statement[:200]}..."
+            if len(statement) > 200 else f"Slow query ({total_time:.2f}s): {statement}"
+        )
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
