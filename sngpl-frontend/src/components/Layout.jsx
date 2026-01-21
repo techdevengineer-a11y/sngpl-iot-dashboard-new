@@ -85,7 +85,7 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex relative">
+    <div className="h-screen flex relative overflow-hidden">
       {/* Animated Background Logo Watermark */}
       <div className="logo-watermark">
         <svg viewBox="0 0 200 200" fill="currentColor" className="w-full h-full text-blue-600 animate-spin-slow">
@@ -260,7 +260,7 @@ const Layout = ({ children }) => {
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+      <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ${
         sidebarCollapsed ? 'ml-16' : 'ml-64'
       }`}>
         {/* Top Bar */}
@@ -294,7 +294,7 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto mt-14">
+        <main className="flex-1 overflow-y-auto mt-14 h-[calc(100vh-3.5rem)]">
           <div className="p-6">
             {children}
           </div>
