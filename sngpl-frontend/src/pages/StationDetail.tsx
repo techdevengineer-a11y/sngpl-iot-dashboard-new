@@ -1276,18 +1276,10 @@ const StationDetail = () => {
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center overflow-visible">
               <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200" style={{ width: '90%', height: '80%', maxWidth: '1200px', aspectRatio: '1.2' }}>
-                <div style={{ position: 'relative', zIndex: 10 }}>
-                  <CustomDateRangeSelector
-                    startDate={tempStartDate}
-                    endDate={tempEndDate}
-                    onStartChange={setTempStartDate}
-                    onEndChange={setTempEndDate}
-                  />
-                </div>
                 <div
                   ref={chartContainerRef}
                   className="overflow-x-auto overflow-y-hidden"
-                  style={{ height: '90%', cursor: isDragging ? 'grabbing' : 'grab' }}
+                  style={{ height: '100%', cursor: isDragging ? 'grabbing' : 'grab' }}
                   onMouseDown={(e) => {
                     // Prevent drag on date inputs
                     if (e.target instanceof HTMLInputElement && e.target.type === 'datetime-local') {
@@ -1411,13 +1403,7 @@ const StationDetail = () => {
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gradient-to-br from-white to-blue-50/30">
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 h-full border border-blue-100">
-                <CustomDateRangeSelector
-                  startDate={diffPStartDate}
-                  endDate={diffPEndDate}
-                  onStartChange={setDiffPStartDate}
-                  onEndChange={setDiffPEndDate}
-                />
-                <ResponsiveContainer width="100%" height="90%">
+                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 200)}>
                     <defs>
                       <linearGradient id="colorDiffPGreenFull" x1="0" y1="0" x2="0" y2="1">
@@ -1529,13 +1515,7 @@ const StationDetail = () => {
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50">
               <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
-                <CustomDateRangeSelector
-                  startDate={staticPStartDate}
-                  endDate={staticPEndDate}
-                  onStartChange={setStaticPStartDate}
-                  onEndChange={setStaticPEndDate}
-                />
-                <ResponsiveContainer width="100%" height="90%">
+                <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 200)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
@@ -1630,13 +1610,7 @@ const StationDetail = () => {
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50">
               <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
-                <CustomDateRangeSelector
-                  startDate={volumeStartDate}
-                  endDate={volumeEndDate}
-                  onStartChange={setVolumeStartDate}
-                  onEndChange={setVolumeEndDate}
-                />
-                <ResponsiveContainer width="100%" height="90%">
+                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 200)}>
                     <defs>
                       <linearGradient id="colorVolumeGreenFull" x1="0" y1="0" x2="0" y2="1">
@@ -1743,13 +1717,7 @@ const StationDetail = () => {
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50">
               <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
-                <CustomDateRangeSelector
-                  startDate={flowStartDate}
-                  endDate={flowEndDate}
-                  onStartChange={setFlowStartDate}
-                  onEndChange={setFlowEndDate}
-                />
-                <ResponsiveContainer width="100%" height="90%">
+                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={filterDataByDateRange(flowStartDate, flowEndDate, 200)}>
                     <defs>
                       <linearGradient id="colorFlowGreenFull" x1="0" y1="0" x2="0" y2="1">
@@ -1856,13 +1824,7 @@ const StationDetail = () => {
             {/* Chart Content */}
             <div className="flex-1 p-6 bg-gray-50">
               <div className="bg-white rounded-lg shadow-md p-6 h-full border border-gray-200">
-                <CustomDateRangeSelector
-                  startDate={batteryStartDate}
-                  endDate={batteryEndDate}
-                  onStartChange={setBatteryStartDate}
-                  onEndChange={setBatteryEndDate}
-                />
-                <ResponsiveContainer width="100%" height="90%">
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 200)} layout="horizontal">
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
