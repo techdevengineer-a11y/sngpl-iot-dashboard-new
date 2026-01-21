@@ -569,12 +569,6 @@ const SectionDetail = () => {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     <div className="flex items-center gap-1">
-                      <Droplets className="w-3 h-3 text-purple-600" />
-                      Volume (MMCF)
-                    </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
-                    <div className="flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" />
                       Flow (MCF/d)
                     </div>
@@ -685,15 +679,6 @@ const SectionDetail = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
                           {device.latest_reading?.volume?.toFixed(1) || '-'}
-                        </span>
-                      </td>
-
-                      {/* Volume (MMCF) */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm font-medium text-purple-600">
-                          {device.latest_reading?.volume
-                            ? (device.latest_reading.volume / 1000).toFixed(3)
-                            : '-'}
                         </span>
                       </td>
 
