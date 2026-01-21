@@ -399,8 +399,8 @@ const StationDetail = () => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    // Add 1 hour buffer to end date for timezone differences
-    const endWithBuffer = new Date(end.getTime() + 60 * 60 * 1000);
+    // Add 24 hour buffer to end date to always include latest readings regardless of timezone
+    const endWithBuffer = new Date(end.getTime() + 24 * 60 * 60 * 1000);
 
     const filtered = historyData.filter(d => {
       const timestamp = new Date(d.timestamp);
