@@ -264,9 +264,7 @@ const Layout = ({ children }) => {
         sidebarCollapsed ? 'ml-16' : 'ml-64'
       }`}>
         {/* Top Bar */}
-        <header className="fixed top-0 right-0 enterprise-header h-14 flex items-center justify-between px-6 z-30 transition-all duration-300" style={{
-          left: sidebarCollapsed ? '4rem' : '16rem'
-        }}>
+        <header className="sticky top-0 enterprise-header h-14 flex items-center justify-between px-6 z-30 shrink-0">
           <div className="flex items-center space-x-4">
             {sidebarCollapsed && (
               <button
@@ -294,7 +292,7 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto mt-14 h-[calc(100vh-3.5rem)]">
+        <main className="flex-1 overflow-y-auto">
           <div className="p-6">
             {children}
           </div>
