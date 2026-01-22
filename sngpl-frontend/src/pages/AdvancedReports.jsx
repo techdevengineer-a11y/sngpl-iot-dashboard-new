@@ -999,8 +999,8 @@ const AdvancedReports = () => {
                     onChange={(e) => setSectionComparisonType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="15days">Mid-Month Comparison</option>
-                    <option value="30days">Full Month Comparison</option>
+                    <option value="15days">Mid-Month</option>
+                    <option value="30days">Full Month</option>
                   </select>
                   <button
                     onClick={generateSectionReport}
