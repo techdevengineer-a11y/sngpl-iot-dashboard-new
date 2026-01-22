@@ -98,8 +98,8 @@ async def get_device_stats(db: Session = Depends(get_db), current_user: User = D
 
     total_devices = db.query(Device).count()
 
-    # Calculate active devices: those that sent data in last 5 minutes
-    five_minutes_ago = datetime.now() - timedelta(minutes=5)
+    # Calculate active devices: those that sent data in last 105 minutes (1 hour 45 min)
+    five_minutes_ago = datetime.now() - timedelta(minutes=105)
     active_devices = db.query(Device).filter(
         Device.last_seen != None,
         Device.last_seen >= five_minutes_ago

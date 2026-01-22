@@ -43,15 +43,15 @@ def get_parameter_status(value: float, parameter: str, thresholds: Dict[str, Any
 
 
 def get_device_online_status(last_seen: datetime) -> Dict[str, str]:
-    """Determine device online status"""
+    """Determine device online status - 105 minutes threshold (1 hour 45 min)"""
     if not last_seen:
         return {"status": "Offline", "color": "#808080"}
 
     diff_minutes = (datetime.now() - last_seen).total_seconds() / 60
 
-    if diff_minutes < 5:
+    if diff_minutes < 105:
         return {"status": "Online", "color": "#43A047"}
-    elif diff_minutes < 30:
+    elif diff_minutes < 150:
         return {"status": "Warning", "color": "#FD6835"}
     else:
         return {"status": "Offline", "color": "#E53935"}
@@ -119,9 +119,9 @@ async def get_system_metrics(
     # Average readings per minute
     readings_per_minute = recent_readings / 60 if recent_readings > 0 else 0
 
-    # Device uptime - calculate based on devices that sent data in last 5 minutes
+    # Device uptime - calculate based on devices that sent data in last 105 minutes
     total_devices = db.query(Device).count()
-    five_minutes_ago = datetime.now() - timedelta(minutes=5)
+    five_minutes_ago = datetime.now() - timedelta(minutes=105)
     active_devices = db.query(Device).filter(
         Device.last_seen != None,
         Device.last_seen >= five_minutes_ago
@@ -324,8 +324,8 @@ async def get_dashboard_stats(
     # Total devices
     total_devices = db.query(Device).count()
 
-    # Active devices (sent data in last 5 minutes)
-    five_min_ago = datetime.now() - timedelta(minutes=5)
+    # Active devices (sent data in last 105 minutes)
+    five_min_ago = datetime.now() - timedelta(minutes=105)
     active_devices = db.query(Device).filter(
         Device.last_seen.isnot(None),
         Device.last_seen >= five_min_ago
