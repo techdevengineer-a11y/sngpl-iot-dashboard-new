@@ -267,10 +267,39 @@ const AdvancedReports = () => {
 
       toast.loading('Building report...', { id: 'section-report' });
 
+      // Format region name - remove ", PAKISTAN" and expand abbreviations to full names
+      const formatRegionName = (location) => {
+        if (!location) return 'Unknown';
+
+        // Remove ", PAKISTAN" or ", Pakistan" suffix
+        let region = location.replace(/,?\s*PAKISTAN$/i, '').trim();
+
+        // Map common abbreviations to full names
+        const regionMappings = {
+          'FSD': 'FAISALABAD',
+          'SGD': 'SARGODHA',
+          'SKP': 'SHEIKHUPURA',
+          'GJW': 'GUJRANWALA',
+          'GJT': 'GUJRAT',
+          'MLT': 'MULTAN',
+          'LHR': 'LAHORE',
+          'RWP': 'RAWALPINDI',
+          'ISB': 'ISLAMABAD',
+        };
+
+        // Check if the region matches any abbreviation
+        const upperRegion = region.toUpperCase();
+        if (regionMappings[upperRegion]) {
+          return regionMappings[upperRegion];
+        }
+
+        return region.toUpperCase();
+      };
+
       // Group devices by region/location
       const devicesByRegion = {};
       sectionDevices.forEach(device => {
-        const region = device.location || 'Unknown';
+        const region = formatRegionName(device.location);
         if (!devicesByRegion[region]) {
           devicesByRegion[region] = [];
         }
