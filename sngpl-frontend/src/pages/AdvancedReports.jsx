@@ -106,48 +106,36 @@ const AdvancedReports = () => {
 
     try {
       const now = new Date();
-      let periodA_start, periodA_end, periodB_start, periodB_end, comparisonLabel, periodType;
+      let period_start, period_end, reportLabel, periodType;
 
       // Get month names
       const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-      // Define date ranges based on comparison type
+      // Define date range based on report type (single period, no comparison)
       if (sectionComparisonType === '15days') {
-        // Period B: Current month 1st to 15th (or up to today if before 15th)
+        // Mid-Month: Current month 1st to 15th (or up to today if before 15th)
         const currentDay = now.getDate();
-        const periodBEndDay = Math.min(currentDay, 15);
-        periodB_end = new Date(now.getFullYear(), now.getMonth(), periodBEndDay, 23, 59, 59);
-        periodB_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        const endDay = Math.min(currentDay, 15);
+        period_end = new Date(now.getFullYear(), now.getMonth(), endDay, 23, 59, 59);
+        period_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
 
-        // Period A: Previous month 1st to 15th
-        periodA_end = new Date(now.getFullYear(), now.getMonth() - 1, 15, 23, 59, 59);
-        periodA_start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
-
-        comparisonLabel = 'MID-MONTH';
-        periodType = '01*15';
+        reportLabel = 'MID-MONTH';
+        periodType = `01*${endDay}`;
       } else if (sectionComparisonType === '30days') {
-        // Period B: Current month (full month or up to today)
-        const lastDayB = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        // Full Month: Current month 1st to today
         const currentDay = now.getDate();
-        periodB_end = new Date(now.getFullYear(), now.getMonth(), currentDay, 23, 59, 59);
-        periodB_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        period_end = new Date(now.getFullYear(), now.getMonth(), currentDay, 23, 59, 59);
+        period_start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
 
-        // Period A: Previous month (full month)
-        const lastDayA = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-        periodA_end = new Date(now.getFullYear(), now.getMonth() - 1, lastDayA, 23, 59, 59);
-        periodA_start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
-
-        comparisonLabel = 'FULL-MONTH';
-        periodType = '01*' + lastDayB;
+        reportLabel = 'FULL-MONTH';
+        periodType = `01*${currentDay}`;
       }
 
-      // Format for column headers
-      const monthA = monthNames[periodA_start.getMonth()];
-      const yearA = periodA_start.getFullYear().toString().slice(-2);
-      const monthB = monthNames[periodB_start.getMonth()];
-      const yearB = periodB_start.getFullYear().toString().slice(-2);
+      // Format for column header
+      const monthName = monthNames[period_start.getMonth()];
+      const year = period_start.getFullYear();
 
-      // Fetch data for a device for both periods
+      // Fetch data for a device
       const fetchDeviceData = async (deviceId, startDate, endDate) => {
         try {
           let allData = [];
@@ -181,48 +169,22 @@ const AdvancedReports = () => {
         }
       };
 
-      // Calculate total volume using 6 AM daily readings only
+      // Calculate total volume by summing all hourly readings
       const calculateTotalVolume = (readings) => {
         if (!Array.isArray(readings) || readings.length === 0) return 0;
 
-        // Group readings by date and pick the one closest to 6 AM
-        const readingsByDate = {};
-
-        readings.forEach(reading => {
-          const readingDate = new Date(reading.timestamp || reading.created_at);
-          const dateKey = `${readingDate.getFullYear()}-${String(readingDate.getMonth() + 1).padStart(2, '0')}-${String(readingDate.getDate()).padStart(2, '0')}`;
-          const hour = readingDate.getHours();
-          const minutes = readingDate.getMinutes();
-          const timeInMinutes = hour * 60 + minutes;
-          const targetTime = 6 * 60; // 6 AM in minutes
-          const timeDiff = Math.abs(timeInMinutes - targetTime);
-
-          // Only consider readings between 5 AM and 7 AM
-          if (hour >= 5 && hour <= 7) {
-            if (!readingsByDate[dateKey] || timeDiff < readingsByDate[dateKey].timeDiff) {
-              readingsByDate[dateKey] = {
-                reading,
-                timeDiff
-              };
-            }
-          }
-        });
-
-        // Sum the 6 AM daily volumes (only use last_hour_volume, not cumulative volume)
+        // Sum all hourly volumes
         let totalVolume = 0;
-        Object.values(readingsByDate).forEach(({ reading }) => {
-          const volume = reading.last_hour_volume || 0;
-          totalVolume += volume;
+        readings.forEach(reading => {
+          totalVolume += reading.last_hour_volume || 0;
         });
 
         return totalVolume;
       };
 
-      // Column headers matching the format - dates as 01*15.12.2024
-      const dateFormatA = `${periodType}.${String(periodA_start.getMonth() + 1).padStart(2, '0')}.${periodA_start.getFullYear()}`;
-      const dateFormatB = `${periodType}.${String(periodB_start.getMonth() + 1).padStart(2, '0')}.${periodB_start.getFullYear()}`;
-      const colA = `Volume for the month of ${monthA}-${periodA_start.getFullYear()} ${dateFormatA} (MMCF) (A)`;
-      const colB = `Volume for the month of ${monthB}-${periodB_start.getFullYear()} ${dateFormatB} (MMCF) (B)`;
+      // Column header
+      const dateFormat = `${periodType}.${String(period_start.getMonth() + 1).padStart(2, '0')}.${year}`;
+      const volumeCol = `Volume (${monthName}-${year}) ${dateFormat} (MMCF)`;
 
       // OPTIMIZED: Fetch all device data in parallel batches
       const BATCH_SIZE = 5; // Process 5 devices at a time
@@ -241,21 +203,14 @@ const AdvancedReports = () => {
 
         // Fetch data for all devices in this batch in parallel
         const batchPromises = batch.map(async (device) => {
-          const [periodA_data, periodB_data] = await Promise.all([
-            fetchDeviceData(device.id, periodA_start, periodA_end),
-            fetchDeviceData(device.id, periodB_start, periodB_end)
-          ]);
+          const periodData = await fetchDeviceData(device.id, period_start, period_end);
 
-          const volumeA_MCF = calculateTotalVolume(periodA_data);
-          const volumeB_MCF = calculateTotalVolume(periodB_data);
-          const volumeA = volumeA_MCF / 1000; // Convert to MMCF
-          const volumeB = volumeB_MCF / 1000; // Convert to MMCF
+          const volume_MCF = calculateTotalVolume(periodData);
+          const volume = volume_MCF / 1000; // Convert to MMCF
 
           return {
             device,
-            volumeA,
-            volumeB,
-            difference: volumeB - volumeA
+            volume
           };
         });
 
@@ -309,34 +264,27 @@ const AdvancedReports = () => {
       // Process all devices and collect data
       const excelData = [];
       let srNo = 1;
-      let grandTotalA = 0;
-      let grandTotalB = 0;
+      let grandTotal = 0;
 
       const regions = Object.keys(devicesByRegion).sort();
 
       for (const region of regions) {
-        let regionTotalA = 0;
-        let regionTotalB = 0;
+        let regionTotal = 0;
         const regionDevices = devicesByRegion[region];
         let isFirstInRegion = true;
 
         for (const device of regionDevices) {
           // Get pre-fetched data from map
           const result = deviceResults.get(device.id);
-          const volumeA = result?.volumeA || 0;
-          const volumeB = result?.volumeB || 0;
-          const difference = result?.difference || 0;
+          const volume = result?.volume || 0;
 
-          regionTotalA += volumeA;
-          regionTotalB += volumeB;
+          regionTotal += volume;
 
           excelData.push({
             'Sr. No.': srNo++,
             'Region': isFirstInRegion ? region.toUpperCase() : '',
             'SMSs Name': device.device_name || device.client_id,
-            [colA]: volumeA.toFixed(3),
-            [colB]: volumeB.toFixed(3),
-            'Difference (B - A)': difference.toFixed(3)
+            [volumeCol]: volume.toFixed(3)
           });
 
           isFirstInRegion = false;
@@ -347,13 +295,10 @@ const AdvancedReports = () => {
           'Sr. No.': '',
           'Region': '',
           'SMSs Name': '',
-          [colA]: regionTotalA.toFixed(3),
-          [colB]: regionTotalB.toFixed(3),
-          'Difference (B - A)': (regionTotalB - regionTotalA).toFixed(3)
+          [volumeCol]: regionTotal.toFixed(3)
         });
 
-        grandTotalA += regionTotalA;
-        grandTotalB += regionTotalB;
+        grandTotal += regionTotal;
       }
 
       // Create worksheet with styled title rows
@@ -402,13 +347,13 @@ const AdvancedReports = () => {
 
       // Row 1: Main title (dark red background, white text)
       worksheet['A1'] = {
-        v: `VOLUMES COMPARISON OF SMSs OF SECTION-${selectedSection.section_id}`,
+        v: `VOLUMES OF SMSs OF SECTION-${selectedSection.section_id}`,
         s: darkRedHeaderStyle
       };
 
-      // Row 2: Subtitle with red MID-MONTH text
+      // Row 2: Subtitle with period info
       worksheet['A2'] = {
-        v: `BETWEEN THE ${comparisonLabel} OF ${monthA}-${yearA} VS ${monthB}-${yearB}`,
+        v: `${reportLabel} OF ${monthName}-${year}`,
         s: {
           font: { bold: true, sz: 12 },
           alignment: { horizontal: 'center', vertical: 'center' }
@@ -417,9 +362,9 @@ const AdvancedReports = () => {
 
       // Row 3: Empty row
       // Row 4: Column headers
-      const headers = ['Sr. No.', 'Region', 'SMSs Name', colA, colB, 'Difference (B - A)'];
+      const headers = ['Sr. No.', 'Region', 'SMSs Name', volumeCol];
       headers.forEach((header, idx) => {
-        const col = String.fromCharCode(65 + idx); // A, B, C, D, E, F
+        const col = String.fromCharCode(65 + idx); // A, B, C, D
         worksheet[`${col}4`] = { v: header, s: columnHeaderStyle };
       });
 
@@ -432,23 +377,19 @@ const AdvancedReports = () => {
         worksheet[`A${rowNum}`] = { v: row['Sr. No.'], s: cellStyle };
         worksheet[`B${rowNum}`] = { v: row['Region'], s: cellStyle };
         worksheet[`C${rowNum}`] = { v: row['SMSs Name'], s: cellStyle };
-        worksheet[`D${rowNum}`] = { v: row[colA], s: cellStyle };
-        worksheet[`E${rowNum}`] = { v: row[colB], s: cellStyle };
-        worksheet[`F${rowNum}`] = { v: row['Difference (B - A)'], s: cellStyle };
+        worksheet[`D${rowNum}`] = { v: row[volumeCol], s: cellStyle };
         rowNum++;
       });
 
       // Set the range of the worksheet
-      worksheet['!ref'] = `A1:F${rowNum - 1}`;
+      worksheet['!ref'] = `A1:D${rowNum - 1}`;
 
       // Set column widths
       worksheet['!cols'] = [
         { wch: 8 },   // Sr. No.
         { wch: 18 },  // Region
         { wch: 30 },  // SMSs Name
-        { wch: 28 },  // Volume A
-        { wch: 28 },  // Volume B
-        { wch: 14 },  // Difference
+        { wch: 35 },  // Volume
       ];
 
       // Set row heights
@@ -461,8 +402,8 @@ const AdvancedReports = () => {
 
       // Merge title cells
       worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // Title row 1
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // Title row 2
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // Title row 1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // Title row 2
       ];
 
       // Create workbook
@@ -470,7 +411,7 @@ const AdvancedReports = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, `Section ${selectedSection.section_id}`);
 
       // Generate filename
-      const filename = `Section_${selectedSection.section_id}_${comparisonLabel}_${monthA}${yearA}_vs_${monthB}${yearB}.xlsx`;
+      const filename = `Section_${selectedSection.section_id}_${reportLabel}_${monthName}${year}.xlsx`;
 
       // Download
       XLSX.writeFile(workbook, filename);
@@ -991,7 +932,7 @@ const AdvancedReports = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">Generate Section Report</h3>
-                  <p className="text-sm text-gray-600">Download volume comparison for all {sectionDevices.length} devices</p>
+                  <p className="text-sm text-gray-600">Download volume report for all {sectionDevices.length} devices</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <select
@@ -999,8 +940,8 @@ const AdvancedReports = () => {
                     onChange={(e) => setSectionComparisonType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="15days">Mid-Month (1st-15th) vs Previous Month</option>
-                    <option value="30days">Full Month vs Previous Month</option>
+                    <option value="15days">Mid-Month (1st-15th)</option>
+                    <option value="30days">Full Month</option>
                   </select>
                   <button
                     onClick={generateSectionReport}
