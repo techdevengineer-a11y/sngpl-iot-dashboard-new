@@ -560,78 +560,108 @@ const AdvancedReports = () => {
 
       const allReadings = await fetchAllData();
 
-      // Filter for 6 AM readings (between 5 AM and 7 AM to catch closest reading)
-      // Group by date and pick the reading closest to 6 AM
+      // Group ALL readings by date (not just 6 AM)
+      // Sum volumes and energies, average other values for each day
       const readingsByDate = {};
 
       allReadings.forEach(reading => {
         const readingDate = new Date(reading.timestamp || reading.created_at);
         const dateKey = `${readingDate.getFullYear()}-${String(readingDate.getMonth() + 1).padStart(2, '0')}-${String(readingDate.getDate()).padStart(2, '0')}`;
-        const hour = readingDate.getHours();
-        const minutes = readingDate.getMinutes();
-        const timeInMinutes = hour * 60 + minutes;
-        const targetTime = 6 * 60; // 6 AM in minutes
-        const timeDiff = Math.abs(timeInMinutes - targetTime);
 
-        // Only consider readings between 5 AM and 7 AM
-        if (hour >= 5 && hour <= 7) {
-          if (!readingsByDate[dateKey] || timeDiff < readingsByDate[dateKey].timeDiff) {
-            readingsByDate[dateKey] = {
-              reading,
-              timeDiff
-            };
-          }
+        if (!readingsByDate[dateKey]) {
+          readingsByDate[dateKey] = {
+            readings: [],
+            date: readingDate
+          };
         }
+        readingsByDate[dateKey].readings.push(reading);
       });
 
-      // Convert to sorted array
-      const dailyReadings = Object.entries(readingsByDate)
+      // Calculate daily totals/averages for each day
+      const dailySummaries = Object.entries(readingsByDate)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([, { reading }]) => reading);
+        .map(([dateKey, { readings, date }]) => {
+          // SUM for volume and energy (all hourly readings in the day)
+          const totalVolume = readings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
+          const totalEnergy = readings.reduce((sum, r) => sum + (r.last_hour_energy || 0), 0);
+          const totalFlowTime = readings.reduce((sum, r) => sum + (r.last_hour_flow_time || 0), 0);
 
-      if (dailyReadings.length === 0) {
-        toast.error('No 6 AM readings found for the selected period');
+          // AVERAGE of non-zero values for temperature, pressure, diff pressure
+          const nonZeroTemps = readings.filter(r => r.last_hour_temperature && r.last_hour_temperature !== 0);
+          const avgTemp = nonZeroTemps.length > 0
+            ? nonZeroTemps.reduce((sum, r) => sum + r.last_hour_temperature, 0) / nonZeroTemps.length
+            : 0;
+
+          const nonZeroPressures = readings.filter(r => r.last_hour_static_pressure && r.last_hour_static_pressure !== 0);
+          const avgPressure = nonZeroPressures.length > 0
+            ? nonZeroPressures.reduce((sum, r) => sum + r.last_hour_static_pressure, 0) / nonZeroPressures.length
+            : 0;
+
+          const nonZeroDiffPressures = readings.filter(r => r.last_hour_diff_pressure && r.last_hour_diff_pressure !== 0);
+          const avgDiffPressure = nonZeroDiffPressures.length > 0
+            ? nonZeroDiffPressures.reduce((sum, r) => sum + r.last_hour_diff_pressure, 0) / nonZeroDiffPressures.length
+            : 0;
+
+          // Get specific gravity from first reading (it's usually constant)
+          const specificGravity = readings[0]?.specific_gravity || 0;
+
+          return {
+            dateKey,
+            date,
+            totalVolume,
+            totalEnergy,
+            totalFlowTime,
+            avgTemp,
+            avgPressure,
+            avgDiffPressure,
+            specificGravity,
+            readingCount: readings.length
+          };
+        });
+
+      if (dailySummaries.length === 0) {
+        toast.error('No readings found for the selected period');
         setGeneratingReport(false);
         return;
       }
 
-      // Create Excel data with all parameters
-      const excelData = dailyReadings.map((reading, index) => {
-        const readingDate = new Date(reading.timestamp || reading.created_at);
+      // Create Excel data with daily summaries
+      const excelData = dailySummaries.map((day, index) => {
         return {
           srNo: index + 1,
-          date: formatDate(readingDate),
-          time: `${String(readingDate.getHours()).padStart(2, '0')}:${String(readingDate.getMinutes()).padStart(2, '0')}`,
-          flowTime: reading.last_hour_flow_time?.toFixed(2) || '-',
-          diffPressure: reading.last_hour_diff_pressure?.toFixed(2) || '-',
-          staticPressure: reading.last_hour_static_pressure?.toFixed(1) || '-',
-          temperature: reading.last_hour_temperature?.toFixed(1) || '-',
-          volume: reading.last_hour_volume?.toFixed(3) || '-',
-          energy: reading.last_hour_energy?.toFixed(2) || '-',
-          specificGravity: reading.specific_gravity?.toFixed(4) || '-'
+          date: formatDate(day.date),
+          time: `${day.readingCount} hrs`, // Show how many hourly readings were summed
+          flowTime: day.totalFlowTime.toFixed(2),
+          diffPressure: day.avgDiffPressure.toFixed(2),
+          staticPressure: day.avgPressure.toFixed(1),
+          temperature: day.avgTemp.toFixed(1),
+          volume: day.totalVolume.toFixed(3),
+          energy: day.totalEnergy.toFixed(2),
+          specificGravity: day.specificGravity.toFixed(4)
         };
       });
 
-      // Calculate summary - SUM for Volume and Energy, AVERAGE of non-zero values for others
-      const totalVolume = dailyReadings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
-      const totalEnergy = dailyReadings.reduce((sum, r) => sum + (r.last_hour_energy || 0), 0);
+      // Calculate grand totals from daily summaries
+      // SUM of daily volumes and energies (each daily value is already the sum of 24 hourly readings)
+      const grandTotalVolume = dailySummaries.reduce((sum, day) => sum + day.totalVolume, 0);
+      const grandTotalEnergy = dailySummaries.reduce((sum, day) => sum + day.totalEnergy, 0);
 
-      // Calculate average of non-zero values for Temperature
-      const nonZeroTemps = dailyReadings.filter(r => r.last_hour_temperature && r.last_hour_temperature !== 0);
-      const avgTemp = nonZeroTemps.length > 0
-        ? nonZeroTemps.reduce((sum, r) => sum + r.last_hour_temperature, 0) / nonZeroTemps.length
+      // AVERAGE of daily averages for Temperature (only non-zero days)
+      const nonZeroTempDays = dailySummaries.filter(day => day.avgTemp !== 0);
+      const grandAvgTemp = nonZeroTempDays.length > 0
+        ? nonZeroTempDays.reduce((sum, day) => sum + day.avgTemp, 0) / nonZeroTempDays.length
         : 0;
 
-      // Calculate average of non-zero values for Static Pressure
-      const nonZeroPressures = dailyReadings.filter(r => r.last_hour_static_pressure && r.last_hour_static_pressure !== 0);
-      const avgPressure = nonZeroPressures.length > 0
-        ? nonZeroPressures.reduce((sum, r) => sum + r.last_hour_static_pressure, 0) / nonZeroPressures.length
+      // AVERAGE of daily averages for Static Pressure (only non-zero days)
+      const nonZeroPressureDays = dailySummaries.filter(day => day.avgPressure !== 0);
+      const grandAvgPressure = nonZeroPressureDays.length > 0
+        ? nonZeroPressureDays.reduce((sum, day) => sum + day.avgPressure, 0) / nonZeroPressureDays.length
         : 0;
 
-      // Calculate average of non-zero values for Differential Pressure
-      const nonZeroDiffPressures = dailyReadings.filter(r => r.last_hour_diff_pressure && r.last_hour_diff_pressure !== 0);
-      const avgDiffPressure = nonZeroDiffPressures.length > 0
-        ? nonZeroDiffPressures.reduce((sum, r) => sum + r.last_hour_diff_pressure, 0) / nonZeroDiffPressures.length
+      // AVERAGE of daily averages for Differential Pressure (only non-zero days)
+      const nonZeroDiffPressureDays = dailySummaries.filter(day => day.avgDiffPressure !== 0);
+      const grandAvgDiffPressure = nonZeroDiffPressureDays.length > 0
+        ? nonZeroDiffPressureDays.reduce((sum, day) => sum + day.avgDiffPressure, 0) / nonZeroDiffPressureDays.length
         : 0;
 
       // Create worksheet with styled headers
@@ -721,11 +751,11 @@ const AdvancedReports = () => {
       worksheet[`B${rowNum}`] = { v: 'TOTAL/AVG', s: totalRowStyle };
       worksheet[`C${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`D${rowNum}`] = { v: '', s: totalRowStyle };
-      worksheet[`E${rowNum}`] = { v: avgDiffPressure.toFixed(2), s: totalRowStyle };
-      worksheet[`F${rowNum}`] = { v: avgPressure.toFixed(1), s: totalRowStyle };
-      worksheet[`G${rowNum}`] = { v: avgTemp.toFixed(1), s: totalRowStyle };
-      worksheet[`H${rowNum}`] = { v: totalVolume.toFixed(3), s: totalRowStyle };
-      worksheet[`I${rowNum}`] = { v: totalEnergy.toFixed(2), s: totalRowStyle };
+      worksheet[`E${rowNum}`] = { v: grandAvgDiffPressure.toFixed(2), s: totalRowStyle };
+      worksheet[`F${rowNum}`] = { v: grandAvgPressure.toFixed(1), s: totalRowStyle };
+      worksheet[`G${rowNum}`] = { v: grandAvgTemp.toFixed(1), s: totalRowStyle };
+      worksheet[`H${rowNum}`] = { v: grandTotalVolume.toFixed(3), s: totalRowStyle };
+      worksheet[`I${rowNum}`] = { v: grandTotalEnergy.toFixed(2), s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
 
       // Set the range of the worksheet
@@ -764,7 +794,7 @@ const AdvancedReports = () => {
       const filename = `${selectedDevice.client_id}_6AM_Report_${formatDateShort(startDate)}_to_${formatDateShort(endDate)}.xlsx`;
       XLSX.writeFile(workbook, filename);
 
-      toast.success(`Report generated successfully! (${dailyReadings.length} days of data)`);
+      toast.success(`Report generated successfully! (${dailySummaries.length} days of data)`);
       setShowReportModal(false);
     } catch (error) {
       console.error('Error generating report:', error);
