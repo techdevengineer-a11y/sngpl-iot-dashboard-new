@@ -585,9 +585,8 @@ const AdvancedReports = () => {
           const totalVolume = readings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
           const totalEnergy = readings.reduce((sum, r) => sum + (r.last_hour_energy || 0), 0);
 
-          // SUM flow time and convert from seconds to hours
+          // SUM flow time (keep in seconds as raw value)
           const totalFlowTimeSeconds = readings.reduce((sum, r) => sum + (r.last_hour_flow_time || 0), 0);
-          const totalFlowTimeHours = totalFlowTimeSeconds / 3600;
 
           // AVERAGE of non-zero values for temperature, pressure, diff pressure
           const nonZeroTemps = readings.filter(r => r.last_hour_temperature && r.last_hour_temperature !== 0);
@@ -613,7 +612,7 @@ const AdvancedReports = () => {
             date,
             totalVolume,
             totalEnergy,
-            totalFlowTimeHours,
+            totalFlowTimeSeconds,
             avgTemp,
             avgPressure,
             avgDiffPressure,
@@ -634,7 +633,7 @@ const AdvancedReports = () => {
           srNo: index + 1,
           date: formatDate(day.date),
           time: '06:00', // Daily summary time
-          flowTime: day.totalFlowTimeHours.toFixed(2),
+          flowTime: day.totalFlowTimeSeconds.toFixed(2),
           diffPressure: day.avgDiffPressure.toFixed(2),
           staticPressure: day.avgPressure.toFixed(1),
           temperature: day.avgTemp.toFixed(1),
@@ -723,7 +722,7 @@ const AdvancedReports = () => {
       // Row 2: Empty row
       // Row 3: Column headers
       const headers = [
-        'Sr. No.', 'Date', 'Time', 'Flow Time (hrs)', 'Diff Pressure (IWC)',
+        'Sr. No.', 'Date', 'Time', 'Flow Time (s)', 'Diff Pressure (IWC)',
         'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
         'Energy', 'Specific Gravity'
       ];
