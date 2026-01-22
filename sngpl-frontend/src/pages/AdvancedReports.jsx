@@ -585,11 +585,8 @@ const AdvancedReports = () => {
           const totalVolume = readings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
           const totalEnergy = readings.reduce((sum, r) => sum + (r.last_hour_energy || 0), 0);
 
-          // AVERAGE of non-zero flow time values (keep in seconds as raw value)
-          const nonZeroFlowTimes = readings.filter(r => r.last_hour_flow_time && r.last_hour_flow_time !== 0);
-          const avgFlowTimeSeconds = nonZeroFlowTimes.length > 0
-            ? nonZeroFlowTimes.reduce((sum, r) => sum + r.last_hour_flow_time, 0) / nonZeroFlowTimes.length
-            : 0;
+          // Get flow time from first reading (raw value, no calculation - like specific gravity)
+          const flowTimeSeconds = readings[0]?.last_hour_flow_time || 0;
 
           // AVERAGE of non-zero values for temperature, pressure, diff pressure
           const nonZeroTemps = readings.filter(r => r.last_hour_temperature && r.last_hour_temperature !== 0);
@@ -615,7 +612,7 @@ const AdvancedReports = () => {
             date,
             totalVolume,
             totalEnergy,
-            avgFlowTimeSeconds,
+            flowTimeSeconds,
             avgTemp,
             avgPressure,
             avgDiffPressure,
@@ -636,7 +633,7 @@ const AdvancedReports = () => {
           srNo: index + 1,
           date: formatDate(day.date),
           time: '06:00', // Daily summary time
-          flowTime: day.avgFlowTimeSeconds.toFixed(2),
+          flowTime: day.flowTimeSeconds.toFixed(2),
           diffPressure: day.avgDiffPressure.toFixed(2),
           staticPressure: day.avgPressure.toFixed(1),
           temperature: day.avgTemp.toFixed(1),
