@@ -583,10 +583,27 @@ const AdvancedReports = () => {
         };
       });
 
-      // Calculate summary
+      // Calculate summary - SUM for Volume and Energy, AVERAGE of non-zero values for others
       const totalVolume = dailyReadings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
-      const avgTemp = dailyReadings.reduce((sum, r) => sum + (r.last_hour_temperature || 0), 0) / dailyReadings.length;
-      const avgPressure = dailyReadings.reduce((sum, r) => sum + (r.last_hour_static_pressure || 0), 0) / dailyReadings.length;
+      const totalEnergy = dailyReadings.reduce((sum, r) => sum + (r.last_hour_energy || 0), 0);
+
+      // Calculate average of non-zero values for Temperature
+      const nonZeroTemps = dailyReadings.filter(r => r.last_hour_temperature && r.last_hour_temperature !== 0);
+      const avgTemp = nonZeroTemps.length > 0
+        ? nonZeroTemps.reduce((sum, r) => sum + r.last_hour_temperature, 0) / nonZeroTemps.length
+        : 0;
+
+      // Calculate average of non-zero values for Static Pressure
+      const nonZeroPressures = dailyReadings.filter(r => r.last_hour_static_pressure && r.last_hour_static_pressure !== 0);
+      const avgPressure = nonZeroPressures.length > 0
+        ? nonZeroPressures.reduce((sum, r) => sum + r.last_hour_static_pressure, 0) / nonZeroPressures.length
+        : 0;
+
+      // Calculate average of non-zero values for Differential Pressure
+      const nonZeroDiffPressures = dailyReadings.filter(r => r.last_hour_diff_pressure && r.last_hour_diff_pressure !== 0);
+      const avgDiffPressure = nonZeroDiffPressures.length > 0
+        ? nonZeroDiffPressures.reduce((sum, r) => sum + r.last_hour_diff_pressure, 0) / nonZeroDiffPressures.length
+        : 0;
 
       // Create worksheet with styled headers
       const worksheet = XLSX.utils.aoa_to_sheet([]);
@@ -634,25 +651,15 @@ const AdvancedReports = () => {
 
       // Device name for title
       const deviceName = selectedDevice.device_name || selectedDevice.client_id;
-      const dateRangeText = `${formatDateShort(startDate)} TO ${formatDateShort(endDate)}`;
 
       // Row 1: Main title with device name (dark red background)
       worksheet['A1'] = {
-        v: `DAILY 6 AM READINGS REPORT - ${deviceName.toUpperCase()}`,
+        v: `DAILY VOLUME OF ${deviceName.toUpperCase()}`,
         s: darkRedHeaderStyle
       };
 
-      // Row 2: Date range subtitle
-      worksheet['A2'] = {
-        v: `PERIOD: ${dateRangeText}`,
-        s: {
-          font: { bold: true, sz: 12 },
-          alignment: { horizontal: 'center', vertical: 'center' }
-        }
-      };
-
-      // Row 3: Empty row
-      // Row 4: Column headers
+      // Row 2: Empty row
+      // Row 3: Column headers
       const headers = [
         'Sr. No.', 'Date', 'Time', 'Flow Time (hrs)', 'Diff Pressure (IWC)',
         'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
@@ -660,11 +667,11 @@ const AdvancedReports = () => {
       ];
       headers.forEach((header, idx) => {
         const col = String.fromCharCode(65 + idx); // A, B, C...
-        worksheet[`${col}4`] = { v: header, s: columnHeaderStyle };
+        worksheet[`${col}3`] = { v: header, s: columnHeaderStyle };
       });
 
-      // Add data starting from row 5
-      let rowNum = 5;
+      // Add data starting from row 4
+      let rowNum = 4;
       excelData.forEach((row) => {
         worksheet[`A${rowNum}`] = { v: row.srNo, s: dataStyle };
         worksheet[`B${rowNum}`] = { v: row.date, s: dataStyle };
@@ -680,15 +687,16 @@ const AdvancedReports = () => {
       });
 
       // Add total/average row with yellow background
+      // SUM for Volume and Energy, AVERAGE of non-zero values for Temp, Pressure, Diff Pressure
       worksheet[`A${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`B${rowNum}`] = { v: 'TOTAL/AVG', s: totalRowStyle };
       worksheet[`C${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`D${rowNum}`] = { v: '', s: totalRowStyle };
-      worksheet[`E${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`E${rowNum}`] = { v: avgDiffPressure.toFixed(2), s: totalRowStyle };
       worksheet[`F${rowNum}`] = { v: avgPressure.toFixed(1), s: totalRowStyle };
       worksheet[`G${rowNum}`] = { v: avgTemp.toFixed(1), s: totalRowStyle };
       worksheet[`H${rowNum}`] = { v: totalVolume.toFixed(3), s: totalRowStyle };
-      worksheet[`I${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`I${rowNum}`] = { v: totalEnergy.toFixed(2), s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
 
       // Set the range of the worksheet
@@ -711,15 +719,13 @@ const AdvancedReports = () => {
       // Set row heights
       worksheet['!rows'] = [
         { hpt: 30 },  // Row 1: Title
-        { hpt: 22 },  // Row 2: Subtitle
-        { hpt: 15 },  // Row 3: Empty
-        { hpt: 35 },  // Row 4: Column headers
+        { hpt: 15 },  // Row 2: Empty
+        { hpt: 35 },  // Row 3: Column headers
       ];
 
       // Merge title cells
       worksheet['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title row 1
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, // Title row 2
       ];
 
       const workbook = XLSX.utils.book_new();
