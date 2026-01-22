@@ -630,7 +630,7 @@ const AdvancedReports = () => {
         return {
           srNo: index + 1,
           date: formatDate(day.date),
-          time: `${day.readingCount} hrs`, // Show how many hourly readings were summed
+          time: '06:00', // Daily summary time
           flowTime: day.totalFlowTime.toFixed(2),
           diffPressure: day.avgDiffPressure.toFixed(2),
           staticPressure: day.avgPressure.toFixed(1),
