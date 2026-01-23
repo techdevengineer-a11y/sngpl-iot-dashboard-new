@@ -382,9 +382,9 @@ class StandaloneMQTTListener:
         return alarm
 
     def check_offline_devices(self):
-        """Background task to check for offline devices every 105 minutes (1 hour 45 min)"""
+        """Background task to check for offline devices every 90 minutes (1 hour 30 min)"""
         logger.info("[OFFLINE MONITOR] Starting offline device monitoring thread")
-        print("[INFO] Offline device monitoring started (105-minute check interval)")
+        print("[INFO] Offline device monitoring started (90-minute check interval)")
 
         while self.running:
             try:
@@ -392,10 +392,10 @@ class StandaloneMQTTListener:
                 try:
                     # Get current time
                     now = datetime.now()
-                    # Calculate threshold time (105 minutes ago - 1 hour 45 min)
-                    threshold_time = now - timedelta(minutes=105)
+                    # Calculate threshold time (90 minutes ago - 1 hour 30 min)
+                    threshold_time = now - timedelta(minutes=90)
 
-                    # Find devices that were active but haven't sent data in 105 minutes
+                    # Find devices that were active but haven't sent data in 90 minutes
                     offline_devices = db.query(Device).filter(
                         Device.is_active == True,
                         Device.last_seen < threshold_time
@@ -405,7 +405,7 @@ class StandaloneMQTTListener:
                         for device in offline_devices:
                             device.is_active = False
                             logger.warning(f"[OFFLINE] Device {device.client_id} marked as offline (last seen: {device.last_seen})")
-                            print(f"⚠️  [OFFLINE] Device {device.client_id} is now OFFLINE (no data for 105 minutes)")
+                            print(f"⚠️  [OFFLINE] Device {device.client_id} is now OFFLINE (no data for 90 minutes)")
 
                         db.commit()
 
@@ -415,12 +415,12 @@ class StandaloneMQTTListener:
                 finally:
                     db.close()
 
-                # Sleep for 105 minutes (6300 seconds) before next check
-                time.sleep(6300)
+                # Sleep for 90 minutes (5400 seconds) before next check
+                time.sleep(5400)
 
             except Exception as e:
                 logger.error(f"[ERROR] Offline check thread error: {e}", exc_info=True)
-                time.sleep(6300)
+                time.sleep(5400)
 
         logger.info("[OFFLINE MONITOR] Offline device monitoring thread stopped")
 

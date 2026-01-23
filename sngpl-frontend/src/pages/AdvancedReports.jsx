@@ -581,12 +581,10 @@ const AdvancedReports = () => {
       const dailySummaries = Object.entries(readingsByDate)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([dateKey, { readings, date }]) => {
-          // SUM for volume and energy (all hourly readings in the day)
+          // SUM for volume, energy, and flow time (all hourly readings in the day)
           const totalVolume = readings.reduce((sum, r) => sum + (r.last_hour_volume || 0), 0);
           const totalEnergy = readings.reduce((sum, r) => sum + (r.last_hour_energy || 0), 0);
-
-          // Get flow time from first reading (raw value, no calculation - like specific gravity)
-          const flowTimeSeconds = readings[0]?.last_hour_flow_time || 0;
+          const totalFlowTime = readings.reduce((sum, r) => sum + (r.last_hour_flow_time || 0), 0);
 
           // AVERAGE of non-zero values for temperature, pressure, diff pressure
           const nonZeroTemps = readings.filter(r => r.last_hour_temperature && r.last_hour_temperature !== 0);
@@ -612,7 +610,7 @@ const AdvancedReports = () => {
             date,
             totalVolume,
             totalEnergy,
-            flowTimeSeconds,
+            totalFlowTime,
             avgTemp,
             avgPressure,
             avgDiffPressure,
@@ -633,7 +631,7 @@ const AdvancedReports = () => {
           srNo: index + 1,
           date: formatDate(day.date),
           time: '06:00', // Daily summary time
-          flowTime: day.flowTimeSeconds.toFixed(2),
+          flowTime: day.totalFlowTime.toFixed(2),
           diffPressure: day.avgDiffPressure.toFixed(2),
           staticPressure: day.avgPressure.toFixed(1),
           temperature: day.avgTemp.toFixed(1),
@@ -644,9 +642,10 @@ const AdvancedReports = () => {
       });
 
       // Calculate grand totals from daily summaries
-      // SUM of daily volumes and energies (each daily value is already the sum of 24 hourly readings)
+      // SUM of daily volumes, energies, and flow time (each daily value is already the sum of 24 hourly readings)
       const grandTotalVolume = dailySummaries.reduce((sum, day) => sum + day.totalVolume, 0);
       const grandTotalEnergy = dailySummaries.reduce((sum, day) => sum + day.totalEnergy, 0);
+      const grandTotalFlowTime = dailySummaries.reduce((sum, day) => sum + day.totalFlowTime, 0);
 
       // AVERAGE of daily averages for Temperature (only non-zero days)
       const nonZeroTempDays = dailySummaries.filter(day => day.avgTemp !== 0);
@@ -748,11 +747,11 @@ const AdvancedReports = () => {
       });
 
       // Add total/average row with yellow background
-      // SUM for Volume and Energy, AVERAGE of non-zero values for Temp, Pressure, Diff Pressure
+      // SUM for Volume, Energy, and Flow Time; AVERAGE of non-zero values for Temp, Pressure, Diff Pressure
       worksheet[`A${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`B${rowNum}`] = { v: 'TOTAL/AVG', s: totalRowStyle };
       worksheet[`C${rowNum}`] = { v: '', s: totalRowStyle };
-      worksheet[`D${rowNum}`] = { v: '', s: totalRowStyle };
+      worksheet[`D${rowNum}`] = { v: grandTotalFlowTime.toFixed(2), s: totalRowStyle };
       worksheet[`E${rowNum}`] = { v: grandAvgDiffPressure.toFixed(2), s: totalRowStyle };
       worksheet[`F${rowNum}`] = { v: grandAvgPressure.toFixed(1), s: totalRowStyle };
       worksheet[`G${rowNum}`] = { v: grandAvgTemp.toFixed(1), s: totalRowStyle };
