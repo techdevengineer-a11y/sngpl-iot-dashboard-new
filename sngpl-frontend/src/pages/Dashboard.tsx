@@ -553,7 +553,7 @@ const Dashboard = () => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <Zap className="w-8 h-8 text-cyan-600" />
-                Total Volume Flow (All {totalDevices} Devices)
+                Total Volume Flow
               </h2>
               <p className="text-gray-600 text-sm mt-1">Real-time aggregated gas flow monitoring</p>
             </div>
