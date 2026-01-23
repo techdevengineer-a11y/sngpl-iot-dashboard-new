@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#0891b2"/>
+
+  <!-- Gas flame icon -->
+  <path d="M32 12c-2 8-8 12-8 20 0 6.627 5.373 12 12 12s12-5.373 12-12c0-8-10-12-8-20-4 4-8 8-8 12 0-4-4-8-8-12 2 8 8 12 8 20z" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Inner flame -->
+  <path d="M32 24c-1 4-4 6-4 10 0 3.314 2.686 6 6 6s6-2.686 6-6c0-4-5-6-4-10-2 2-4 4-4 6 0-2-2-4-4-6 1 4 4 6 4 10z" fill="#06b6d4"/>
+
+  <!-- Monitoring dots -->
+  <circle cx="18" cy="32" r="3" fill="#ffffff" opacity="0.8"/>
+  <circle cx="46" cy="32" r="3" fill="#ffffff" opacity="0.8"/>
+  <circle cx="32" cy="52" r="3" fill="#ffffff" opacity="0.8"/>
+</svg>
