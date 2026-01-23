@@ -714,7 +714,7 @@ const AdvancedReports = () => {
 
       // Row 1: Main title with device name (dark red background)
       worksheet['A1'] = {
-        v: `DAILY VOLUME OF ${deviceName.toUpperCase()}`,
+        v: `Daily Volume Report of ${deviceName}`,
         s: darkRedHeaderStyle
       };
 
