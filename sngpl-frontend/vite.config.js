@@ -8,13 +8,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',  // Better minification
-    terserOptions: {
-      compress: {
-        drop_console: true,  // Remove console.log in production
-        drop_debugger: true
-      }
-    },
+    minify: 'esbuild',  // Default fast minifier
     rollupOptions: {
       output: {
         // Split vendor chunks for better caching
