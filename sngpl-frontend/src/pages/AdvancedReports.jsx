@@ -22,6 +22,10 @@ const AdvancedReports = () => {
   const [sectionComparisonType, setSectionComparisonType] = useState('15days'); // For section reports
   const [generatingReport, setGeneratingReport] = useState(false);
 
+  // Year comparison state - for comparing specific months between years
+  const [lastYearMonth, setLastYearMonth] = useState(new Date().getMonth()); // 0-11
+  const [thisYearMonth, setThisYearMonth] = useState(new Date().getMonth()); // 0-11
+
   // Section colors matching the Sections page
   const sectionColors = [
     'from-blue-600 to-blue-700',
@@ -139,6 +143,27 @@ const AdvancedReports = () => {
 
         comparisonLabel = 'FULL-MONTH';
         periodType = '01*' + lastDayB;
+      } else if (sectionComparisonType === 'yearComparison') {
+        // Year comparison: Compare selected month from last year with selected month from this year
+        const lastYear = now.getFullYear() - 1;
+        const thisYear = now.getFullYear();
+
+        // Period A: Selected month from last year (full month)
+        const lastDayA = new Date(lastYear, lastYearMonth + 1, 0).getDate();
+        periodA_start = new Date(lastYear, lastYearMonth, 1, 0, 0, 0);
+        periodA_end = new Date(lastYear, lastYearMonth, lastDayA, 23, 59, 59);
+
+        // Period B: Selected month from this year (full month or up to today if current month)
+        const lastDayB = new Date(thisYear, thisYearMonth + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const isCurrentMonth = thisYearMonth === now.getMonth();
+        const periodBEndDay = isCurrentMonth ? Math.min(currentDay, lastDayB) : lastDayB;
+
+        periodB_start = new Date(thisYear, thisYearMonth, 1, 0, 0, 0);
+        periodB_end = new Date(thisYear, thisYearMonth, periodBEndDay, 23, 59, 59);
+
+        comparisonLabel = 'YEAR-COMPARISON';
+        periodType = '01*' + periodBEndDay;
       }
 
       // Format for column headers
@@ -991,7 +1016,7 @@ const AdvancedReports = () => {
                   <h3 className="text-lg font-bold text-gray-900">Generate Section Report</h3>
                   <p className="text-sm text-gray-600">Download volume comparison for all {sectionDevices.length} devices</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <select
                     value={sectionComparisonType}
                     onChange={(e) => setSectionComparisonType(e.target.value)}
@@ -999,7 +1024,58 @@ const AdvancedReports = () => {
                   >
                     <option value="15days">Mid-Month</option>
                     <option value="30days">Full Month</option>
+                    <option value="yearComparison">Year Comparison</option>
                   </select>
+
+                  {/* Month selectors for Year Comparison */}
+                  {sectionComparisonType === 'yearComparison' && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 font-medium">{new Date().getFullYear() - 1}:</span>
+                        <select
+                          value={lastYearMonth}
+                          onChange={(e) => setLastYearMonth(parseInt(e.target.value))}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value={0}>January</option>
+                          <option value={1}>February</option>
+                          <option value={2}>March</option>
+                          <option value={3}>April</option>
+                          <option value={4}>May</option>
+                          <option value={5}>June</option>
+                          <option value={6}>July</option>
+                          <option value={7}>August</option>
+                          <option value={8}>September</option>
+                          <option value={9}>October</option>
+                          <option value={10}>November</option>
+                          <option value={11}>December</option>
+                        </select>
+                      </div>
+                      <span className="text-gray-400">vs</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 font-medium">{new Date().getFullYear()}:</span>
+                        <select
+                          value={thisYearMonth}
+                          onChange={(e) => setThisYearMonth(parseInt(e.target.value))}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value={0}>January</option>
+                          <option value={1}>February</option>
+                          <option value={2}>March</option>
+                          <option value={3}>April</option>
+                          <option value={4}>May</option>
+                          <option value={5}>June</option>
+                          <option value={6}>July</option>
+                          <option value={7}>August</option>
+                          <option value={8}>September</option>
+                          <option value={9}>October</option>
+                          <option value={10}>November</option>
+                          <option value={11}>December</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
                   <button
                     onClick={generateSectionReport}
                     disabled={generatingReport}
