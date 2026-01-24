@@ -23,8 +23,14 @@ const AdvancedReports = () => {
   const [generatingReport, setGeneratingReport] = useState(false);
 
   // Year comparison state - for comparing specific months between years
-  const [lastYearMonth, setLastYearMonth] = useState(new Date().getMonth()); // 0-11
-  const [thisYearMonth, setThisYearMonth] = useState(new Date().getMonth()); // 0-11
+  const [periodAYear, setPeriodAYear] = useState(new Date().getFullYear() - 1);
+  const [periodAMonth, setPeriodAMonth] = useState(new Date().getMonth()); // 0-11
+  const [periodBYear, setPeriodBYear] = useState(new Date().getFullYear());
+  const [periodBMonth, setPeriodBMonth] = useState(new Date().getMonth()); // 0-11
+
+  // Generate year options (last 5 years to current year)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 5 + i);
 
   // Section colors matching the Sections page
   const sectionColors = [
@@ -115,44 +121,41 @@ const AdvancedReports = () => {
       // Get month names
       const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-      // Year comparison - always compare selected months from last year vs this year
-      const lastYear = now.getFullYear() - 1;
-      const thisYear = now.getFullYear();
-
+      // Year comparison - compare selected months from selected years
       // Define date ranges based on comparison type (mid-month or full month)
       if (sectionComparisonType === '15days') {
         // Mid-Month comparison: 1st to 15th of each selected month
 
-        // Period A: Selected month from last year (1st to 15th)
-        periodA_start = new Date(lastYear, lastYearMonth, 1, 0, 0, 0);
-        periodA_end = new Date(lastYear, lastYearMonth, 15, 23, 59, 59);
+        // Period A: Selected month and year (1st to 15th)
+        periodA_start = new Date(periodAYear, periodAMonth, 1, 0, 0, 0);
+        periodA_end = new Date(periodAYear, periodAMonth, 15, 23, 59, 59);
 
-        // Period B: Selected month from this year (1st to 15th, or up to today if current month and before 15th)
+        // Period B: Selected month and year (1st to 15th, or up to today if current month)
         const currentDay = now.getDate();
-        const isCurrentMonth = thisYearMonth === now.getMonth() && thisYear === now.getFullYear();
+        const isCurrentMonth = periodBMonth === now.getMonth() && periodBYear === now.getFullYear();
         const periodBEndDay = isCurrentMonth ? Math.min(currentDay, 15) : 15;
 
-        periodB_start = new Date(thisYear, thisYearMonth, 1, 0, 0, 0);
-        periodB_end = new Date(thisYear, thisYearMonth, periodBEndDay, 23, 59, 59);
+        periodB_start = new Date(periodBYear, periodBMonth, 1, 0, 0, 0);
+        periodB_end = new Date(periodBYear, periodBMonth, periodBEndDay, 23, 59, 59);
 
         comparisonLabel = 'MID-MONTH';
         periodType = '01*15';
       } else if (sectionComparisonType === '30days') {
         // Full Month comparison: 1st to last day of each selected month
 
-        // Period A: Selected month from last year (full month)
-        const lastDayA = new Date(lastYear, lastYearMonth + 1, 0).getDate();
-        periodA_start = new Date(lastYear, lastYearMonth, 1, 0, 0, 0);
-        periodA_end = new Date(lastYear, lastYearMonth, lastDayA, 23, 59, 59);
+        // Period A: Selected month and year (full month)
+        const lastDayA = new Date(periodAYear, periodAMonth + 1, 0).getDate();
+        periodA_start = new Date(periodAYear, periodAMonth, 1, 0, 0, 0);
+        periodA_end = new Date(periodAYear, periodAMonth, lastDayA, 23, 59, 59);
 
-        // Period B: Selected month from this year (full month or up to today if current month)
-        const lastDayB = new Date(thisYear, thisYearMonth + 1, 0).getDate();
+        // Period B: Selected month and year (full month or up to today if current month)
+        const lastDayB = new Date(periodBYear, periodBMonth + 1, 0).getDate();
         const currentDay = now.getDate();
-        const isCurrentMonth = thisYearMonth === now.getMonth() && thisYear === now.getFullYear();
+        const isCurrentMonth = periodBMonth === now.getMonth() && periodBYear === now.getFullYear();
         const periodBEndDay = isCurrentMonth ? Math.min(currentDay, lastDayB) : lastDayB;
 
-        periodB_start = new Date(thisYear, thisYearMonth, 1, 0, 0, 0);
-        periodB_end = new Date(thisYear, thisYearMonth, periodBEndDay, 23, 59, 59);
+        periodB_start = new Date(periodBYear, periodBMonth, 1, 0, 0, 0);
+        periodB_end = new Date(periodBYear, periodBMonth, periodBEndDay, 23, 59, 59);
 
         comparisonLabel = 'FULL-MONTH';
         periodType = '01*' + periodBEndDay;
@@ -1009,51 +1012,67 @@ const AdvancedReports = () => {
                   <p className="text-sm text-gray-600">Compare volumes between last year and this year for all {sectionDevices.length} devices</p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  {/* Last Year Month Selector */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 font-medium">{new Date().getFullYear() - 1}:</span>
+                  {/* Period A: Month and Year Selector */}
+                  <div className="flex items-center gap-1">
                     <select
-                      value={lastYearMonth}
-                      onChange={(e) => setLastYearMonth(parseInt(e.target.value))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      value={periodAMonth}
+                      onChange={(e) => setPeriodAMonth(parseInt(e.target.value))}
+                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value={0}>January</option>
-                      <option value={1}>February</option>
-                      <option value={2}>March</option>
-                      <option value={3}>April</option>
+                      <option value={0}>Jan</option>
+                      <option value={1}>Feb</option>
+                      <option value={2}>Mar</option>
+                      <option value={3}>Apr</option>
                       <option value={4}>May</option>
-                      <option value={5}>June</option>
-                      <option value={6}>July</option>
-                      <option value={7}>August</option>
-                      <option value={8}>September</option>
-                      <option value={9}>October</option>
-                      <option value={10}>November</option>
-                      <option value={11}>December</option>
+                      <option value={5}>Jun</option>
+                      <option value={6}>Jul</option>
+                      <option value={7}>Aug</option>
+                      <option value={8}>Sep</option>
+                      <option value={9}>Oct</option>
+                      <option value={10}>Nov</option>
+                      <option value={11}>Dec</option>
+                    </select>
+                    <select
+                      value={periodAYear}
+                      onChange={(e) => setPeriodAYear(parseInt(e.target.value))}
+                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      {yearOptions.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
                     </select>
                   </div>
 
                   <span className="text-gray-400 font-medium">vs</span>
 
-                  {/* This Year Month Selector */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 font-medium">{new Date().getFullYear()}:</span>
+                  {/* Period B: Month and Year Selector */}
+                  <div className="flex items-center gap-1">
                     <select
-                      value={thisYearMonth}
-                      onChange={(e) => setThisYearMonth(parseInt(e.target.value))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      value={periodBMonth}
+                      onChange={(e) => setPeriodBMonth(parseInt(e.target.value))}
+                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value={0}>January</option>
-                      <option value={1}>February</option>
-                      <option value={2}>March</option>
-                      <option value={3}>April</option>
+                      <option value={0}>Jan</option>
+                      <option value={1}>Feb</option>
+                      <option value={2}>Mar</option>
+                      <option value={3}>Apr</option>
                       <option value={4}>May</option>
-                      <option value={5}>June</option>
-                      <option value={6}>July</option>
-                      <option value={7}>August</option>
-                      <option value={8}>September</option>
-                      <option value={9}>October</option>
-                      <option value={10}>November</option>
-                      <option value={11}>December</option>
+                      <option value={5}>Jun</option>
+                      <option value={6}>Jul</option>
+                      <option value={7}>Aug</option>
+                      <option value={8}>Sep</option>
+                      <option value={9}>Oct</option>
+                      <option value={10}>Nov</option>
+                      <option value={11}>Dec</option>
+                    </select>
+                    <select
+                      value={periodBYear}
+                      onChange={(e) => setPeriodBYear(parseInt(e.target.value))}
+                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      {yearOptions.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
                     </select>
                   </div>
 
