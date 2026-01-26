@@ -533,15 +533,9 @@ const Dashboard = () => {
               </h2>
               <p className="text-gray-600 text-sm mt-1">Real-time aggregated gas flow monitoring</p>
             </div>
-            <div className="flex items-center gap-3">
-              {dashboardData?.sections.slice(0, 5).map((section, index) => (
-                <div key={section.section_id} className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${section.active_sms > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-xs text-gray-600">
-                    Section {index + 1}: {section.active_sms}/{section.sms_count}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${wsConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600">{wsConnected ? 'Live' : 'Disconnected'}</span>
             </div>
           </div>
 
