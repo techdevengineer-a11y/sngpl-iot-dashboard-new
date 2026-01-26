@@ -42,6 +42,7 @@ const UserManagement = lazy(() => import('./pages/UserManagement'));
 const Favourites = lazy(() => import('./pages/Favourites'));
 const UnderObservation = lazy(() => import('./pages/UnderObservation'));
 const OdorantDrum = lazy(() => import('./pages/OdorantDrumNew'));
+const OfflineTracker = lazy(() => import('./pages/OfflineTracker'));
 const LoadingScreen = lazy(() => import('./components/LoadingScreen'));
 
 // Loading fallback component
@@ -100,6 +101,7 @@ function AppRoutes() {
         <Route path="/odorant-drum" element={<PrivateRoute><OdorantDrum /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
         <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+        <Route path="/offline-tracker" element={<PrivateRoute><OfflineTracker /></PrivateRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Suspense>

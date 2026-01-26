@@ -11,15 +11,13 @@ import {
   WifiOff,
   AlertTriangle,
   TrendingUp,
-  Clock,
   Thermometer,
   Gauge,
   Zap,
   Battery,
   BatteryLow,
   BatteryMedium,
-  BatteryFull,
-  BarChart3
+  BatteryFull
 } from 'lucide-react';
 
 interface SectionStats {
@@ -524,34 +522,22 @@ const Dashboard = () => {
             <div className="text-xs text-gray-600 mt-1">Active</div>
           </motion.div>
 
-          {/* Volume Comparison */}
+          {/* Duration Offline */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-purple-100 rounded-lg p-4"
+            className="bg-red-100 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/offline-tracker')}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-purple-600 text-xs font-medium">Volume Comparison</span>
-              <BarChart3 className="w-5 h-5 text-purple-600" />
+              <span className="text-red-600 text-xs font-medium">Duration Offline</span>
+              <div className="p-1 bg-red-100 rounded-md">
+                <WifiOff className="w-5 h-5 text-red-600" />
+              </div>
             </div>
-            <select
-              className="w-full bg-white text-purple-700 text-xs font-semibold rounded px-2 py-1.5 border border-purple-200 focus:outline-none focus:border-purple-500 cursor-pointer"
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  navigate('/advanced-reports', { state: { preSelectedSection: e.target.value } });
-                }
-              }}
-            >
-              <option value="" disabled>Select Section</option>
-              {(dashboardData?.sections || []).map((section) => (
-                <option key={section.section_id} value={section.section_id}>
-                  Section {section.section_id}
-                </option>
-              ))}
-            </select>
-            <div className="text-xs text-gray-600 mt-1">Go to Report</div>
+            <div className="text-3xl font-bold text-gray-900">{offlineDevices}</div>
+            <div className="text-xs text-gray-600 mt-1">Since {dataStartTime.toLocaleTimeString()}</div>
           </motion.div>
         </div>
 
