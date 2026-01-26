@@ -441,7 +441,7 @@ const Dashboard = () => {
     <Layout>
       <div className="flex flex-col space-y-4 pb-8">
         {/* Top Stats Bar - Compact Single Row */}
-        <div className="grid grid-cols-6 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {/* Total SMS */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -507,14 +507,14 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="glass rounded-lg p-4"
+            className="bg-purple-100 rounded-lg p-4"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-purple-600 text-xs font-medium">Volume Comparison</span>
               <BarChart3 className="w-5 h-5 text-purple-600" />
             </div>
             <select
-              className="w-full bg-purple-50 text-purple-700 text-xs font-semibold rounded px-2 py-1.5 border border-purple-200 focus:outline-none focus:border-purple-500 cursor-pointer"
+              className="w-full bg-white text-purple-700 text-xs font-semibold rounded px-2 py-1.5 border border-purple-200 focus:outline-none focus:border-purple-500 cursor-pointer"
               defaultValue=""
               onChange={(e) => {
                 if (e.target.value) {
@@ -529,7 +529,7 @@ const Dashboard = () => {
                 </option>
               ))}
             </select>
-            <div className="text-xs text-purple-600 mt-1">Go to Report</div>
+            <div className="text-xs text-gray-600 mt-1">Go to Report</div>
           </motion.div>
         </div>
 
