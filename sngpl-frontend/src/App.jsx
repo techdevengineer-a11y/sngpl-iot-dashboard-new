@@ -71,6 +71,24 @@ const PrivateRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" />;
 };
 
+const AdminRoute = ({ children }) => {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="text-2xl text-gray-400">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" />;
+  if (!isAdmin) return <Navigate to="/dashboard" />;
+  return children;
+};
+
 function AppRoutes() {
   const { user } = useAuth();
 
@@ -85,7 +103,7 @@ function AppRoutes() {
         <Route path="/stations/:stationId" element={<PrivateRoute><StationDetail /></PrivateRoute>} />
         <Route path="/trends/:deviceId" element={<PrivateRoute><Trends /></PrivateRoute>} />
         <Route path="/devices" element={<PrivateRoute><Devices /></PrivateRoute>} />
-        <Route path="/device-management" element={<PrivateRoute><DeviceManagement /></PrivateRoute>} />
+        <Route path="/device-management" element={<AdminRoute><DeviceManagement /></AdminRoute>} />
         <Route path="/map" element={<PrivateRoute><Map /></PrivateRoute>} />
         <Route path="/live-monitor" element={<PrivateRoute><LiveMonitor /></PrivateRoute>} />
         <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
@@ -95,7 +113,7 @@ function AppRoutes() {
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
         <Route path="/advanced-reports" element={<PrivateRoute><AdvancedReports /></PrivateRoute>} />
         <Route path="/analytics-page" element={<PrivateRoute><AnalyticsPage /></PrivateRoute>} />
-        <Route path="/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
+        <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
         <Route path="/favourites" element={<PrivateRoute><Favourites /></PrivateRoute>} />
         <Route path="/under-observation" element={<PrivateRoute><UnderObservation /></PrivateRoute>} />
         <Route path="/odorant-drum" element={<PrivateRoute><OdorantDrum /></PrivateRoute>} />

@@ -117,8 +117,8 @@ async def get_device_stats(db: Session = Depends(get_db), current_user: User = D
 
 
 @router.get("/", response_model=List[DeviceResponse])
-async def get_devices(db: Session = Depends(get_db)):
-    """Get all devices - Public endpoint with latest reading including battery"""
+async def get_devices(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Get all devices with latest reading including battery"""
     devices = db.query(Device).all()
 
     # Attach latest reading with battery data for each device
@@ -184,7 +184,10 @@ async def create_device(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create new device"""
+    """Create new device (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only administrators can create devices")
+
     # Check if device already exists
     if db.query(Device).filter(Device.client_id == device_data.client_id).first():
         raise HTTPException(status_code=400, detail="Device ID already exists")
@@ -214,7 +217,10 @@ async def update_device(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update device"""
+    """Update device (admin or user)"""
+    if current_user.role not in ["admin", "user"]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions to update devices")
+
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -245,7 +251,10 @@ async def update_device_name(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update only the device name"""
+    """Update only the device name (admin or user)"""
+    if current_user.role not in ["admin", "user"]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions to update devices")
+
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -276,7 +285,10 @@ async def delete_device(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete device by client_id"""
+    """Delete device by client_id (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only administrators can delete devices")
+
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")

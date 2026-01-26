@@ -61,9 +61,9 @@ class UserCreate(BaseModel):
     @classmethod
     def validate_role(cls, v: str) -> str:
         """Validate role is one of allowed values"""
-        allowed_roles = ["admin", "user", "guest"]
-        if v not in allowed_roles:
-            raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")
+        from app.core.rbac import RBACPermissions
+        if v not in RBACPermissions.VALID_ROLES:
+            raise ValueError(f"Role must be one of: {', '.join(RBACPermissions.VALID_ROLES)}")
         return v
 
 
@@ -202,13 +202,13 @@ async def register(request: Request, user_data: UserCreate, db: Session = Depend
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Create new user
+    # Public registration always creates 'viewer' role — admin creates elevated users via /users/
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_password,
-        role=user_data.role,
+        role="viewer",
         is_active=True
     )
     db.add(new_user)

@@ -6,7 +6,7 @@ import { getAlarms } from '../services/api';
 import GlobalSearch from './GlobalSearch';
 
 const Layout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,18 +29,21 @@ const Layout = ({ children }) => {
   }, []);
 
   // Sidebar menu items with gradient colors
-  const menuItems = [
+  const allMenuItems = [
     { path: '/dashboard', label: 'DASHBOARD', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
     { path: '/sections', label: 'SECTIONS', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
     { path: '/alarms', label: 'ALERTS', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
     { path: '/advanced-reports', label: 'ADVANCED REPORTS', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
     { path: '/analytics-page', label: 'ANALYTICS', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
-    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
+    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500', adminOnly: true },
     { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
     { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
     { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
-    { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
+    { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500', adminOnly: true },
   ];
+
+  // Filter menu items based on role
+  const menuItems = allMenuItems.filter(item => !item.adminOnly || isAdmin);
 
   useEffect(() => {
     fetchNotifications();

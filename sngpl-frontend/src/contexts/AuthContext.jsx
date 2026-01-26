@@ -52,8 +52,16 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
+  const hasRole = (role) => {
+    if (!user) return false;
+    if (Array.isArray(role)) return role.includes(user.role);
+    return user.role === role;
+  };
+
+  const isAdmin = user?.role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, hasRole, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
