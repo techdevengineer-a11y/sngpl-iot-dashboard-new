@@ -696,7 +696,7 @@ const Dashboard = () => {
             </div>
 
             {/* Alerts Scrollable List */}
-            <div className="flex-1 overflow-y-auto" style={{ maxHeight: '140px' }}>
+            <div className="flex-1 overflow-y-auto" style={{ maxHeight: '220px' }}>
               <div className="space-y-2">
                 {filteredAlertsData.slice(0, 50).map((alert, index) => (
                   <motion.div
@@ -779,12 +779,12 @@ const Dashboard = () => {
             </div>
 
             {/* Bar Chart - Horizontal Scroll Container */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden" style={{ maxHeight: '180px', minHeight: '180px' }}>
-              <div style={{ minWidth: `${Math.max(filteredBatteryData.length * 25, 100)}px`, height: '180px' }}>
-                {chartsReady && <ResponsiveContainer width="100%" height="100%" minHeight={180}>
+            <div className="flex-1 overflow-x-auto overflow-y-hidden" style={{ maxHeight: '260px', minHeight: '260px' }}>
+              <div style={{ minWidth: `${Math.max(filteredBatteryData.length * 25, 100)}px`, height: '260px' }}>
+                {chartsReady && <ResponsiveContainer width="100%" height="100%" minHeight={260}>
                   <BarChart
                     data={filteredBatteryData}
-                    margin={{ top: 10, right: 10, left: 10, bottom: 40 }}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
                     <XAxis
@@ -792,7 +792,7 @@ const Dashboard = () => {
                       stroke="#9ca3af"
                       angle={-45}
                       textAnchor="end"
-                      height={60}
+                      height={80}
                       interval={0}
                       style={{ fontSize: '8px' }}
                     />
