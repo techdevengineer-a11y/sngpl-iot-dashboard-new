@@ -309,11 +309,20 @@ const Dashboard = () => {
 
           return {
             deviceId: device.client_id,
+            deviceName: device.device_name || device.client_id,
             section: device.section_id || 'N/A',
-            battery: batteryVoltage,  // Store actual voltage, not percentage
+            battery: batteryVoltage,
             voltage: batteryVoltage,
-            status: status
+            status: status,
+            isActive: device.is_active || false
           };
+        });
+
+        // Sort: online devices first, then offline
+        data.sort((a: any, b: any) => {
+          if (a.isActive && !b.isActive) return -1;
+          if (!a.isActive && b.isActive) return 1;
+          return 0;
         });
 
         setBatteryData(data);
@@ -329,9 +338,21 @@ const Dashboard = () => {
 
   const generateAlertsData = async () => {
     try {
-      // Fetch real alarms from API with authentication
-      const response = await api.get('/alarms/');
-      const alarms = response.data;
+      // Fetch real alarms and device names
+      const [alarmsResponse, devicesResponse] = await Promise.all([
+        api.get('/alarms/'),
+        fetch('/api/devices/')
+      ]);
+      const alarms = alarmsResponse.data;
+
+      // Build a lookup map: client_id -> device_name
+      const deviceNameMap: { [key: string]: string } = {};
+      if (devicesResponse.ok) {
+        const devices = await devicesResponse.json();
+        devices.forEach((d: any) => {
+          deviceNameMap[d.client_id] = d.device_name || d.client_id;
+        });
+      }
 
         // Map alarms to alerts format
         const alerts: any[] = alarms.map((alarm: any) => {
@@ -365,6 +386,7 @@ const Dashboard = () => {
 
           return {
             deviceId: alarm.client_id,
+            deviceName: deviceNameMap[alarm.client_id] || alarm.client_id,
             section: alarm.section_id || 'N/A',
             parameter: alarm.parameter.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
             paramIcon: paramIcons[alarm.parameter] || '⚠️',
@@ -710,7 +732,7 @@ const Dashboard = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-base">{alert.paramIcon}</span>
                         <div>
-                          <div className="text-xs font-semibold text-white">{alert.deviceId}</div>
+                          <div className="text-xs font-semibold text-white">{alert.deviceName}</div>
                           <div className="text-xs text-gray-400">{alert.parameter}</div>
                         </div>
                       </div>
@@ -741,7 +763,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Battery className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-base font-semibold text-white">Device Battery Levels</h3>
+                <h3 className="text-base font-semibold text-white">SMS Battery Levels</h3>
               </div>
               <select
                 value={selectedSection}
@@ -804,16 +826,21 @@ const Dashboard = () => {
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#1e293b',
-                        border: '1px solid #334155',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e5e7eb',
                         borderRadius: '8px',
-                        color: '#fff',
-                        fontSize: '11px'
+                        color: '#1f2937',
+                        fontSize: '12px',
+                        padding: '8px 12px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                       }}
                       formatter={(value: any) => {
                         return [`${value.toFixed(2)}V`, 'Battery'];
                       }}
-                      labelFormatter={(label) => `Device: ${label}`}
+                      labelFormatter={(label) => {
+                        const device = filteredBatteryData.find((d: any) => d.deviceId === label);
+                        return device?.deviceName || label;
+                      }}
                     />
                     <Bar dataKey="battery" radius={[4, 4, 0, 0]} maxBarSize={20}>
                       {filteredBatteryData.map((entry, index) => (
