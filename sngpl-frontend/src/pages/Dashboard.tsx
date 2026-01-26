@@ -44,7 +44,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [chartsReady, setChartsReady] = useState(false);
   const [dataStartTime, setDataStartTime] = useState<Date>(new Date());
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [totalAlerts, setTotalAlerts] = useState(0);
   const [selectedSection, setSelectedSection] = useState('all');
   const [batteryData, setBatteryData] = useState<any[]>([]);
@@ -67,18 +66,6 @@ const Dashboard = () => {
     // Delay chart rendering to avoid dimension errors (reduced for faster load)
     setTimeout(() => setChartsReady(true), 300);
 
-    // Update current time every second with requestAnimationFrame for smoother rendering
-    let lastUpdate = Date.now();
-    const updateTime = () => {
-      const now = Date.now();
-      if (now - lastUpdate >= 1000) {
-        setCurrentTime(new Date());
-        lastUpdate = now;
-      }
-      requestAnimationFrame(updateTime);
-    };
-    const animationId = requestAnimationFrame(updateTime);
-
     // Refresh data every 10 seconds for smooth updates
     const dataInterval = setInterval(() => {
       fetchDashboardData();
@@ -87,7 +74,6 @@ const Dashboard = () => {
     }, 10000);
 
     return () => {
-      cancelAnimationFrame(animationId);
       clearInterval(dataInterval);
       if (wsRef.current) {
         wsRef.current.close();
@@ -284,20 +270,10 @@ const Dashboard = () => {
     }
   };
 
-  const getDuration = () => {
-    const diff = currentTime.getTime() - dataStartTime.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    return `${hours}h ${minutes}m ${seconds}s`;
-  };
-
-  const getTimeAgo = () => {
-    const diff = currentTime.getTime() - new Date(dashboardData?.timestamp || new Date()).getTime();
-    const seconds = Math.floor(diff / 1000);
-    if (seconds < 5) return 'Just now';
-    if (seconds < 60) return `${seconds}s ago`;
-    return `${Math.floor(seconds / 60)}m ago`;
+  const getAverageFlow = () => {
+    if (historicalFlow.length === 0) return 0;
+    const sum = historicalFlow.reduce((acc: number, d: any) => acc + d.totalFlow, 0);
+    return sum / historicalFlow.length;
   };
 
   const getPeakFlow = () => {
@@ -584,15 +560,15 @@ const Dashboard = () => {
             </div>
 
             <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="text-xs text-purple-700 mb-1">Duration</div>
-              <div className="text-2xl font-bold text-purple-600">{getDuration()}</div>
-              <div className="text-xs text-purple-600 mt-1">Running Time</div>
+              <div className="text-xs text-purple-700 mb-1">Average Flow</div>
+              <div className="text-3xl font-bold text-purple-600">{getAverageFlow().toFixed(1)}</div>
+              <div className="text-xs text-purple-600 mt-1">MCF/day</div>
             </div>
 
             <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-              <div className="text-xs text-yellow-700 mb-1">Last Update</div>
-              <div className="text-2xl font-bold text-yellow-600">{getTimeAgo()}</div>
-              <div className="text-xs text-yellow-600 mt-1">{historicalFlow.length} points</div>
+              <div className="text-xs text-yellow-700 mb-1">Total Volume</div>
+              <div className="text-3xl font-bold text-yellow-600">{getTotalAccumulated().toLocaleString()}</div>
+              <div className="text-xs text-yellow-600 mt-1">MCF</div>
             </div>
           </div>
 
