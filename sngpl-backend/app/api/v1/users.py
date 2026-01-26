@@ -58,9 +58,9 @@ class UserCreate(BaseModel):
     @field_validator("role")
     @classmethod
     def validate_role(cls, v: str) -> str:
-        from app.core.rbac import RBACPermissions
-        if v not in RBACPermissions.VALID_ROLES:
-            raise ValueError(f"Role must be one of: {', '.join(RBACPermissions.VALID_ROLES)}")
+        valid_roles = ["admin", "user", "viewer"]
+        if v not in valid_roles:
+            raise ValueError(f"Role must be one of: {', '.join(valid_roles)}")
         return v
 
 
@@ -73,9 +73,9 @@ class UserUpdate(BaseModel):
     @classmethod
     def validate_role(cls, v: Optional[str]) -> Optional[str]:
         if v is not None:
-            from app.core.rbac import RBACPermissions
-            if v not in RBACPermissions.VALID_ROLES:
-                raise ValueError(f"Role must be one of: {', '.join(RBACPermissions.VALID_ROLES)}")
+            valid_roles = ["admin", "user", "viewer"]
+            if v not in valid_roles:
+                raise ValueError(f"Role must be one of: {', '.join(valid_roles)}")
         return v
 
 
@@ -306,7 +306,6 @@ async def update_user(
             )
         user.email = user_data.email
 
-    if user_data.role is not None and current_user.role == "admin":
         user.role = user_data.role
 
     if user_data.is_active is not None and current_user.role == "admin":

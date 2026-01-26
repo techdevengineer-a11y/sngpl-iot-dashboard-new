@@ -17,11 +17,8 @@ class RBACPermissions:
     ROLE_HIERARCHY = {
         "admin": 3,
         "user": 2,
-        "viewer": 1
+        "guest": 1
     }
-
-    # Valid roles list — single source of truth
-    VALID_ROLES = ["admin", "user", "viewer"]
 
     # Permission mappings: resource_type -> action -> allowed_roles
     PERMISSIONS = {
@@ -30,18 +27,18 @@ class RBACPermissions:
             "read": ["admin", "user"],
             "update": ["admin"],
             "delete": ["admin"],
-            "change_password": ["admin", "user"]
+            "change_password": ["admin", "user"]  # Users can change their own password
         },
         "device": {
             "create": ["admin"],
-            "read": ["admin", "user", "viewer"],
+            "read": ["admin", "user", "guest"],
             "update": ["admin", "user"],
             "delete": ["admin"]
         },
         "alarm": {
-            "create": ["admin"],
-            "read": ["admin", "user", "viewer"],
-            "update": ["admin", "user"],
+            "create": ["admin"],  # System creates alarms
+            "read": ["admin", "user", "guest"],
+            "update": ["admin", "user"],  # Acknowledge alarms
             "delete": ["admin"]
         },
         "threshold": {
@@ -69,10 +66,10 @@ class RBACPermissions:
             "execute": ["admin"]
         },
         "analytics": {
-            "read": ["admin", "user", "viewer"]
+            "read": ["admin", "user"]
         },
         "dashboard": {
-            "read": ["admin", "user", "viewer"]
+            "read": ["admin", "user", "guest"]
         }
     }
 

@@ -86,10 +86,9 @@ async def get_readings(
     end_date: Optional[datetime] = None,
     page: int = Query(1, ge=1, description="Page number (starts at 1)"),
     page_size: int = Query(100, ge=1, le=1000, description="Items per page (max 1000)"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    """Get device readings with pagination and filters. Can filter by device_id OR client_id"""
+    """Get device readings with pagination and filters - Public endpoint. Can filter by device_id OR client_id"""
     from app.models.models import Device
     query = db.query(DeviceReading)
 

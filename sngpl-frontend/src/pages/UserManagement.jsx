@@ -1,25 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
-const API_URL = '/api';
-
-const getAuthHeaders = () => ({
-  Authorization: `Bearer ${sessionStorage.getItem('token')}`
-});
+const API_URL = 'http://localhost:8000/api';
 
 const UserManagement = () => {
-  const { user: currentUser, isAdmin } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirect non-admins
-  useEffect(() => {
-    if (currentUser && !isAdmin) {
-      navigate('/dashboard');
-    }
-  }, [currentUser, isAdmin, navigate]);
-
+  const { token, user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -52,7 +38,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       const response = await axios.get(`${API_URL}/users/`, {
-        headers: getAuthHeaders()
+        headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data);
       setLoading(false);
@@ -95,7 +81,7 @@ const UserManagement = () => {
 
     try {
       await axios.delete(`${API_URL}/users/${userId}`, {
-        headers: getAuthHeaders()
+        headers: { Authorization: `Bearer ${token}` }
       });
       fetchUsers();
     } catch (error) {
@@ -109,7 +95,7 @@ const UserManagement = () => {
     try {
       if (modalMode === 'create') {
         await axios.post(`${API_URL}/users/`, formData, {
-          headers: getAuthHeaders()
+          headers: { Authorization: `Bearer ${token}` }
         });
       } else {
         const updateData = {
@@ -119,7 +105,7 @@ const UserManagement = () => {
           is_active: formData.is_active
         };
         await axios.put(`${API_URL}/users/${selectedUser.id}`, updateData, {
-          headers: getAuthHeaders()
+          headers: { Authorization: `Bearer ${token}` }
         });
       }
       setShowModal(false);
@@ -145,7 +131,7 @@ const UserManagement = () => {
           new_password: passwordData.new_password
         },
         {
-          headers: getAuthHeaders()
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
       alert('Password changed successfully');
