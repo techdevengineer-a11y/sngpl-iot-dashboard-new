@@ -22,6 +22,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app.core.config import settings
 from app.core.logging_config import get_logger
 from app.models.models import Device, DeviceReading, Alarm, AlarmThreshold
+from app.services.email_service import email_service
+
+# Offline notification recipients
+OFFLINE_NOTIFICATION_EMAILS = ["shayankhannn12@gmail.com"]
 
 logger = get_logger("mqtt_listener")
 
@@ -406,6 +410,16 @@ class StandaloneMQTTListener:
                             device.is_active = False
                             logger.warning(f"[OFFLINE] Device {device.client_id} marked as offline (last seen: {device.last_seen})")
                             print(f"⚠️  [OFFLINE] Device {device.client_id} is now OFFLINE (no data for 90 minutes)")
+
+                            # Send offline email notification
+                            try:
+                                email_service.send_device_offline_notification(
+                                    device=device,
+                                    recipients=OFFLINE_NOTIFICATION_EMAILS
+                                )
+                                logger.info(f"[EMAIL] Offline notification sent for {device.device_name or device.client_id}")
+                            except Exception as email_err:
+                                logger.error(f"[EMAIL] Failed to send offline notification for {device.client_id}: {email_err}")
 
                         db.commit()
 

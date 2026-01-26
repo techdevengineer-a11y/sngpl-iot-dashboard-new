@@ -1,6 +1,7 @@
-"""Email notification service for critical alarms"""
+"""Email notification service for critical alarms and device offline alerts"""
 
 import os
+import smtplib
 import aiosmtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -363,6 +364,128 @@ Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         )
 
         return await self.send_email(recipients, subject, html_body)
+
+    def send_email_sync(
+        self,
+        to_emails: List[str],
+        subject: str,
+        html_body: str,
+        text_body: Optional[str] = None
+    ) -> bool:
+        """Send email synchronously (for use in background threads)"""
+        if not self.enabled:
+            logger.warning("Email service is disabled - skipping email")
+            return False
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = self.from_email
+            message["To"] = ", ".join(to_emails)
+
+            if text_body:
+                text_part = MIMEText(text_body, "plain")
+                message.attach(text_part)
+
+            html_part = MIMEText(html_body, "html")
+            message.attach(html_part)
+
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.smtp_user, self.smtp_password)
+                server.send_message(message)
+
+            logger.info(f"Email sent successfully to {to_emails}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to send email: {e}", exc_info=True)
+            return False
+
+    def send_device_offline_notification(
+        self,
+        device: Device,
+        recipients: List[str]
+    ) -> bool:
+        """Send notification when a device goes offline (sync, for background threads)"""
+        if not recipients:
+            return False
+
+        now = datetime.now()
+        device_name = device.device_name or device.client_id
+        last_seen = device.last_seen.strftime("%Y-%m-%d %H:%M:%S") if device.last_seen else "Unknown"
+
+        subject = f"⚠️ SNGPL Device Offline: {device_name}"
+
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+        .header h1 {{ margin: 0; font-size: 22px; }}
+        .content {{ background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }}
+        .info-row {{ padding: 12px 0; border-bottom: 1px solid #e5e7eb; }}
+        .info-label {{ font-weight: 600; color: #4b5563; display: inline-block; width: 140px; }}
+        .info-value {{ color: #1f2937; }}
+        .alert-box {{ margin: 20px 0; padding: 15px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px; }}
+        .footer {{ background: #1f2937; color: #9ca3af; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚠️ Device Offline Alert</h1>
+    </div>
+    <div class="content">
+        <h2 style="color: #dc2626; margin-top: 0;">Device Has Gone Offline</h2>
+        <div class="info-row">
+            <span class="info-label">Device Name:</span>
+            <span class="info-value"><strong>{device_name}</strong></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Client ID:</span>
+            <span class="info-value">{device.client_id}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Location:</span>
+            <span class="info-value">{device.location or 'Unknown'}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Last Seen:</span>
+            <span class="info-value">{last_seen}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Offline Since:</span>
+            <span class="info-value">{now.strftime("%Y-%m-%d %H:%M:%S")}</span>
+        </div>
+        <div class="alert-box">
+            <strong>⚠️ Action Required:</strong> Device <strong>{device_name}</strong> has not sent any data for over 90 minutes and has been marked as offline. Please check the device.
+        </div>
+    </div>
+    <div class="footer">
+        <p>SNGPL IoT Monitoring Platform - Automated Alert</p>
+        <p>Generated on {now.strftime("%Y-%m-%d %H:%M:%S")}</p>
+    </div>
+</body>
+</html>
+"""
+
+        text_body = f"""SNGPL IoT Platform - Device Offline Alert
+
+Device Name: {device_name}
+Client ID: {device.client_id}
+Location: {device.location or 'Unknown'}
+Last Seen: {last_seen}
+Offline Since: {now.strftime("%Y-%m-%d %H:%M:%S")}
+
+ACTION REQUIRED: Device {device_name} has not sent data for over 90 minutes.
+
+---
+SNGPL IoT Monitoring Platform
+"""
+
+        return self.send_email_sync(recipients, subject, html_body, text_body)
 
 
 # Global instance
