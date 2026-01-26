@@ -566,9 +566,9 @@ const Dashboard = () => {
             </div>
 
             <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-              <div className="text-xs text-yellow-700 mb-1">Total Volume</div>
-              <div className="text-3xl font-bold text-yellow-600">{getTotalAccumulated().toLocaleString()}</div>
-              <div className="text-xs text-yellow-600 mt-1">MCF</div>
+              <div className="text-xs text-yellow-700 mb-1">Active Stations</div>
+              <div className="text-3xl font-bold text-yellow-600">{onlineDevices}/{totalDevices}</div>
+              <div className="text-xs text-yellow-600 mt-1">Online</div>
             </div>
           </div>
 
