@@ -18,7 +18,8 @@ import {
   Battery,
   BatteryLow,
   BatteryMedium,
-  BatteryFull
+  BatteryFull,
+  BarChart3
 } from 'lucide-react';
 
 interface SectionStats {
@@ -501,7 +502,7 @@ const Dashboard = () => {
             <div className="text-xs text-gray-600 mt-1">Active</div>
           </motion.div>
 
-          {/* Data Started */}
+          {/* Volume Comparison */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -509,11 +510,26 @@ const Dashboard = () => {
             className="glass rounded-lg p-4"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-purple-600 text-xs font-medium">Started</span>
-              <Clock className="w-5 h-5 text-purple-600" />
+              <span className="text-purple-600 text-xs font-medium">Volume Comparison</span>
+              <BarChart3 className="w-5 h-5 text-purple-600" />
             </div>
-            <div className="text-sm font-bold text-gray-900">{dataStartTime.toLocaleTimeString()}</div>
-            <div className="text-xs text-gray-600 mt-1">{dataStartTime.toLocaleDateString()}</div>
+            <select
+              className="w-full bg-purple-50 text-purple-700 text-xs font-semibold rounded px-2 py-1.5 border border-purple-200 focus:outline-none focus:border-purple-500 cursor-pointer"
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  navigate('/advanced-reports', { state: { preSelectedSection: e.target.value } });
+                }
+              }}
+            >
+              <option value="" disabled>Select Section</option>
+              {(dashboardData?.sections || []).map((section) => (
+                <option key={section.section_id} value={section.section_id}>
+                  Section {section.section_id}
+                </option>
+              ))}
+            </select>
+            <div className="text-xs text-purple-600 mt-1">Go to Report</div>
           </motion.div>
         </div>
 

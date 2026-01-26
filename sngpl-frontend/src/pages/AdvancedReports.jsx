@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { FileSpreadsheet, Building2, Gauge, WifiOff, Activity, Download, Calendar, ChevronDown, ChevronUp, CheckSquare, Square, X, BarChart3, Thermometer, Wind, Droplets, Battery, TrendingUp, MapPin, Clock } from 'lucide-react';
@@ -8,6 +8,7 @@ import { getReadings } from '../services/api';
 
 const AdvancedReports = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sectionData, setSectionData] = useState([]);
   const [selectedSection, setSelectedSection] = useState(null);
   const [sectionDevices, setSectionDevices] = useState([]);
@@ -44,6 +45,17 @@ const AdvancedReports = () => {
   useEffect(() => {
     fetchSectionData();
   }, []);
+
+  // Auto-select section when navigated from Dashboard with preSelectedSection
+  useEffect(() => {
+    const preSelectedSectionId = location.state?.preSelectedSection;
+    if (preSelectedSectionId && sectionData.length > 0 && !selectedSection) {
+      const section = sectionData.find(s => s.section_id === preSelectedSectionId);
+      if (section) {
+        handleSectionClick(section);
+      }
+    }
+  }, [sectionData]);
 
   const fetchSectionData = async () => {
     try {
