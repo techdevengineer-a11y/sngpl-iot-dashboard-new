@@ -592,18 +592,23 @@ const AdvancedReports = () => {
 
       const allReadings = await fetchAllData();
 
-      // Group ALL readings by date (not just 6 AM)
-      // Sum volumes and energies, average other values for each day
+      // Group readings by gas day (7 AM to 6 AM next day = 23 hours, 24 readings)
+      // If reading hour < 7, it belongs to previous day's gas day
       const readingsByDate = {};
 
       allReadings.forEach(reading => {
         const readingDate = new Date(reading.timestamp || reading.created_at);
-        const dateKey = `${readingDate.getFullYear()}-${String(readingDate.getMonth() + 1).padStart(2, '0')}-${String(readingDate.getDate()).padStart(2, '0')}`;
+        // Shift readings before 7 AM to previous day's gas day
+        const adjusted = new Date(readingDate);
+        if (adjusted.getHours() < 7) {
+          adjusted.setDate(adjusted.getDate() - 1);
+        }
+        const dateKey = `${adjusted.getFullYear()}-${String(adjusted.getMonth() + 1).padStart(2, '0')}-${String(adjusted.getDate()).padStart(2, '0')}`;
 
         if (!readingsByDate[dateKey]) {
           readingsByDate[dateKey] = {
             readings: [],
-            date: readingDate
+            date: adjusted
           };
         }
         readingsByDate[dateKey].readings.push(reading);
@@ -674,7 +679,7 @@ const AdvancedReports = () => {
       });
 
       // Calculate grand totals from daily summaries
-      // SUM of daily volumes, energies, and flow time (each daily value is already the sum of 24 hourly readings)
+      // SUM of daily volumes, energies, and flow time (gas day: 7 AM to 6 AM = 23 hours, 24 readings)
       const grandTotalVolume = dailySummaries.reduce((sum, day) => sum + day.totalVolume, 0);
       const grandTotalEnergy = dailySummaries.reduce((sum, day) => sum + day.totalEnergy, 0);
       const grandTotalFlowTime = dailySummaries.reduce((sum, day) => sum + day.totalFlowTime, 0);
