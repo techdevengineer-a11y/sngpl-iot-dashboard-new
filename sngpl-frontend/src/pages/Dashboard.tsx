@@ -557,10 +557,6 @@ const Dashboard = () => {
               </h2>
               <p className="text-gray-600 text-sm mt-1">Real-time aggregated gas flow monitoring</p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${wsConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-gray-600">{wsConnected ? 'Live' : 'Disconnected'}</span>
-            </div>
           </div>
 
           {/* Current Stats Row */}
