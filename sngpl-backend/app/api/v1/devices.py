@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from typing import List, Optional
 from pydantic import BaseModel, field_validator, Field
 from datetime import datetime
@@ -121,14 +121,20 @@ async def get_devices(db: Session = Depends(get_db)):
     """Get all devices - Public endpoint with latest reading including battery"""
     devices = db.query(Device).all()
 
-    # Attach latest reading with battery data for each device
+    # Get latest reading for ALL devices in a single query using a subquery
+    latest_reading_ids = db.query(
+        func.max(DeviceReading.id).label("max_id")
+    ).group_by(DeviceReading.device_id).subquery()
+
+    latest_readings = db.query(DeviceReading).filter(
+        DeviceReading.id.in_(db.query(latest_reading_ids.c.max_id))
+    ).all()
+
+    # Build a lookup dict: device_id -> latest reading
+    readings_map = {r.device_id: r for r in latest_readings}
+
     result = []
     for device in devices:
-        # Get latest reading for this device
-        latest_reading = db.query(DeviceReading).filter(
-            DeviceReading.device_id == device.id
-        ).order_by(DeviceReading.timestamp.desc()).first()
-
         # Extract section_id from client_id (e.g., SMS-II-023 -> II)
         section_id = None
         if device.client_id and device.client_id.startswith("SMS-"):
@@ -150,6 +156,7 @@ async def get_devices(db: Session = Depends(get_db)):
             "latest_reading": None
         }
 
+        latest_reading = readings_map.get(device.id)
         if latest_reading:
             device_dict["latest_reading"] = {
                 "temperature": latest_reading.temperature,
