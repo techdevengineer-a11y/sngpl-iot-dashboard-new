@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import { FileSpreadsheet, Building2, Gauge, WifiOff, Activity, Download, Calendar, ChevronDown, ChevronUp, CheckSquare, Square, X, BarChart3, Thermometer, Wind, Droplets, Battery, TrendingUp, MapPin, Clock } from 'lucide-react';
+import { FileSpreadsheet, Building2, Gauge, WifiOff, Activity, Download, Calendar, ChevronDown, ChevronUp, CheckSquare, Square, X, BarChart3, Thermometer, Wind, Droplets, Battery, TrendingUp, MapPin, Clock, SlidersHorizontal, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 import { getReadings } from '../services/api';
 
@@ -15,6 +15,18 @@ const AdvancedReports = () => {
   const [loading, setLoading] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
+
+  // Adjustment state
+  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
+  const [adjustmentDevice, setAdjustmentDevice] = useState(null);
+  const [adjustmentDuration, setAdjustmentDuration] = useState('');
+  const [adjustmentVolume, setAdjustmentVolume] = useState('');
+  const [adjustmentReason, setAdjustmentReason] = useState('');
+  const [adjustments, setAdjustments] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sngpl_adjustments') || '[]');
+    } catch { return []; }
+  });
 
   // Report generation state
   const [reportType, setReportType] = useState('30days'); // 15days, 30days, or custom
@@ -795,9 +807,104 @@ const AdvancedReports = () => {
       worksheet[`H${rowNum}`] = { v: grandTotalVolume, s: totalRowStyle };
       worksheet[`I${rowNum}`] = { v: grandTotalEnergy, s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
+      rowNum++;
+
+      // Add adjustments at the end of the table
+      const deviceAdjustments = getAdjustmentsForReport(selectedDevice.id, startDate, endDate);
+      if (deviceAdjustments.length > 0) {
+        // Empty row
+        rowNum++;
+
+        // Adjustment header
+        const adjHeaderStyle = {
+          fill: { fgColor: { rgb: 'FF8C00' } },
+          font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } }
+          }
+        };
+
+        const adjSubHeaderStyle = {
+          fill: { fgColor: { rgb: 'FFF3E0' } },
+          font: { bold: true, sz: 10 },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } }
+          }
+        };
+
+        const adjDataStyle = {
+          fill: { fgColor: { rgb: 'FFF8F0' } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } }
+          }
+        };
+
+        // Title row for adjustments
+        worksheet[`A${rowNum}`] = { v: 'ADJUSTMENTS', s: adjHeaderStyle };
+        worksheet[`B${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`C${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`D${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`E${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`F${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`G${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`H${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`I${rowNum}`] = { v: '', s: adjHeaderStyle };
+        worksheet[`J${rowNum}`] = { v: '', s: adjHeaderStyle };
+        // Merge adjustment title
+        if (!worksheet['!merges']) worksheet['!merges'] = [];
+        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 0 }, e: { r: rowNum - 1, c: 9 } });
+        rowNum++;
+
+        // Sub headers
+        worksheet[`A${rowNum}`] = { v: '#', s: adjSubHeaderStyle };
+        worksheet[`B${rowNum}`] = { v: 'SMS Name', s: adjSubHeaderStyle };
+        worksheet[`C${rowNum}`] = { v: 'Duration', s: adjSubHeaderStyle };
+        worksheet[`D${rowNum}`] = { v: 'Adjustment Volume', s: adjSubHeaderStyle };
+        worksheet[`E${rowNum}`] = { v: '', s: adjSubHeaderStyle };
+        worksheet[`F${rowNum}`] = { v: 'Reason', s: adjSubHeaderStyle };
+        worksheet[`G${rowNum}`] = { v: '', s: adjSubHeaderStyle };
+        worksheet[`H${rowNum}`] = { v: '', s: adjSubHeaderStyle };
+        worksheet[`I${rowNum}`] = { v: 'Date Added', s: adjSubHeaderStyle };
+        worksheet[`J${rowNum}`] = { v: '', s: adjSubHeaderStyle };
+        // Merge reason columns and date columns
+        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 4 }, e: { r: rowNum - 1, c: 4 } });
+        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 5 }, e: { r: rowNum - 1, c: 7 } });
+        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 8 }, e: { r: rowNum - 1, c: 9 } });
+        rowNum++;
+
+        // Adjustment data rows
+        deviceAdjustments.forEach((adj, idx) => {
+          worksheet[`A${rowNum}`] = { v: idx + 1, s: adjDataStyle };
+          worksheet[`B${rowNum}`] = { v: adj.deviceName, s: adjDataStyle };
+          worksheet[`C${rowNum}`] = { v: adj.duration, s: adjDataStyle };
+          worksheet[`D${rowNum}`] = { v: adj.volume, s: adjDataStyle };
+          worksheet[`E${rowNum}`] = { v: '', s: adjDataStyle };
+          worksheet[`F${rowNum}`] = { v: adj.reason, s: adjDataStyle };
+          worksheet[`G${rowNum}`] = { v: '', s: adjDataStyle };
+          worksheet[`H${rowNum}`] = { v: '', s: adjDataStyle };
+          worksheet[`I${rowNum}`] = { v: new Date(adj.createdAt).toLocaleDateString(), s: adjDataStyle };
+          worksheet[`J${rowNum}`] = { v: '', s: adjDataStyle };
+          // Merge reason and date cells
+          worksheet['!merges'].push({ s: { r: rowNum - 1, c: 5 }, e: { r: rowNum - 1, c: 7 } });
+          worksheet['!merges'].push({ s: { r: rowNum - 1, c: 8 }, e: { r: rowNum - 1, c: 9 } });
+          rowNum++;
+        });
+      }
 
       // Set the range of the worksheet
-      worksheet['!ref'] = `A1:J${rowNum}`;
+      worksheet['!ref'] = `A1:J${rowNum - 1}`;
 
       // Set column widths
       worksheet['!cols'] = [
@@ -840,6 +947,55 @@ const AdvancedReports = () => {
     } finally {
       setGeneratingReport(false);
     }
+  };
+
+  // Adjustment functions
+  const handleAdjustmentClick = (device) => {
+    setAdjustmentDevice(device);
+    setAdjustmentDuration('');
+    setAdjustmentVolume('');
+    setAdjustmentReason('');
+    setShowAdjustmentModal(true);
+  };
+
+  const saveAdjustment = () => {
+    if (!adjustmentDevice || !adjustmentDuration || !adjustmentVolume || !adjustmentReason) {
+      toast.error('Please fill all fields');
+      return;
+    }
+    const newAdj = {
+      id: Date.now(),
+      deviceId: adjustmentDevice.id,
+      clientId: adjustmentDevice.client_id,
+      deviceName: adjustmentDevice.device_name || adjustmentDevice.client_id,
+      duration: adjustmentDuration,
+      volume: adjustmentVolume,
+      reason: adjustmentReason,
+      createdAt: new Date().toISOString(),
+      month: new Date().getMonth(),
+      year: new Date().getFullYear(),
+    };
+    const updated = [...adjustments, newAdj];
+    setAdjustments(updated);
+    localStorage.setItem('sngpl_adjustments', JSON.stringify(updated));
+    toast.success(`Adjustment saved for ${newAdj.deviceName}`);
+    setShowAdjustmentModal(false);
+  };
+
+  const deleteAdjustment = (adjId) => {
+    const updated = adjustments.filter(a => a.id !== adjId);
+    setAdjustments(updated);
+    localStorage.setItem('sngpl_adjustments', JSON.stringify(updated));
+    toast.success('Adjustment deleted');
+  };
+
+  // Get adjustments for a specific device in a date range
+  const getAdjustmentsForReport = (deviceId, startDate, endDate) => {
+    return adjustments.filter(a => {
+      if (a.deviceId !== deviceId) return false;
+      const adjDate = new Date(a.createdAt);
+      return adjDate >= startDate && adjDate <= endDate;
+    });
   };
 
   const getSectionColor = (index) => {
@@ -1333,6 +1489,17 @@ const AdvancedReports = () => {
                                   <Download className="w-3 h-3" />
                                   Report
                                 </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAdjustmentClick(device);
+                                  }}
+                                  className="px-2 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-all font-semibold text-xs flex items-center gap-1"
+                                  title="Add Volume Adjustment"
+                                >
+                                  <SlidersHorizontal className="w-3 h-3" />
+                                  Adjustment
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1346,6 +1513,116 @@ const AdvancedReports = () => {
           </div>
         )}
       </div>
+
+      {/* Adjustment Modal */}
+      {showAdjustmentModal && adjustmentDevice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Add Adjustment</h3>
+                  <p className="text-orange-100 mt-1">{adjustmentDevice.device_name || adjustmentDevice.client_id}</p>
+                </div>
+                <button
+                  onClick={() => setShowAdjustmentModal(false)}
+                  className="text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* SMS Name (read-only) */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">SMS Name</label>
+                <input
+                  type="text"
+                  value={adjustmentDevice.device_name || adjustmentDevice.client_id}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
+                />
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Duration</label>
+                <input
+                  type="text"
+                  value={adjustmentDuration}
+                  onChange={(e) => setAdjustmentDuration(e.target.value)}
+                  placeholder="e.g. 5 hours, 2 days"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              {/* Adjustment Volume */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Adjustment Volume</label>
+                <input
+                  type="text"
+                  value={adjustmentVolume}
+                  onChange={(e) => setAdjustmentVolume(e.target.value)}
+                  placeholder="e.g. 150 MCF"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
+                <textarea
+                  value={adjustmentReason}
+                  onChange={(e) => setAdjustmentReason(e.target.value)}
+                  placeholder="Enter reason for adjustment..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                />
+              </div>
+
+              {/* Existing adjustments for this device */}
+              {adjustments.filter(a => a.deviceId === adjustmentDevice.id).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Existing Adjustments</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {adjustments.filter(a => a.deviceId === adjustmentDevice.id).map(adj => (
+                      <div key={adj.id} className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-lg p-2 text-xs">
+                        <div>
+                          <span className="font-medium">{adj.duration}</span> | <span>{adj.volume}</span> | <span className="text-gray-600">{adj.reason}</span>
+                          <div className="text-gray-400 mt-0.5">{new Date(adj.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <button onClick={() => deleteAdjustment(adj.id)} className="text-red-500 hover:text-red-700 p-1">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl flex items-center justify-between">
+              <button
+                onClick={() => setShowAdjustmentModal(false)}
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-all font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveAdjustment}
+                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg transition-all font-semibold flex items-center gap-2"
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                Save Adjustment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report Generation Modal */}
       {showReportModal && (
