@@ -596,7 +596,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.last_hour_flow_time?.toFixed(2) || '0.00'}
+                {latest?.last_hour_flow_time ?? '0'}
               </span>
               <span className="text-sm text-gray-500">hrs</span>
             </div>
@@ -615,7 +615,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.last_hour_diff_pressure?.toFixed(2) || '0.00'}
+                {latest?.last_hour_diff_pressure ?? '0'}
               </span>
               <span className="text-sm text-gray-500">IWC</span>
             </div>
@@ -634,7 +634,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.last_hour_static_pressure?.toFixed(1) || '0.0'}
+                {latest?.last_hour_static_pressure ?? '0'}
               </span>
               <span className="text-sm text-gray-500">PSI</span>
             </div>
@@ -653,7 +653,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.last_hour_temperature?.toFixed(1) || '0.0'}
+                {latest?.last_hour_temperature ?? '0'}
               </span>
               <span className="text-sm text-gray-500">°F</span>
             </div>
@@ -672,7 +672,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.last_hour_volume?.toFixed(2) || '0.00'}
+                {latest?.last_hour_volume ?? '0'}
               </span>
               <span className="text-sm text-gray-500">MCF</span>
             </div>
@@ -691,7 +691,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.last_hour_energy?.toFixed(2) || '0.00'}
+                {latest?.last_hour_energy ?? '0'}
               </span>
             </div>
           </motion.div>
@@ -747,7 +747,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(2) || '0.00'} hours`, 'Flow Time']}
+                  formatter={(value: any) => [`${value ?? '0'} hours`, 'Flow Time']}
                 />
                 <Line
                   type="monotone"
@@ -791,7 +791,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(2) || '0.00'} IWC`, 'Diff Pressure']}
+                  formatter={(value: any) => [`${value ?? '0'} IWC`, 'Diff Pressure']}
                 />
                 <Line
                   type="monotone"
@@ -835,7 +835,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(1) || '0.0'} PSI`, 'Static Pressure']}
+                  formatter={(value: any) => [`${value ?? '0'} PSI`, 'Static Pressure']}
                 />
                 <Line
                   type="monotone"
@@ -879,7 +879,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(1) || '0.0'} °F`, 'Temperature']}
+                  formatter={(value: any) => [`${value ?? '0'} °F`, 'Temperature']}
                 />
                 <Line
                   type="monotone"
@@ -923,7 +923,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(2) || '0.00'} MCF`, 'Volume']}
+                  formatter={(value: any) => [`${value ?? '0'} MCF`, 'Volume']}
                 />
                 <Line
                   type="monotone"
@@ -967,7 +967,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(2) || '0.00'}`, 'Energy']}
+                  formatter={(value: any) => [`${value ?? '0'}`, 'Energy']}
                 />
                 <Line
                   type="monotone"
@@ -1060,32 +1060,32 @@ const Trends = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-blue-700">
-                        {reading.last_hour_flow_time?.toFixed(2) || '-'}
+                        {reading.last_hour_flow_time ?? '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-purple-700">
-                        {reading.last_hour_diff_pressure?.toFixed(2) || '-'}
+                        {reading.last_hour_diff_pressure ?? '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-green-700">
-                        {reading.last_hour_static_pressure?.toFixed(1) || '-'}
+                        {reading.last_hour_static_pressure ?? '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-orange-700">
-                        {reading.last_hour_temperature?.toFixed(1) || '-'}
+                        {reading.last_hour_temperature ?? '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-cyan-700">
-                        {reading.last_hour_volume?.toFixed(2) || '-'}
+                        {reading.last_hour_volume ?? '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-yellow-700">
-                        {reading.last_hour_energy?.toFixed(2) || '-'}
+                        {reading.last_hour_energy ?? '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">

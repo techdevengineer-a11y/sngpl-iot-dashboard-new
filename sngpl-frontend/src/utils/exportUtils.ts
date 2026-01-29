@@ -169,11 +169,11 @@ export const formatDeviceDataForExport = (
   return readings.map(reading => ({
     timestamp: new Date(reading.timestamp).toLocaleString(),
     device: deviceName,
-    temperature: parseFloat(reading.temperature?.toFixed(2) || '0'),
-    static_pressure: parseFloat(reading.static_pressure?.toFixed(2) || '0'),
-    differential_pressure: parseFloat(reading.differential_pressure?.toFixed(2) || '0'),
-    volume: parseFloat(reading.volume?.toFixed(2) || '0'),
-    total_volume_flow: parseFloat(reading.total_volume_flow?.toFixed(2) || '0'),
+    temperature: reading.temperature ?? 0,
+    static_pressure: reading.static_pressure ?? 0,
+    differential_pressure: reading.differential_pressure ?? 0,
+    volume: reading.volume ?? 0,
+    total_volume_flow: reading.total_volume_flow ?? 0,
   }));
 };
 
@@ -194,11 +194,11 @@ export const exportStationSummary = (
     'Location': stationData.location || 'N/A',
     'Status': stationData.status || 'Unknown',
     'Last Seen': stationData.last_seen ? new Date(stationData.last_seen).toLocaleString() : 'Never',
-    'Temperature (°F)': stationData.latest_reading?.temperature?.toFixed(2) || 'N/A',
-    'Static Pressure (PSI)': stationData.latest_reading?.static_pressure?.toFixed(2) || 'N/A',
-    'Differential Pressure (IWC)': stationData.latest_reading?.differential_pressure?.toFixed(2) || 'N/A',
-    'Volume': stationData.latest_reading?.volume?.toFixed(2) || 'N/A',
-    'Total Volume Flow (m³)': stationData.latest_reading?.total_volume_flow?.toFixed(2) || 'N/A',
+    'Temperature (°F)': stationData.latest_reading?.temperature ?? 'N/A',
+    'Static Pressure (PSI)': stationData.latest_reading?.static_pressure ?? 'N/A',
+    'Differential Pressure (IWC)': stationData.latest_reading?.differential_pressure ?? 'N/A',
+    'Volume': stationData.latest_reading?.volume ?? 'N/A',
+    'Total Volume Flow (m³)': stationData.latest_reading?.total_volume_flow ?? 'N/A',
   }];
 
   switch (format) {

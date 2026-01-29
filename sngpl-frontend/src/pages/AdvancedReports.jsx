@@ -668,12 +668,12 @@ const AdvancedReports = () => {
           srNo: index + 1,
           date: formatDate(day.date),
           time: '06:00', // Daily summary time
-          flowTime: day.totalFlowTime.toFixed(2),
-          diffPressure: day.avgDiffPressure.toFixed(2),
-          staticPressure: day.avgPressure.toFixed(1),
-          temperature: day.avgTemp.toFixed(1),
-          volume: day.totalVolume.toFixed(3),
-          energy: day.totalEnergy.toFixed(2),
+          flowTime: day.totalFlowTime,
+          diffPressure: day.avgDiffPressure,
+          staticPressure: day.avgPressure,
+          temperature: day.avgTemp,
+          volume: day.totalVolume,
+          energy: day.totalEnergy,
           specificGravity: day.specificGravity
         };
       });
@@ -788,12 +788,12 @@ const AdvancedReports = () => {
       worksheet[`A${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`B${rowNum}`] = { v: 'TOTAL/AVG', s: totalRowStyle };
       worksheet[`C${rowNum}`] = { v: '', s: totalRowStyle };
-      worksheet[`D${rowNum}`] = { v: grandTotalFlowTime.toFixed(2), s: totalRowStyle };
-      worksheet[`E${rowNum}`] = { v: grandAvgDiffPressure.toFixed(2), s: totalRowStyle };
-      worksheet[`F${rowNum}`] = { v: grandAvgPressure.toFixed(1), s: totalRowStyle };
-      worksheet[`G${rowNum}`] = { v: grandAvgTemp.toFixed(1), s: totalRowStyle };
-      worksheet[`H${rowNum}`] = { v: grandTotalVolume.toFixed(3), s: totalRowStyle };
-      worksheet[`I${rowNum}`] = { v: grandTotalEnergy.toFixed(2), s: totalRowStyle };
+      worksheet[`D${rowNum}`] = { v: grandTotalFlowTime, s: totalRowStyle };
+      worksheet[`E${rowNum}`] = { v: grandAvgDiffPressure, s: totalRowStyle };
+      worksheet[`F${rowNum}`] = { v: grandAvgPressure, s: totalRowStyle };
+      worksheet[`G${rowNum}`] = { v: grandAvgTemp, s: totalRowStyle };
+      worksheet[`H${rowNum}`] = { v: grandTotalVolume, s: totalRowStyle };
+      worksheet[`I${rowNum}`] = { v: grandTotalEnergy, s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
 
       // Set the range of the worksheet
@@ -1256,42 +1256,42 @@ const AdvancedReports = () => {
                             {/* T18: Last Hour Flow Time */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-blue-600">
-                                {device.latest_reading?.last_hour_flow_time?.toFixed(2) || '-'}
+                                {device.latest_reading?.last_hour_flow_time ?? '-'}
                               </span>
                             </td>
 
                             {/* T19: Last Hour Diff Pressure */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-purple-600">
-                                {device.latest_reading?.last_hour_diff_pressure?.toFixed(2) || '-'}
+                                {device.latest_reading?.last_hour_diff_pressure ?? '-'}
                               </span>
                             </td>
 
                             {/* T110: Last Hour Static Pressure */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-green-600">
-                                {device.latest_reading?.last_hour_static_pressure?.toFixed(1) || '-'}
+                                {device.latest_reading?.last_hour_static_pressure ?? '-'}
                               </span>
                             </td>
 
                             {/* T111: Last Hour Temperature */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-orange-600">
-                                {device.latest_reading?.last_hour_temperature?.toFixed(1) || '-'}
+                                {device.latest_reading?.last_hour_temperature ?? '-'}
                               </span>
                             </td>
 
                             {/* T112: Last Hour Volume */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-cyan-600">
-                                {device.latest_reading?.last_hour_volume?.toFixed(2) || '-'}
+                                {device.latest_reading?.last_hour_volume ?? '-'}
                               </span>
                             </td>
 
                             {/* T113: Last Hour Energy */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-yellow-600">
-                                {device.latest_reading?.last_hour_energy?.toFixed(2) || '-'}
+                                {device.latest_reading?.last_hour_energy ?? '-'}
                               </span>
                             </td>
 
