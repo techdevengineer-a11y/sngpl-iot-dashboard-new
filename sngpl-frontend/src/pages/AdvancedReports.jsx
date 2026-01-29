@@ -779,19 +779,22 @@ const AdvancedReports = () => {
         worksheet[`${col}3`] = { v: header, s: columnHeaderStyle };
       });
 
+      // Round to 4 decimal places
+      const r4 = (v) => Math.round(v * 10000) / 10000;
+
       // Add data starting from row 4
       let rowNum = 4;
       excelData.forEach((row) => {
         worksheet[`A${rowNum}`] = { v: row.srNo, s: dataStyle };
         worksheet[`B${rowNum}`] = { v: row.date, s: dataStyle };
         worksheet[`C${rowNum}`] = { v: row.time, s: dataStyle };
-        worksheet[`D${rowNum}`] = { v: row.flowTime, s: dataStyle };
-        worksheet[`E${rowNum}`] = { v: row.diffPressure, s: dataStyle };
-        worksheet[`F${rowNum}`] = { v: row.staticPressure, s: dataStyle };
-        worksheet[`G${rowNum}`] = { v: row.temperature, s: dataStyle };
-        worksheet[`H${rowNum}`] = { v: row.volume, s: dataStyle };
-        worksheet[`I${rowNum}`] = { v: row.energy, s: dataStyle };
-        worksheet[`J${rowNum}`] = { v: row.specificGravity, s: dataStyle };
+        worksheet[`D${rowNum}`] = { v: r4(row.flowTime), s: dataStyle };
+        worksheet[`E${rowNum}`] = { v: r4(row.diffPressure), s: dataStyle };
+        worksheet[`F${rowNum}`] = { v: r4(row.staticPressure), s: dataStyle };
+        worksheet[`G${rowNum}`] = { v: r4(row.temperature), s: dataStyle };
+        worksheet[`H${rowNum}`] = { v: r4(row.volume), s: dataStyle };
+        worksheet[`I${rowNum}`] = { v: r4(row.energy), s: dataStyle };
+        worksheet[`J${rowNum}`] = { v: r4(row.specificGravity), s: dataStyle };
         rowNum++;
       });
 
@@ -800,12 +803,12 @@ const AdvancedReports = () => {
       worksheet[`A${rowNum}`] = { v: '', s: totalRowStyle };
       worksheet[`B${rowNum}`] = { v: 'TOTAL/AVG', s: totalRowStyle };
       worksheet[`C${rowNum}`] = { v: '', s: totalRowStyle };
-      worksheet[`D${rowNum}`] = { v: grandTotalFlowTime, s: totalRowStyle };
-      worksheet[`E${rowNum}`] = { v: grandAvgDiffPressure, s: totalRowStyle };
-      worksheet[`F${rowNum}`] = { v: grandAvgPressure, s: totalRowStyle };
-      worksheet[`G${rowNum}`] = { v: grandAvgTemp, s: totalRowStyle };
-      worksheet[`H${rowNum}`] = { v: grandTotalVolume, s: totalRowStyle };
-      worksheet[`I${rowNum}`] = { v: grandTotalEnergy, s: totalRowStyle };
+      worksheet[`D${rowNum}`] = { v: r4(grandTotalFlowTime), s: totalRowStyle };
+      worksheet[`E${rowNum}`] = { v: r4(grandAvgDiffPressure), s: totalRowStyle };
+      worksheet[`F${rowNum}`] = { v: r4(grandAvgPressure), s: totalRowStyle };
+      worksheet[`G${rowNum}`] = { v: r4(grandAvgTemp), s: totalRowStyle };
+      worksheet[`H${rowNum}`] = { v: r4(grandTotalVolume), s: totalRowStyle };
+      worksheet[`I${rowNum}`] = { v: r4(grandTotalEnergy), s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
       rowNum++;
 
