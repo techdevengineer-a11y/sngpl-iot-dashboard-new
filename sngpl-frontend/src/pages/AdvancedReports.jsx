@@ -674,7 +674,7 @@ const AdvancedReports = () => {
           temperature: day.avgTemp.toFixed(1),
           volume: day.totalVolume.toFixed(3),
           energy: day.totalEnergy.toFixed(2),
-          specificGravity: day.specificGravity.toFixed(4)
+          specificGravity: day.specificGravity
         };
       });
 
@@ -1298,7 +1298,7 @@ const AdvancedReports = () => {
                             {/* T114: Specific Gravity */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-indigo-600">
-                                {device.latest_reading?.specific_gravity?.toFixed(4) || '-'}
+                                {device.latest_reading?.specific_gravity ?? '-'}
                               </span>
                             </td>
 

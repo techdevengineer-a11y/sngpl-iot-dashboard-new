@@ -709,7 +709,7 @@ const Trends = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.specific_gravity?.toFixed(4) || '0.0000'}
+                {latest?.specific_gravity ?? '0'}
               </span>
             </div>
           </motion.div>
@@ -1011,7 +1011,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value?.toFixed(4) || '0.0000'}`, 'Specific Gravity']}
+                  formatter={(value: any) => [`${value ?? '0'}`, 'Specific Gravity']}
                 />
                 <Line
                   type="monotone"
@@ -1090,7 +1090,7 @@ const Trends = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm font-medium text-indigo-700">
-                        {reading.specific_gravity?.toFixed(4) || '-'}
+                        {reading.specific_gravity ?? '-'}
                       </span>
                     </td>
                   </tr>
