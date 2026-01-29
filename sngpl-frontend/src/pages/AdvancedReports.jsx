@@ -780,7 +780,7 @@ const AdvancedReports = () => {
       });
 
       // Round to 4 decimal places
-      const r4 = (v) => Math.round(v * 10000) / 10000;
+      const r4 = (v) => Number(v).toFixed(4);
 
       // Add data starting from row 4
       let rowNum = 4;
