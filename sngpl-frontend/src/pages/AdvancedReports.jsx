@@ -772,10 +772,12 @@ const AdvancedReports = () => {
       const headers = [
         'Sr. No.', 'Date', 'Time', 'Flow Time (s)', 'Diff Pressure (IWC)',
         'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
-        'Energy', 'Specific Gravity'
+        'Energy', 'Specific Gravity',
+        'Adjustment Duration', 'Adjustment Volume (MCF)', 'Adjustment Reason',
+        'Total Volume MCF After Adjustment'
       ];
       headers.forEach((header, idx) => {
-        const col = String.fromCharCode(65 + idx); // A, B, C...
+        const col = idx < 26 ? String.fromCharCode(65 + idx) : 'A' + String.fromCharCode(65 + idx - 26);
         worksheet[`${col}3`] = { v: header, s: columnHeaderStyle };
       });
 
@@ -798,6 +800,31 @@ const AdvancedReports = () => {
         rowNum++;
       });
 
+      // Get adjustments for this device in the date range
+      const deviceAdjustments = getAdjustmentsForReport(selectedDevice.id, startDate, endDate);
+
+      // Calculate total adjustment volume (parse numeric value from strings like "150 MCF" or "150")
+      const totalAdjustmentVolume = deviceAdjustments.reduce((sum, adj) => {
+        const numericVal = parseFloat(String(adj.volume).replace(/[^0-9.\-]/g, '')) || 0;
+        return sum + numericVal;
+      }, 0);
+
+      // Total volume after adjustment
+      const totalVolumeAfterAdj = grandTotalVolume + totalAdjustmentVolume;
+
+      // Adjustment column style (orange background for adjustment columns)
+      const adjColumnStyle = {
+        fill: { fgColor: { rgb: 'FFF3E0' } },
+        font: { bold: true },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+      };
+
       // Add total/average row with yellow background
       // SUM for Volume, Energy, and Flow Time; AVERAGE of non-zero values for Temp, Pressure, Diff Pressure
       worksheet[`A${rowNum}`] = { v: '', s: totalRowStyle };
@@ -810,104 +837,22 @@ const AdvancedReports = () => {
       worksheet[`H${rowNum}`] = { v: r4(grandTotalVolume), s: totalRowStyle };
       worksheet[`I${rowNum}`] = { v: r4(grandTotalEnergy), s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
+
+      // Adjustment columns in the TOTAL/AVG row
+      if (deviceAdjustments.length > 0) {
+        worksheet[`K${rowNum}`] = { v: deviceAdjustments.map(a => a.duration).join('\n'), s: adjColumnStyle };
+        worksheet[`L${rowNum}`] = { v: deviceAdjustments.map(a => a.volume).join('\n'), s: adjColumnStyle };
+        worksheet[`M${rowNum}`] = { v: deviceAdjustments.map(a => a.reason).join('\n'), s: adjColumnStyle };
+      } else {
+        worksheet[`K${rowNum}`] = { v: '', s: totalRowStyle };
+        worksheet[`L${rowNum}`] = { v: '', s: totalRowStyle };
+        worksheet[`M${rowNum}`] = { v: '', s: totalRowStyle };
+      }
+      worksheet[`N${rowNum}`] = { v: r4(totalVolumeAfterAdj), s: adjColumnStyle };
       rowNum++;
 
-      // Add adjustments at the end of the table
-      const deviceAdjustments = getAdjustmentsForReport(selectedDevice.id, startDate, endDate);
-      if (deviceAdjustments.length > 0) {
-        // Empty row
-        rowNum++;
-
-        // Adjustment header
-        const adjHeaderStyle = {
-          fill: { fgColor: { rgb: 'FF8C00' } },
-          font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
-          alignment: { horizontal: 'center', vertical: 'center' },
-          border: {
-            top: { style: 'thin', color: { rgb: '000000' } },
-            bottom: { style: 'thin', color: { rgb: '000000' } },
-            left: { style: 'thin', color: { rgb: '000000' } },
-            right: { style: 'thin', color: { rgb: '000000' } }
-          }
-        };
-
-        const adjSubHeaderStyle = {
-          fill: { fgColor: { rgb: 'FFF3E0' } },
-          font: { bold: true, sz: 10 },
-          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-          border: {
-            top: { style: 'thin', color: { rgb: '000000' } },
-            bottom: { style: 'thin', color: { rgb: '000000' } },
-            left: { style: 'thin', color: { rgb: '000000' } },
-            right: { style: 'thin', color: { rgb: '000000' } }
-          }
-        };
-
-        const adjDataStyle = {
-          fill: { fgColor: { rgb: 'FFF8F0' } },
-          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-          border: {
-            top: { style: 'thin', color: { rgb: '000000' } },
-            bottom: { style: 'thin', color: { rgb: '000000' } },
-            left: { style: 'thin', color: { rgb: '000000' } },
-            right: { style: 'thin', color: { rgb: '000000' } }
-          }
-        };
-
-        // Title row for adjustments
-        worksheet[`A${rowNum}`] = { v: 'ADJUSTMENTS', s: adjHeaderStyle };
-        worksheet[`B${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`C${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`D${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`E${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`F${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`G${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`H${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`I${rowNum}`] = { v: '', s: adjHeaderStyle };
-        worksheet[`J${rowNum}`] = { v: '', s: adjHeaderStyle };
-        // Merge adjustment title
-        if (!worksheet['!merges']) worksheet['!merges'] = [];
-        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 0 }, e: { r: rowNum - 1, c: 9 } });
-        rowNum++;
-
-        // Sub headers
-        worksheet[`A${rowNum}`] = { v: '#', s: adjSubHeaderStyle };
-        worksheet[`B${rowNum}`] = { v: 'SMS Name', s: adjSubHeaderStyle };
-        worksheet[`C${rowNum}`] = { v: 'Duration', s: adjSubHeaderStyle };
-        worksheet[`D${rowNum}`] = { v: 'Adjustment Volume', s: adjSubHeaderStyle };
-        worksheet[`E${rowNum}`] = { v: '', s: adjSubHeaderStyle };
-        worksheet[`F${rowNum}`] = { v: 'Reason', s: adjSubHeaderStyle };
-        worksheet[`G${rowNum}`] = { v: '', s: adjSubHeaderStyle };
-        worksheet[`H${rowNum}`] = { v: '', s: adjSubHeaderStyle };
-        worksheet[`I${rowNum}`] = { v: 'Date Added', s: adjSubHeaderStyle };
-        worksheet[`J${rowNum}`] = { v: '', s: adjSubHeaderStyle };
-        // Merge reason columns and date columns
-        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 4 }, e: { r: rowNum - 1, c: 4 } });
-        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 5 }, e: { r: rowNum - 1, c: 7 } });
-        worksheet['!merges'].push({ s: { r: rowNum - 1, c: 8 }, e: { r: rowNum - 1, c: 9 } });
-        rowNum++;
-
-        // Adjustment data rows
-        deviceAdjustments.forEach((adj, idx) => {
-          worksheet[`A${rowNum}`] = { v: idx + 1, s: adjDataStyle };
-          worksheet[`B${rowNum}`] = { v: adj.deviceName, s: adjDataStyle };
-          worksheet[`C${rowNum}`] = { v: adj.duration, s: adjDataStyle };
-          worksheet[`D${rowNum}`] = { v: adj.volume, s: adjDataStyle };
-          worksheet[`E${rowNum}`] = { v: '', s: adjDataStyle };
-          worksheet[`F${rowNum}`] = { v: adj.reason, s: adjDataStyle };
-          worksheet[`G${rowNum}`] = { v: '', s: adjDataStyle };
-          worksheet[`H${rowNum}`] = { v: '', s: adjDataStyle };
-          worksheet[`I${rowNum}`] = { v: new Date(adj.createdAt).toLocaleDateString(), s: adjDataStyle };
-          worksheet[`J${rowNum}`] = { v: '', s: adjDataStyle };
-          // Merge reason and date cells
-          worksheet['!merges'].push({ s: { r: rowNum - 1, c: 5 }, e: { r: rowNum - 1, c: 7 } });
-          worksheet['!merges'].push({ s: { r: rowNum - 1, c: 8 }, e: { r: rowNum - 1, c: 9 } });
-          rowNum++;
-        });
-      }
-
       // Set the range of the worksheet
-      worksheet['!ref'] = `A1:J${rowNum - 1}`;
+      worksheet['!ref'] = `A1:N${rowNum - 1}`;
 
       // Set column widths
       worksheet['!cols'] = [
@@ -921,6 +866,10 @@ const AdvancedReports = () => {
         { wch: 14 },  // Volume
         { wch: 10 },  // Energy
         { wch: 14 },  // Specific Gravity
+        { wch: 20 },  // Adjustment Duration
+        { wch: 22 },  // Adjustment Volume (MCF)
+        { wch: 25 },  // Adjustment Reason
+        { wch: 30 },  // Total Volume MCF After Adjustment
       ];
 
       // Set row heights
@@ -932,7 +881,7 @@ const AdvancedReports = () => {
 
       // Merge title cells
       worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title row 1
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }, // Title row 1 (A-N)
       ];
 
       const workbook = XLSX.utils.book_new();
