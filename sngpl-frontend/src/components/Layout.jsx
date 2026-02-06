@@ -106,42 +106,19 @@ const Layout = ({ children }) => {
 
   return (
     <div className="h-screen flex relative overflow-hidden">
-      {/* Animated Background Logo Watermark */}
+      {/* Background Logo Watermark — static, no spin for performance */}
       <div className="logo-watermark">
-        <svg viewBox="0 0 200 200" fill="currentColor" className="w-full h-full text-blue-600 animate-spin-slow">
+        <svg viewBox="0 0 200 200" fill="currentColor" className="w-full h-full text-blue-600">
           <circle cx="100" cy="100" r="80" opacity="0.1"/>
           <path d="M100 40 L140 80 L100 120 L60 80 Z" opacity="0.1"/>
           <text x="100" y="110" fontSize="40" textAnchor="middle" fontWeight="bold" opacity="0.15">SMS</text>
         </svg>
       </div>
 
-      {/* Animated Particles */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="particle absolute w-2 h-2 bg-blue-400/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationName: 'particle-float',
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${10 + Math.random() * 10}s`,
-              animationTimingFunction: 'linear',
-              animationIterationCount: 'infinite'
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Floating Orbs */}
-      <div className="fixed top-20 right-20 w-96 h-96 bg-blue-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none"></div>
-      <div className="fixed bottom-20 left-20 w-96 h-96 bg-indigo-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" style={{animationDelay: '2s'}}></div>
-      <div className="fixed top-1/2 left-1/3 w-64 h-64 bg-violet-400/5 rounded-full blur-3xl animate-float pointer-events-none" style={{animationDelay: '1s'}}></div>
-      <div className="fixed top-1/3 right-1/4 w-80 h-80 bg-purple-400/5 rounded-full blur-3xl animate-float pointer-events-none" style={{animationDelay: '3s'}}></div>
-
-      {/* Additional ambient orbs */}
-      <div className="fixed top-1/4 left-1/2 w-48 h-48 bg-cyan-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" style={{animationDelay: '1.5s'}}></div>
-      <div className="fixed bottom-1/3 right-1/3 w-56 h-56 bg-pink-400/5 rounded-full blur-3xl animate-float pointer-events-none" style={{animationDelay: '2.5s'}}></div>
+      {/* Ambient background orbs — static, no animation for smooth scrolling */}
+      <div className="hidden lg:block fixed top-20 right-20 w-96 h-96 bg-blue-400/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="hidden lg:block fixed bottom-20 left-20 w-96 h-96 bg-indigo-400/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="hidden lg:block fixed top-1/3 right-1/4 w-80 h-80 bg-purple-400/5 rounded-full blur-3xl pointer-events-none"></div>
 
       {/* ========== MOBILE TOP HEADER (visible < lg) ========== */}
       <header className="fixed top-0 left-0 right-0 h-14 enterprise-header flex items-center justify-between px-4 z-50 lg:hidden">
