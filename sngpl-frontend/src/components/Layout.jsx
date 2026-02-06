@@ -15,6 +15,7 @@ const Layout = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Global keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -27,6 +28,23 @@ const Layout = ({ children }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   // Sidebar menu items with gradient colors
   const menuItems = [
@@ -84,6 +102,8 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
+  const currentPageTitle = menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
+
   return (
     <div className="h-screen flex relative overflow-hidden">
       {/* Animated Background Logo Watermark */}
@@ -123,8 +143,162 @@ const Layout = ({ children }) => {
       <div className="fixed top-1/4 left-1/2 w-48 h-48 bg-cyan-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" style={{animationDelay: '1.5s'}}></div>
       <div className="fixed bottom-1/3 right-1/3 w-56 h-56 bg-pink-400/5 rounded-full blur-3xl animate-float pointer-events-none" style={{animationDelay: '2.5s'}}></div>
 
-      {/* Sidebar Navigation */}
-      <aside className={`fixed left-0 top-0 h-screen enterprise-sidebar flex flex-col transition-all duration-300 z-40 ${
+      {/* ========== MOBILE TOP HEADER (visible < lg) ========== */}
+      <header className="fixed top-0 left-0 right-0 h-14 enterprise-header flex items-center justify-between px-4 z-50 lg:hidden">
+        <div className="flex items-center space-x-3">
+          <Link to="/dashboard" className="flex items-center space-x-2">
+            <img
+              src="/assets/sngpl-logo.png"
+              alt="SNGPL Logo"
+              className="h-7 w-auto"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </Link>
+          <span className="text-sm font-semibold text-gray-900 truncate max-w-[160px]">{currentPageTitle}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          {/* Notification bell */}
+          <button
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setMobileMenuOpen(false);
+            }}
+            className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          {/* Hamburger button */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(!mobileMenuOpen);
+              setShowNotifications(false);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* ========== MOBILE MENU OVERLAY ========== */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Full-screen menu */}
+          <div className="fixed inset-0 z-50 lg:hidden bg-white overflow-y-auto animate-fade-in">
+            {/* Menu header */}
+            <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <img
+                  src="/assets/sngpl-logo.png"
+                  alt="SNGPL Logo"
+                  className="h-7 w-auto"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <span className="text-lg font-semibold text-gray-900">SMS Monitoring</span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Search bar */}
+            <div className="p-3 border-b border-gray-200">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowSearch(true);
+                }}
+                className="w-full px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2 text-gray-600 border border-gray-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="text-sm flex-1 text-left">Search...</span>
+              </button>
+            </div>
+
+            {/* Navigation items */}
+            <nav className="p-3">
+              <div className="space-y-1">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`group flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
+                      location.pathname === item.path
+                        ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg font-medium`
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-lg">{item.icon}</span>
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </div>
+                    {item.badge !== null && item.badge > 0 && (
+                      <span className="px-2.5 py-1 bg-white text-red-600 text-xs rounded-full font-bold shadow-md animate-pulse border-2 border-red-500">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+
+            {/* User info and logout */}
+            <div className="p-3 border-t border-gray-200 mt-2 space-y-2">
+              <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-sm font-medium text-gray-900">{user?.username}</div>
+                <div className="text-xs text-gray-600 capitalize">{user?.role || 'Administrator'}</div>
+              </div>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 border border-red-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span className="text-sm">Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ========== DESKTOP SIDEBAR (hidden on mobile, visible lg+) ========== */}
+      <aside className={`hidden lg:flex fixed left-0 top-0 h-screen enterprise-sidebar flex-col transition-all duration-300 z-40 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
       }`}>
         {/* Logo and Collapse Toggle */}
@@ -261,10 +435,10 @@ const Layout = ({ children }) => {
 
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ${
-        sidebarCollapsed ? 'ml-16' : 'ml-64'
+        sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        {/* Top Bar */}
-        <header className="sticky top-0 enterprise-header h-14 flex items-center justify-between px-6 z-30 shrink-0">
+        {/* Top Bar (desktop only) */}
+        <header className="hidden lg:flex sticky top-0 enterprise-header h-14 items-center justify-between px-6 z-30 shrink-0">
           <div className="flex items-center space-x-4">
             {sidebarCollapsed && (
               <button
@@ -277,7 +451,7 @@ const Layout = ({ children }) => {
               </button>
             )}
             <h1 className="text-lg font-semibold text-gray-900">
-              {menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
+              {currentPageTitle}
             </h1>
           </div>
           <div className="flex items-center space-x-4">
@@ -291,9 +465,12 @@ const Layout = ({ children }) => {
           </div>
         </header>
 
+        {/* Spacer for mobile header */}
+        <div className="h-14 shrink-0 lg:hidden" />
+
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 max-w-[1920px] mx-auto w-full">
+          <div className="p-3 sm:p-6 max-w-[1920px] mx-auto w-full">
             {children}
           </div>
         </main>
@@ -301,7 +478,7 @@ const Layout = ({ children }) => {
 
       {/* Notifications Dropdown */}
       {showNotifications && (
-        <div className={`fixed ${sidebarCollapsed ? 'left-20' : 'left-68'} top-20 w-96 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-[600px] overflow-hidden`}>
+        <div className={`fixed ${sidebarCollapsed ? 'left-20' : 'left-4 lg:left-68'} top-16 lg:top-20 w-[calc(100vw-2rem)] sm:w-96 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-[600px] overflow-hidden`}>
           <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
             <h3 className="text-gray-900 font-semibold text-sm">Notifications</h3>
             <button

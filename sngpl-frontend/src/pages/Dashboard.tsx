@@ -467,13 +467,13 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-blue-100 rounded-lg p-4 min-w-0"
+            className="bg-blue-100 rounded-lg p-3 sm:p-4 min-w-0"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-blue-600 text-xs font-medium">Total SMS</span>
               <Activity className="w-5 h-5 text-blue-600" />
             </div>
-            <div className="text-3xl font-bold text-gray-900">{totalDevices}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">{totalDevices}</div>
             <div className="text-xs text-gray-600 mt-1">Devices</div>
           </motion.div>
 
@@ -482,13 +482,13 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-green-100 rounded-lg p-4"
+            className="bg-green-100 rounded-lg p-3 sm:p-4"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-green-600 text-xs font-medium">Online</span>
               <Wifi className="w-5 h-5 text-green-600" />
             </div>
-            <div className="text-3xl font-bold text-green-600">{onlineDevices}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-green-600">{onlineDevices}</div>
             <div className="text-xs text-gray-600 mt-1">{((onlineDevices / totalDevices) * 100).toFixed(1)}%</div>
           </motion.div>
 
@@ -497,13 +497,13 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-red-100 rounded-lg p-4"
+            className="bg-red-100 rounded-lg p-3 sm:p-4"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-red-600 text-xs font-medium">Offline</span>
               <WifiOff className="w-5 h-5 text-red-600" />
             </div>
-            <div className="text-3xl font-bold text-red-600">{offlineDevices}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-red-600">{offlineDevices}</div>
             <div className="text-xs text-gray-600 mt-1">{((offlineDevices / totalDevices) * 100).toFixed(1)}%</div>
           </motion.div>
 
@@ -512,13 +512,13 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
-            className="bg-yellow-100 rounded-lg p-4"
+            className="bg-yellow-100 rounded-lg p-3 sm:p-4"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-yellow-600 text-xs font-medium">Alerts</span>
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
             </div>
-            <div className="text-3xl font-bold text-yellow-600">{totalAlerts}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-yellow-600">{totalAlerts}</div>
             <div className="text-xs text-gray-600 mt-1">Active</div>
           </motion.div>
 
@@ -527,7 +527,7 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-red-100 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
+            className="bg-red-100 rounded-lg p-3 sm:p-4 cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => navigate('/offline-tracker')}
           >
             <div className="flex items-center justify-between mb-2">
@@ -536,7 +536,7 @@ const Dashboard = () => {
                 <WifiOff className="w-5 h-5 text-red-600" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900">{offlineDevices}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">{offlineDevices}</div>
             <div className="text-xs text-gray-600 mt-1">Since {dataStartTime.toLocaleTimeString()}</div>
           </motion.div>
         </div>
@@ -546,7 +546,7 @@ const Dashboard = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
-          className="flex-1 glass rounded-lg p-6"
+          className="flex-1 glass rounded-lg p-3 sm:p-6"
         >
           {/* Chart Header */}
           <div className="flex items-center justify-between mb-4">
@@ -561,27 +561,27 @@ const Dashboard = () => {
 
           {/* Current Stats Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
+            <div className="bg-cyan-50 rounded-lg p-3 sm:p-4 border border-cyan-200">
               <div className="text-xs text-cyan-700 mb-1">Current Flow</div>
-              <div className="text-3xl font-bold text-cyan-600">{currentFlow.toFixed(1)}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-cyan-600">{currentFlow.toFixed(1)}</div>
               <div className="text-xs text-cyan-600 mt-1">MCF/day</div>
             </div>
 
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
               <div className="text-xs text-green-700 mb-1">Peak Flow</div>
-              <div className="text-3xl font-bold text-green-600">{getPeakFlow().toFixed(1)}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-green-600">{getPeakFlow().toFixed(1)}</div>
               <div className="text-xs text-green-600 mt-1">MCF/day</div>
             </div>
 
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <div className="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-200">
               <div className="text-xs text-purple-700 mb-1">Average Flow</div>
-              <div className="text-3xl font-bold text-purple-600">{getAverageFlow().toFixed(1)}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-purple-600">{getAverageFlow().toFixed(1)}</div>
               <div className="text-xs text-purple-600 mt-1">MCF/day</div>
             </div>
 
-            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+            <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">
               <div className="text-xs text-yellow-700 mb-1">Active Stations</div>
-              <div className="text-3xl font-bold text-yellow-600">{onlineDevices}/{totalDevices}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-yellow-600">{onlineDevices}/{totalDevices}</div>
               <div className="text-xs text-yellow-600 mt-1">Online</div>
             </div>
           </div>

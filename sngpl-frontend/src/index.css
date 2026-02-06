@@ -222,16 +222,10 @@
 
   .enterprise-sidebar {
     @apply bg-white border-r border-gray-200;
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    height: 100vh !important;
-    overflow-y: auto !important;
+    overflow-y: auto;
     overflow-x: hidden;
     backdrop-filter: blur(12px);
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-    z-index: 1000 !important;
     will-change: transform;
     transform: translateZ(0);
   }
