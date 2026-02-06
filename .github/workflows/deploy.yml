@@ -56,7 +56,7 @@ jobs:
 
           # Install dependencies and build
           cd /var/www/sngpl-dashboard/frontend
-          npm install --silent
+          npm install --silent --legacy-peer-deps
           npm run build
           echo "✅ Frontend built successfully"
 
