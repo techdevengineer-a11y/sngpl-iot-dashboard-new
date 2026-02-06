@@ -772,9 +772,7 @@ const AdvancedReports = () => {
       const headers = [
         'Sr. No.', 'Date', 'Time', 'Flow Time (s)', 'Diff Pressure (IWC)',
         'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
-        'Energy', 'Specific Gravity',
-        'Adjustment Duration', 'Adjustment Volume (MCF)', 'Adjustment Reason',
-        'Total Volume MCF After Adjustment'
+        'Energy', 'Specific Gravity'
       ];
       headers.forEach((header, idx) => {
         const col = idx < 26 ? String.fromCharCode(65 + idx) : 'A' + String.fromCharCode(65 + idx - 26);
@@ -838,26 +836,52 @@ const AdvancedReports = () => {
       worksheet[`I${rowNum}`] = { v: r4(grandTotalEnergy), s: totalRowStyle };
       worksheet[`J${rowNum}`] = { v: '', s: totalRowStyle };
 
-      // Adjustment columns in the TOTAL/AVG row
-      if (deviceAdjustments.length > 0) {
-        worksheet[`K${rowNum}`] = { v: deviceAdjustments.map(a => a.duration).join('\n'), s: adjColumnStyle };
-        worksheet[`L${rowNum}`] = { v: deviceAdjustments.map(a => a.volume).join('\n'), s: adjColumnStyle };
-        worksheet[`M${rowNum}`] = { v: deviceAdjustments.map(a => a.reason).join('\n'), s: adjColumnStyle };
-      } else {
-        worksheet[`K${rowNum}`] = { v: '', s: totalRowStyle };
-        worksheet[`L${rowNum}`] = { v: '', s: totalRowStyle };
-        worksheet[`M${rowNum}`] = { v: '', s: totalRowStyle };
+      rowNum++;
+
+      // Add adjustment rows below the TOTAL/AVG row
+      // Adjustment Duration
+      worksheet[`A${rowNum}`] = { v: 'Adjustment Duration', s: adjColumnStyle };
+      worksheet[`B${rowNum}`] = { v: deviceAdjustments.length > 0 ? deviceAdjustments.map(a => a.duration).join(', ') : '', s: adjColumnStyle };
+      for (let ci = 2; ci < 10; ci++) {
+        const col = String.fromCharCode(65 + ci);
+        worksheet[`${col}${rowNum}`] = { v: '', s: adjColumnStyle };
       }
-      worksheet[`N${rowNum}`] = { v: r4(totalVolumeAfterAdj), s: adjColumnStyle };
+      rowNum++;
+
+      // Adjustment Volume
+      worksheet[`A${rowNum}`] = { v: 'Adjustment Volume', s: adjColumnStyle };
+      worksheet[`B${rowNum}`] = { v: deviceAdjustments.length > 0 ? deviceAdjustments.map(a => a.volume).join(', ') : '', s: adjColumnStyle };
+      for (let ci = 2; ci < 10; ci++) {
+        const col = String.fromCharCode(65 + ci);
+        worksheet[`${col}${rowNum}`] = { v: '', s: adjColumnStyle };
+      }
+      rowNum++;
+
+      // Adjustment Reason
+      worksheet[`A${rowNum}`] = { v: 'Adjustment Reason', s: adjColumnStyle };
+      worksheet[`B${rowNum}`] = { v: deviceAdjustments.length > 0 ? deviceAdjustments.map(a => a.reason).join(', ') : '', s: adjColumnStyle };
+      for (let ci = 2; ci < 10; ci++) {
+        const col = String.fromCharCode(65 + ci);
+        worksheet[`${col}${rowNum}`] = { v: '', s: adjColumnStyle };
+      }
+      rowNum++;
+
+      // Total Volume MCF After Adjustment
+      worksheet[`A${rowNum}`] = { v: 'Total Volume MCF', s: adjColumnStyle };
+      worksheet[`B${rowNum}`] = { v: r4(totalVolumeAfterAdj), s: adjColumnStyle };
+      for (let ci = 2; ci < 10; ci++) {
+        const col = String.fromCharCode(65 + ci);
+        worksheet[`${col}${rowNum}`] = { v: '', s: adjColumnStyle };
+      }
       rowNum++;
 
       // Set the range of the worksheet
-      worksheet['!ref'] = `A1:N${rowNum - 1}`;
+      worksheet['!ref'] = `A1:J${rowNum - 1}`;
 
       // Set column widths
       worksheet['!cols'] = [
-        { wch: 8 },   // Sr. No.
-        { wch: 12 },  // Date
+        { wch: 22 },  // Sr. No. / Adjustment labels
+        { wch: 25 },  // Date / Adjustment values
         { wch: 8 },   // Time
         { wch: 14 },  // Flow Time
         { wch: 18 },  // Diff Pressure
@@ -866,10 +890,6 @@ const AdvancedReports = () => {
         { wch: 14 },  // Volume
         { wch: 10 },  // Energy
         { wch: 14 },  // Specific Gravity
-        { wch: 20 },  // Adjustment Duration
-        { wch: 22 },  // Adjustment Volume (MCF)
-        { wch: 25 },  // Adjustment Reason
-        { wch: 30 },  // Total Volume MCF After Adjustment
       ];
 
       // Set row heights
@@ -881,7 +901,7 @@ const AdvancedReports = () => {
 
       // Merge title cells
       worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }, // Title row 1 (A-N)
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title row 1 (A-J)
       ];
 
       const workbook = XLSX.utils.book_new();
