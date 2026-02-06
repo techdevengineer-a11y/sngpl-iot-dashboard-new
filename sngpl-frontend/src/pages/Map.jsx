@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { getDevices } from '../services/api';
+import { useState, useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Polygon, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
+import { getDevices, getReadings } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
@@ -15,44 +16,70 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom marker icons for device status
+// SVG antenna icon for device markers
 const createCustomIcon = (status) => {
   const colors = {
-    online: '#10B981',    // green
-    warning: '#F59E0B',   // yellow
-    offline: '#EF4444',   // red
-    unknown: '#6B7280'    // gray
+    online: '#10B981',
+    warning: '#F59E0B',
+    offline: '#EF4444',
+    unknown: '#6B7280'
   };
+  const color = colors[status] || colors.unknown;
 
   return L.divIcon({
     className: 'custom-marker',
     html: `
-      <div style="
-        background-color: ${colors[status] || colors.unknown};
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        ${status === 'online' ? 'animation: pulse 2s infinite;' : ''}
-      ">
-        📡
+      <div style="position:relative;width:36px;height:36px;">
+        ${status === 'online' ? `<div style="
+          position:absolute;inset:0;border-radius:50%;
+          border:2px solid ${color};opacity:0.4;
+          animation:marker-ring 2s ease-out infinite;
+        "></div>` : ''}
+        <div style="
+          position:absolute;inset:2px;
+          background:#fff;border-radius:50%;
+          box-shadow:0 2px 8px rgba(0,0,0,0.25);
+          display:flex;align-items:center;justify-content:center;
+        ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20V10"/>
+            <path d="M8 16l4-6 4 6"/>
+            <path d="M6 12a6 6 0 0 1 12 0"/>
+            <path d="M3 8a11 11 0 0 1 18 0"/>
+          </svg>
+        </div>
       </div>
       <style>
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.8; }
+        @keyframes marker-ring {
+          0% { transform:scale(1); opacity:0.4; }
+          100% { transform:scale(1.6); opacity:0; }
         }
       </style>
     `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -15]
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18]
   });
+};
+
+// Section boundary polygons (approximate pipeline territory outlines)
+const sectionBoundaries = {
+  'I': [
+    [29.0, 70.0], [29.0, 73.0], [30.8, 73.0], [31.0, 72.0], [30.8, 70.5], [29.5, 70.0]
+  ],
+  'II': [
+    [30.8, 72.0], [30.8, 73.8], [32.2, 73.8], [32.2, 72.0]
+  ],
+  'III': [
+    [32.8, 72.0], [32.8, 74.0], [34.2, 74.0], [34.2, 72.0]
+  ],
+  'IV': [
+    [31.0, 73.5], [31.0, 75.0], [32.8, 75.0], [32.8, 73.5]
+  ],
+  'V': [
+    [33.5, 70.5], [33.5, 72.5], [35.0, 72.5], [35.0, 70.5]
+  ]
 };
 
 // Component to recenter map when devices change
@@ -68,12 +95,12 @@ const Map = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDevice, setSelectedDevice] = useState(null);
-  const [mapCenter, setMapCenter] = useState([30.3753, 69.3451]); // Pakistan center (Multan area)
+  const [mapCenter, setMapCenter] = useState([30.3753, 69.3451]);
   const [mapZoom, setMapZoom] = useState(6);
   const [showAddModal, setShowAddModal] = useState(false);
   const [clickedLocation, setClickedLocation] = useState(null);
-  const [selectedSection, setSelectedSection] = useState('ALL'); // Section filter
-  const [devicesWithReadings, setDevicesWithReadings] = useState([]); // Devices with latest readings
+  const [selectedSection, setSelectedSection] = useState('ALL');
+  const [readingsMap, setReadingsMap] = useState({});
   const [newDevice, setNewDevice] = useState({
     client_id: '',
     device_name: '',
@@ -93,25 +120,23 @@ const Map = () => {
       const data = await getDevices();
       setDevices(data);
 
-      // Fetch latest reading for each device (only for devices with coordinates)
-      const devicesWithCoords = data.filter(d => d.latitude && d.longitude && !(d.latitude === 0 && d.longitude === 0));
-      const devicesWithData = await Promise.all(
-        devicesWithCoords.slice(0, 50).map(async (device) => {
-          try {
-            const response = await fetch(`/api/analytics/readings?device_id=${device.id}&page_size=1&page=1`);
-            if (response.ok) {
-              const result = await response.json();
-              const latestReading = result.data && result.data.length > 0 ? result.data[0] : null;
-              return { ...device, latest_reading: latestReading };
-            }
-          } catch (err) {
-            console.error(`Error fetching reading for ${device.id}:`, err);
+      // Batch fetch: single request for recent readings
+      try {
+        const result = await getReadings({ page_size: 200, page: 1 });
+        const readings = result.data || [];
+        // Group by device_id, keep latest per device
+        const latestByDevice = {};
+        for (const r of readings) {
+          if (!r.device_id) continue;
+          if (!latestByDevice[r.device_id] || new Date(r.timestamp) > new Date(latestByDevice[r.device_id].timestamp)) {
+            latestByDevice[r.device_id] = r;
           }
-          return { ...device, latest_reading: null };
-        })
-      );
+        }
+        setReadingsMap(latestByDevice);
+      } catch (err) {
+        console.error('Error fetching bulk readings:', err);
+      }
 
-      setDevicesWithReadings(devicesWithData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching devices:', error);
@@ -129,6 +154,47 @@ const Map = () => {
     if (diffMinutes < 30) return 'warning';
     return 'offline';
   };
+
+  // Extract section from client_id (e.g., "SMS-I-002" -> "I")
+  const extractSection = (clientId) => {
+    if (!clientId) return null;
+    const match = clientId.match(/SMS-([IVX]+)-/);
+    return match ? match[1] : null;
+  };
+
+  // Memoized valid devices
+  const validDevices = useMemo(() => {
+    return devices.filter(d => {
+      if (d.latitude == null || d.longitude == null) return false;
+      if (d.latitude === 0 && d.longitude === 0) return false;
+      if (selectedSection !== 'ALL') {
+        const deviceSection = extractSection(d.client_id);
+        if (deviceSection !== selectedSection) return false;
+      }
+      return true;
+    });
+  }, [devices, selectedSection]);
+
+  // Memoized status map
+  const deviceStatusMap = useMemo(() => {
+    const map = {};
+    for (const d of validDevices) {
+      map[d.id] = getDeviceStatus(d);
+    }
+    return map;
+  }, [validDevices]);
+
+  // Memoized stats
+  const statusStats = useMemo(() => {
+    const stats = { online: 0, warning: 0, offline: 0, total: validDevices.length };
+    for (const d of validDevices) {
+      const s = deviceStatusMap[d.id];
+      if (s === 'online') stats.online++;
+      else if (s === 'warning') stats.warning++;
+      else if (s === 'offline') stats.offline++;
+    }
+    return stats;
+  }, [validDevices, deviceStatusMap]);
 
   const handleMapClick = (e) => {
     const { lat, lng } = e.latlng;
@@ -181,34 +247,6 @@ const Map = () => {
     { name: 'Quetta', lat: 30.1798, lng: 66.9750 },
   ];
 
-  // Extract section from client_id (e.g., "SMS-I-002" -> "I")
-  const extractSection = (clientId) => {
-    if (!clientId) return null;
-    const match = clientId.match(/SMS-([IVX]+)-/);
-    return match ? match[1] : null;
-  };
-
-  // Filter devices with valid coordinates only
-  const validDevices = devices.filter(d => {
-    if (d.latitude == null || d.longitude == null) return false;
-    if (d.latitude === 0 && d.longitude === 0) return false;
-
-    // Apply section filter
-    if (selectedSection !== 'ALL') {
-      const deviceSection = extractSection(d.client_id);
-      if (deviceSection !== selectedSection) return false;
-    }
-
-    return true;
-  });
-
-  const statusStats = {
-    online: validDevices.filter(d => getDeviceStatus(d) === 'online').length,
-    warning: validDevices.filter(d => getDeviceStatus(d) === 'warning').length,
-    offline: validDevices.filter(d => getDeviceStatus(d) === 'offline').length,
-    total: validDevices.length
-  };
-
   // Section definitions
   const sections = [
     { id: 'ALL', name: 'All Sections', center: [30.3753, 69.3451], zoom: 6 },
@@ -221,12 +259,17 @@ const Map = () => {
 
   const handleSectionChange = (sectionId) => {
     setSelectedSection(sectionId);
+    setSelectedDevice(null);
     const section = sections.find(s => s.id === sectionId);
     if (section) {
       setMapCenter(section.center);
       setMapZoom(section.zoom);
     }
   };
+
+  // Get reading for selected device
+  const selectedReading = selectedDevice ? readingsMap[selectedDevice.id] : null;
+  const selectedStatus = selectedDevice ? deviceStatusMap[selectedDevice.id] || getDeviceStatus(selectedDevice) : null;
 
   return (
     <Layout>
@@ -291,7 +334,7 @@ const Map = () => {
         </div>
 
         {/* Map Container */}
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-6 relative">
           <div className="mb-4 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-white">Pakistan Device Locations</h2>
             <div className="flex items-center space-x-4 text-sm">
@@ -330,7 +373,7 @@ const Map = () => {
             </div>
           </div>
 
-          <div className="rounded-lg overflow-hidden border border-gray-700" style={{ height: '600px' }}>
+          <div className="rounded-lg overflow-hidden border border-gray-700 h-[calc(100vh-280px)]">
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -344,85 +387,33 @@ const Map = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* Device Markers */}
-              {validDevices.map((device) => {
-                // Find the device with reading data
-                const deviceWithReading = devicesWithReadings.find(d => d.id === device.id);
-                const latestReading = deviceWithReading?.latest_reading;
+              {/* Section boundary polygon */}
+              {selectedSection !== 'ALL' && sectionBoundaries[selectedSection] && (
+                <Polygon
+                  positions={sectionBoundaries[selectedSection]}
+                  pathOptions={{
+                    color: '#3B82F6',
+                    weight: 2,
+                    opacity: 0.4,
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.08,
+                  }}
+                />
+              )}
 
-                return (
+              {/* Device Markers with Clustering */}
+              <MarkerClusterGroup chunkedLoading>
+                {validDevices.map((device) => (
                   <Marker
                     key={device.id}
                     position={[device.latitude, device.longitude]}
-                    icon={createCustomIcon(getDeviceStatus(device))}
+                    icon={createCustomIcon(deviceStatusMap[device.id] || 'unknown')}
                     eventHandlers={{
                       click: () => handleDeviceClick(device)
                     }}
-                  >
-                    <Popup>
-                      <div className="p-2 min-w-[250px]">
-                        <h3 className="font-bold text-lg mb-2">{device.device_name}</h3>
-                        <div className="space-y-1 text-sm">
-                          <p><strong>ID:</strong> {device.client_id}</p>
-                          <p><strong>Location:</strong> {device.location}</p>
-                          <p><strong>Status:</strong>
-                            <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                              getDeviceStatus(device) === 'online' ? 'bg-green-100 text-green-800' :
-                              getDeviceStatus(device) === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {getDeviceStatus(device).toUpperCase()}
-                            </span>
-                          </p>
-                          {device.last_seen && (
-                            <p><strong>Last Seen:</strong> {new Date(device.last_seen).toLocaleString()}</p>
-                          )}
-
-                          {/* Current Sensor Values */}
-                          {latestReading ? (
-                            <>
-                              <hr className="my-2 border-gray-300" />
-                              <p className="font-semibold text-blue-600 mb-1">Current Sensor Values:</p>
-                              <div className="grid grid-cols-2 gap-1 text-xs">
-                                {latestReading.temperature != null && (
-                                  <p><strong>Temp:</strong> {latestReading.temperature}°C</p>
-                                )}
-                                {latestReading.static_pressure != null && (
-                                  <p><strong>Static P:</strong> {latestReading.static_pressure} bar</p>
-                                )}
-                                {latestReading.differential_pressure != null && (
-                                  <p><strong>Diff P:</strong> {latestReading.differential_pressure} bar</p>
-                                )}
-                                {latestReading.volume != null && (
-                                  <p><strong>MMCF:</strong> {latestReading.volume.toFixed(3)}</p>
-                                )}
-                                {latestReading.total_volume_flow != null && (
-                                  <p><strong>Total Flow:</strong> {latestReading.total_volume_flow}</p>
-                                )}
-                                {latestReading.battery != null && (
-                                  <p><strong>Battery:</strong> {latestReading.battery}%</p>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Reading at: {new Date(latestReading.timestamp).toLocaleString()}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <hr className="my-2 border-gray-300" />
-                              <p className="text-xs text-gray-500 italic">No recent sensor data available</p>
-                            </>
-                          )}
-
-                          <p className="text-xs text-gray-500 mt-2">
-                            Coordinates: {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
-                          </p>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
+                  />
+                ))}
+              </MarkerClusterGroup>
 
               {/* Major Cities (Reference Points) */}
               {majorCities.map((city, index) => (
@@ -450,6 +441,110 @@ const Map = () => {
             </MapContainer>
           </div>
 
+          {/* Slide-in Device Detail Panel */}
+          <div
+            className={`absolute top-0 right-0 h-full w-96 bg-gray-900/95 backdrop-blur border-l border-gray-700 z-[1000] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+              selectedDevice ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            {selectedDevice && (
+              <div className="p-6">
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedDevice(null)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none"
+                >
+                  ✕
+                </button>
+
+                <h3 className="text-xl font-bold text-white mb-1 pr-8">{selectedDevice.device_name}</h3>
+                <p className="text-sm text-gray-400 mb-4">{selectedDevice.client_id}</p>
+
+                {/* Status Badge */}
+                <div className="mb-4">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                    selectedStatus === 'online' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                    selectedStatus === 'warning' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                    selectedStatus === 'offline' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                  }`}>
+                    {(selectedStatus || 'unknown').toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Device Info */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Location</span>
+                    <span className="text-white text-right">{selectedDevice.location}</span>
+                  </div>
+                  {selectedDevice.last_seen && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Last Seen</span>
+                      <span className="text-white">{new Date(selectedDevice.last_seen).toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Coordinates</span>
+                    <span className="text-white">
+                      {selectedDevice.latitude.toFixed(4)}, {selectedDevice.longitude.toFixed(4)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sensor Readings */}
+                <div className="border-t border-gray-700 pt-4">
+                  <h4 className="text-sm font-semibold text-blue-400 mb-3">Latest Sensor Readings</h4>
+                  {selectedReading ? (
+                    <div className="space-y-2">
+                      {selectedReading.temperature != null && (
+                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400">Temperature</span>
+                          <span className="text-white font-medium">{selectedReading.temperature}°C</span>
+                        </div>
+                      )}
+                      {selectedReading.static_pressure != null && (
+                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400">Static Pressure</span>
+                          <span className="text-white font-medium">{selectedReading.static_pressure} bar</span>
+                        </div>
+                      )}
+                      {selectedReading.differential_pressure != null && (
+                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400">Diff Pressure</span>
+                          <span className="text-white font-medium">{selectedReading.differential_pressure} bar</span>
+                        </div>
+                      )}
+                      {selectedReading.volume != null && (
+                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400">MMCF</span>
+                          <span className="text-white font-medium">{selectedReading.volume.toFixed(3)}</span>
+                        </div>
+                      )}
+                      {selectedReading.total_volume_flow != null && (
+                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400">Total Flow</span>
+                          <span className="text-white font-medium">{selectedReading.total_volume_flow}</span>
+                        </div>
+                      )}
+                      {selectedReading.battery != null && (
+                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-400">Battery</span>
+                          <span className="text-white font-medium">{selectedReading.battery}%</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        Reading at: {new Date(selectedReading.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No recent sensor data available</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="mt-4 text-sm text-gray-400 text-center">
             Click on map markers to view device details • {devices.filter(d => d.latitude != null && d.longitude != null).length} devices on map • {devices.length} total devices
           </div>
@@ -467,7 +562,7 @@ const Map = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {validDevices.map((device) => {
-                const status = getDeviceStatus(device);
+                const status = deviceStatusMap[device.id] || 'unknown';
                 return (
                   <div
                     key={device.id}
