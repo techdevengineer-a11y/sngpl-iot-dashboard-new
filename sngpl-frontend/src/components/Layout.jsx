@@ -4,18 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getAlarms } from '../services/api';
 import GlobalSearch from './GlobalSearch';
-import {
-  LayoutDashboard,
-  Building2,
-  Bell,
-  BarChart3,
-  Activity,
-  Wrench,
-  Eye,
-  Cylinder,
-  MapPin,
-  Settings,
-} from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -58,18 +46,18 @@ const Layout = ({ children }) => {
     };
   }, [mobileMenuOpen]);
 
-  // Sidebar menu items
+  // Sidebar menu items with gradient colors
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
-    { path: '/sections', label: 'Sections', icon: Building2, badge: null },
-    { path: '/alarms', label: 'Alerts', icon: Bell, badge: unreadCount },
-    { path: '/advanced-reports', label: 'Advanced Reports', icon: BarChart3, badge: null },
-    { path: '/analytics-page', label: 'Analytics', icon: Activity, badge: null },
-    { path: '/device-management', label: 'Manage', icon: Wrench, badge: null },
-    { path: '/under-observation', label: 'Under Observation', icon: Eye, badge: null },
-    { path: '/odorant-drum', label: 'Odorant Drum', icon: Cylinder, badge: null },
-    { path: '/map', label: 'Map', icon: MapPin, badge: null },
-    { path: '/settings', label: 'Settings', icon: Settings, badge: null },
+    { path: '/dashboard', label: 'DASHBOARD', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
+    { path: '/sections', label: 'SECTIONS', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
+    { path: '/alarms', label: 'ALERTS', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
+    { path: '/advanced-reports', label: 'ADVANCED REPORTS', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
+    { path: '/analytics-page', label: 'ANALYTICS', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
+    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
+    { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
+    { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
+    { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
+    { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
   ];
 
   useEffect(() => {
@@ -207,7 +195,7 @@ const Layout = ({ children }) => {
                     e.target.style.display = 'none';
                   }}
                 />
-                <span className="text-lg font-semibold text-gray-900">{user?.username || 'SMS Monitoring'}</span>
+                <span className="text-lg font-semibold text-gray-900">SMS Monitoring</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -243,18 +231,18 @@ const Layout = ({ children }) => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`group flex items-center justify-between px-4 py-3 rounded-lg transition-colors duration-200 ${
+                    className={`group flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
                       location.pathname === item.path
-                        ? 'bg-gray-100 text-gray-900 font-medium'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg font-medium`
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <item.icon className="w-5 h-5" />
+                      <span className="text-lg">{item.icon}</span>
                       <span className="text-sm font-medium">{item.label}</span>
                     </div>
                     {item.badge !== null && item.badge > 0 && (
-                      <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full font-medium">
+                      <span className="px-2.5 py-1 bg-white text-red-600 text-xs rounded-full font-bold shadow-md animate-pulse border-2 border-red-500">
                         {item.badge}
                       </span>
                     )}
@@ -274,7 +262,7 @@ const Layout = ({ children }) => {
                   setMobileMenuOpen(false);
                   handleLogout();
                 }}
-                className="w-full px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                className="w-full px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 border border-red-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -302,7 +290,7 @@ const Layout = ({ children }) => {
                   e.target.style.display = 'none';
                 }}
               />
-              <span className="text-lg font-semibold text-gray-900">{user?.username || 'SMS Monitoring'}</span>
+              <span className="text-lg font-semibold text-gray-900">SMS Monitoring</span>
             </Link>
           ) : (
             <Link to="/dashboard" className="flex items-center justify-center mx-auto">
@@ -353,23 +341,26 @@ const Layout = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`group flex items-center justify-between px-4 py-3 rounded-lg transition-colors duration-200 ${
+                className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
                   location.pathname === item.path
-                    ? 'bg-gray-100 text-gray-900 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105 font-medium`
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
                 }`}
                 title={sidebarCollapsed ? item.label : ''}
               >
-                <div className={`flex items-center ${sidebarCollapsed ? 'justify-center w-full' : 'space-x-3'}`}>
-                  <item.icon className="w-5 h-5" />
+                <div className="flex items-center space-x-3">
+                  <span className={`${sidebarCollapsed ? 'text-2xl mx-auto' : 'text-base'} transition-transform`}>
+                    {item.icon}
+                  </span>
                   {!sidebarCollapsed && (
                     <span className="text-sm">
                       {item.label}
                     </span>
                   )}
                 </div>
+                {/* Badge */}
                 {!sidebarCollapsed && item.badge !== null && item.badge > 0 && (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full font-medium">
+                  <span className="px-2.5 py-1 bg-white text-red-600 text-xs rounded-full font-bold shadow-md animate-pulse border-2 border-red-500">
                     {item.badge}
                   </span>
                 )}
@@ -378,13 +369,40 @@ const Layout = ({ children }) => {
           </div>
         </nav>
 
-        {/* Logout */}
-        <div className="p-3 border-t border-gray-200">
+        {/* User Info and Notifications */}
+        <div className="p-3 border-t border-gray-200 space-y-2">
+          {/* Notifications */}
+          {!sidebarCollapsed && (
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative w-full px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors flex items-center space-x-2 text-gray-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="text-sm flex-1 text-left">NOTIFICATIONS</span>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-medium">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* User Info */}
+          {!sidebarCollapsed && (
+            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-sm font-medium text-gray-900">{user?.username}</div>
+              <div className="text-xs text-gray-600 capitalize">{user?.role || 'Administrator'}</div>
+            </div>
+          )}
+
+          {/* Logout */}
           <button
             onClick={handleLogout}
-            className={`w-full px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}`}
+            className="w-full px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 border border-red-200"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             {!sidebarCollapsed && <span className="text-sm">Sign Out</span>}
