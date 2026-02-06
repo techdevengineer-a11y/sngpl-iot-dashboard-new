@@ -114,6 +114,10 @@ const StationDetail = () => {
   // Export modal state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
+  // History logs pagination
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPerPage = 50;
+
   // Fullscreen chart state
   const [isChartFullscreen, setIsChartFullscreen] = useState(false); // Temperature
   const [isPressureFullscreen, setIsPressureFullscreen] = useState(false); // Pressure History
@@ -1128,7 +1132,7 @@ const StationDetail = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-                <p className="text-sm text-gray-600 mt-1">Latest 500 readings</p>
+                <p className="text-sm text-gray-600 mt-1">{historyData.length} readings — Page {historyPage} of {Math.ceil(historyData.length / historyPerPage)}</p>
               </div>
               <button
                 onClick={() => setIsExportModalOpen(true)}
@@ -1156,10 +1160,10 @@ const StationDetail = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {historyData.slice(0, 500).map((reading, index) => (
+                {historyData.slice((historyPage - 1) * historyPerPage, historyPage * historyPerPage).map((reading, index) => (
                   <tr key={index} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-700">{index + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">{(historyPage - 1) * historyPerPage + index + 1}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{formatTimestamp(reading.timestamp)}</span>
@@ -1205,6 +1209,70 @@ const StationDetail = () => {
               </tbody>
             </table>
           </div>
+          {/* Pagination Controls */}
+          {historyData.length > historyPerPage && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                Showing {(historyPage - 1) * historyPerPage + 1}–{Math.min(historyPage * historyPerPage, historyData.length)} of {historyData.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHistoryPage(1)}
+                  disabled={historyPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                  disabled={historyPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Prev
+                </button>
+                {(() => {
+                  const totalPages = Math.ceil(historyData.length / historyPerPage);
+                  const maxVisible = 5;
+                  let start = Math.max(1, historyPage - Math.floor(maxVisible / 2));
+                  let end = Math.min(totalPages, start + maxVisible - 1);
+                  if (end - start + 1 < maxVisible) {
+                    start = Math.max(1, end - maxVisible + 1);
+                  }
+                  const pages = [];
+                  for (let i = start; i <= end; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setHistoryPage(i)}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                          i === historyPage
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+                  return pages;
+                })()}
+                <button
+                  onClick={() => setHistoryPage(p => Math.min(Math.ceil(historyData.length / historyPerPage), p + 1))}
+                  disabled={historyPage === Math.ceil(historyData.length / historyPerPage)}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setHistoryPage(Math.ceil(historyData.length / historyPerPage))}
+                  disabled={historyPage === Math.ceil(historyData.length / historyPerPage)}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
 
