@@ -461,13 +461,13 @@ const Dashboard = () => {
     <Layout>
       <div className="flex flex-col space-y-4 pb-8">
         {/* Top Stats Bar - Compact Single Row */}
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Total SMS */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-blue-100 rounded-lg p-4"
+            className="bg-blue-100 rounded-lg p-4 min-w-0"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-blue-600 text-xs font-medium">Total SMS</span>
@@ -560,7 +560,7 @@ const Dashboard = () => {
           </div>
 
           {/* Current Stats Row */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
               <div className="text-xs text-cyan-700 mb-1">Current Flow</div>
               <div className="text-3xl font-bold text-cyan-600">{currentFlow.toFixed(1)}</div>
@@ -587,7 +587,7 @@ const Dashboard = () => {
           </div>
 
           {/* Chart */}
-          <div className="h-48 min-h-[192px]">
+          <div className="h-48 xl:h-64 2xl:h-80 min-h-[192px]">
             {chartsReady && historicalFlow.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minHeight={192}>
                 <AreaChart data={historicalFlow}>
@@ -642,7 +642,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Bottom Section: Alerts Overview + Battery Visualization */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Left: Active Alerts Overview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -700,7 +700,7 @@ const Dashboard = () => {
             </div>
 
             {/* Alerts Scrollable List */}
-            <div className="flex-1 overflow-y-auto" style={{ maxHeight: '220px' }}>
+            <div className="flex-1 overflow-y-auto" style={{ maxHeight: '320px' }}>
               <div className="space-y-2">
                 {filteredAlertsData.slice(0, 50).map((alert, index) => (
                   <motion.div
@@ -783,8 +783,8 @@ const Dashboard = () => {
             </div>
 
             {/* Bar Chart - Horizontal Scroll Container */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden" style={{ maxHeight: '260px', minHeight: '260px' }}>
-              <div style={{ minWidth: `${Math.max(filteredBatteryData.length * 25, 100)}px`, height: '260px' }}>
+            <div className="flex-1 overflow-x-auto overflow-y-hidden" style={{ maxHeight: '320px', minHeight: '260px' }}>
+              <div style={{ minWidth: `${Math.max(filteredBatteryData.length * 25, 100)}px`, height: '100%', minHeight: '260px' }}>
                 {chartsReady && <ResponsiveContainer width="100%" height="100%" minHeight={260}>
                   <BarChart
                     data={filteredBatteryData}

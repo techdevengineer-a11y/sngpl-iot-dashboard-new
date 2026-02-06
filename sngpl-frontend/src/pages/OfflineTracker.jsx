@@ -217,7 +217,7 @@ const OfflineTracker = () => {
         {/* Section Cards Grid */}
         <div>
           <h2 className="text-lg font-semibold text-white mb-3">Sections</h2>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {sectionData.map((section, index) => {
               const counts = getSectionCounts(section);
               const isSelected = selectedSection?.section_id === section.section_id;
