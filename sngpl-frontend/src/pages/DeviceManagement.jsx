@@ -247,8 +247,8 @@ const DeviceManagement = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Device Management</h1>
-            <p className="text-gray-400 mt-1">Manage device names and GPS coordinates by section</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Management</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Manage device names and GPS coordinates by section</p>
           </div>
         </div>
 
@@ -257,8 +257,8 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Devices</p>
-                <p className="text-3xl font-bold text-white mt-1">{stats.total}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Devices</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
               </div>
               <div className="text-4xl">📡</div>
             </div>
@@ -267,7 +267,7 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Online</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Online</p>
                 <p className="text-3xl font-bold text-green-400 mt-1">{stats.online}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-green-500 animate-pulse"></div>
@@ -277,7 +277,7 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Warning</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Warning</p>
                 <p className="text-3xl font-bold text-yellow-400 mt-1">{stats.warning}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-yellow-500"></div>
@@ -287,7 +287,7 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Offline</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Offline</p>
                 <p className="text-3xl font-bold text-red-400 mt-1">{stats.offline}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-red-500"></div>
@@ -297,7 +297,7 @@ const DeviceManagement = () => {
 
         {/* Section Filter */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Filter by Section</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filter by Section</h2>
           <div className="flex flex-wrap gap-3">
             {sections.map((section) => (
               <button
@@ -325,11 +325,11 @@ const DeviceManagement = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {sectionStats().map((stat) => (
               <div key={stat.id} className="glass rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-gray-400 mb-2">Section {stat.id}</h3>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Section {stat.id}</h3>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold text-white">{stat.count}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.count}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       <span className="text-green-400">{stat.online}</span> online
                     </p>
                   </div>
@@ -347,36 +347,36 @@ const DeviceManagement = () => {
 
         {/* Devices Table */}
         <div className="glass rounded-xl overflow-hidden">
-          <div className="p-6 border-b border-gray-700">
-            <h2 className="text-xl font-semibold text-white">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {selectedSection === 'ALL' ? 'All Devices' : sections.find(s => s.id === selectedSection)?.name}
-              <span className="ml-3 text-sm text-gray-400">({filteredDevices.length} devices)</span>
+              <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">({filteredDevices.length} devices)</span>
             </h2>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-gray-400">
+            <div className="p-12 text-center text-gray-600 dark:text-gray-400">
               <div className="text-4xl mb-4">⏳</div>
               <p>Loading devices...</p>
             </div>
           ) : filteredDevices.length === 0 ? (
             <div className="p-12 text-center">
               <div className="text-6xl mb-4">📡</div>
-              <h3 className="text-xl font-semibold text-white mb-2">No Devices Found</h3>
-              <p className="text-gray-400">No devices in this section</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Devices Found</h3>
+              <p className="text-gray-600 dark:text-gray-400">No devices in this section</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-800/50 border-b border-gray-700">
+                <thead className="bg-gray-100 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Client ID</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Device Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Location</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Latitude</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Longitude</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Status</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400 uppercase">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Client ID</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Device Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Location</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Latitude</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Longitude</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Status</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
@@ -404,10 +404,10 @@ const DeviceManagement = () => {
                               type="text"
                               value={device.device_name}
                               onChange={(e) => handleDeviceChange(device.id, 'device_name', e.target.value)}
-                              className="w-full px-3 py-1 bg-gray-800/50 text-white rounded border border-gray-600 focus:outline-none focus:border-blue-500"
+                              className="w-full px-3 py-1 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-blue-500"
                             />
                           ) : (
-                            <span className="text-white font-medium">{device.device_name}</span>
+                            <span className="text-gray-900 dark:text-white font-medium">{device.device_name}</span>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -420,7 +420,7 @@ const DeviceManagement = () => {
                               step="any"
                               value={device.latitude || ''}
                               onChange={(e) => handleDeviceChange(device.id, 'latitude', e.target.value)}
-                              className="w-full px-3 py-1 bg-gray-800/50 text-white rounded border border-gray-600 focus:outline-none focus:border-blue-500"
+                              className="w-full px-3 py-1 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-blue-500"
                               placeholder="e.g., 30.1575"
                             />
                           ) : (
@@ -436,7 +436,7 @@ const DeviceManagement = () => {
                               step="any"
                               value={device.longitude || ''}
                               onChange={(e) => handleDeviceChange(device.id, 'longitude', e.target.value)}
-                              className="w-full px-3 py-1 bg-gray-800/50 text-white rounded border border-gray-600 focus:outline-none focus:border-blue-500"
+                              className="w-full px-3 py-1 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-blue-500"
                               placeholder="e.g., 71.5249"
                             />
                           ) : (
@@ -495,8 +495,8 @@ const DeviceManagement = () => {
           <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-white">Edit Device</h2>
-                <p className="text-sm text-gray-400 mt-1">{currentDevice.client_id}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Device</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{currentDevice.client_id}</p>
               </div>
               <button
                 onClick={() => { setShowEditModal(false); resetForm(); }}
@@ -508,36 +508,36 @@ const DeviceManagement = () => {
 
             <form onSubmit={handleEditDevice} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device Name</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device Name</label>
                 <input
                   type="text"
                   value={formData.device_name}
                   onChange={(e) => setFormData({...formData, device_name: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Latitude</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Latitude</label>
                 <input
                   type="number"
                   step="any"
                   value={formData.latitude}
                   onChange={(e) => setFormData({...formData, latitude: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., 30.1575"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Longitude</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Longitude</label>
                 <input
                   type="number"
                   step="any"
                   value={formData.longitude}
                   onChange={(e) => setFormData({...formData, longitude: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., 71.5249"
                 />
               </div>

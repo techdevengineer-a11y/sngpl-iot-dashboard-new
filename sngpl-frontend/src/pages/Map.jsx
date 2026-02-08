@@ -277,8 +277,8 @@ const Map = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Device Map</h1>
-            <p className="text-gray-400 mt-1">Interactive map of IoT device locations across Pakistan</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Map</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Interactive map of IoT device locations across Pakistan</p>
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -298,8 +298,8 @@ const Map = () => {
           <div className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Devices</p>
-                <p className="text-3xl font-bold text-white mt-1">{statusStats.total}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Devices</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{statusStats.total}</p>
               </div>
               <div className="text-3xl">📡</div>
             </div>
@@ -307,7 +307,7 @@ const Map = () => {
           <div className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Online</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Online</p>
                 <p className="text-3xl font-bold text-green-400 mt-1">{statusStats.online}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-green-500 animate-pulse"></div>
@@ -316,7 +316,7 @@ const Map = () => {
           <div className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Warning</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Warning</p>
                 <p className="text-3xl font-bold text-yellow-400 mt-1">{statusStats.warning}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-yellow-500"></div>
@@ -325,7 +325,7 @@ const Map = () => {
           <div className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Offline</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Offline</p>
                 <p className="text-3xl font-bold text-red-400 mt-1">{statusStats.offline}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-red-500"></div>
@@ -336,26 +336,26 @@ const Map = () => {
         {/* Map Container */}
         <div className="glass rounded-xl p-6 relative">
           <div className="mb-4 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white">Pakistan Device Locations</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Pakistan Device Locations</h2>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                <span className="text-gray-400">Online</span>
+                <span className="text-gray-600 dark:text-gray-400">Online</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                <span className="text-gray-400">Warning</span>
+                <span className="text-gray-600 dark:text-gray-400">Warning</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-gray-400">Offline</span>
+                <span className="text-gray-600 dark:text-gray-400">Offline</span>
               </div>
             </div>
           </div>
 
           {/* Section Filter Buttons */}
           <div className="mb-4">
-            <p className="text-sm text-gray-400 mb-2">Filter by Section:</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Filter by Section:</p>
             <div className="flex flex-wrap gap-2">
               {sections.map((section) => (
                 <button
@@ -373,7 +373,7 @@ const Map = () => {
             </div>
           </div>
 
-          <div className="rounded-lg overflow-hidden border border-gray-700 h-[calc(100vh-280px)]">
+          <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-[calc(100vh-280px)]">
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -443,7 +443,7 @@ const Map = () => {
 
           {/* Slide-in Device Detail Panel */}
           <div
-            className={`absolute top-0 right-0 h-full w-96 bg-gray-900/95 backdrop-blur border-l border-gray-700 z-[1000] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+            className={`absolute top-0 right-0 h-full w-96 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-l border-gray-200 dark:border-gray-700 z-[1000] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
               selectedDevice ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
@@ -452,13 +452,13 @@ const Map = () => {
                 {/* Close button */}
                 <button
                   onClick={() => setSelectedDevice(null)}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none"
+                  className="absolute top-4 right-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none"
                 >
                   ✕
                 </button>
 
-                <h3 className="text-xl font-bold text-white mb-1 pr-8">{selectedDevice.device_name}</h3>
-                <p className="text-sm text-gray-400 mb-4">{selectedDevice.client_id}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 pr-8">{selectedDevice.device_name}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{selectedDevice.client_id}</p>
 
                 {/* Status Badge */}
                 <div className="mb-4">
@@ -475,62 +475,62 @@ const Map = () => {
                 {/* Device Info */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Location</span>
-                    <span className="text-white text-right">{selectedDevice.location}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Location</span>
+                    <span className="text-gray-900 dark:text-white text-right">{selectedDevice.location}</span>
                   </div>
                   {selectedDevice.last_seen && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Last Seen</span>
-                      <span className="text-white">{new Date(selectedDevice.last_seen).toLocaleString()}</span>
+                      <span className="text-gray-600 dark:text-gray-400">Last Seen</span>
+                      <span className="text-gray-900 dark:text-white">{new Date(selectedDevice.last_seen).toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Coordinates</span>
-                    <span className="text-white">
+                    <span className="text-gray-600 dark:text-gray-400">Coordinates</span>
+                    <span className="text-gray-900 dark:text-white">
                       {selectedDevice.latitude.toFixed(4)}, {selectedDevice.longitude.toFixed(4)}
                     </span>
                   </div>
                 </div>
 
                 {/* Sensor Readings */}
-                <div className="border-t border-gray-700 pt-4">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <h4 className="text-sm font-semibold text-blue-400 mb-3">Latest Sensor Readings</h4>
                   {selectedReading ? (
                     <div className="space-y-2">
                       {selectedReading.temperature != null && (
-                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-400">Temperature</span>
-                          <span className="text-white font-medium">{selectedReading.temperature}°C</span>
+                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600 dark:text-gray-400">Temperature</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.temperature}°C</span>
                         </div>
                       )}
                       {selectedReading.static_pressure != null && (
-                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-400">Static Pressure</span>
-                          <span className="text-white font-medium">{selectedReading.static_pressure} bar</span>
+                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600 dark:text-gray-400">Static Pressure</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.static_pressure} bar</span>
                         </div>
                       )}
                       {selectedReading.differential_pressure != null && (
-                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-400">Diff Pressure</span>
-                          <span className="text-white font-medium">{selectedReading.differential_pressure} bar</span>
+                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600 dark:text-gray-400">Diff Pressure</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.differential_pressure} bar</span>
                         </div>
                       )}
                       {selectedReading.volume != null && (
-                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-400">MMCF</span>
-                          <span className="text-white font-medium">{selectedReading.volume.toFixed(3)}</span>
+                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600 dark:text-gray-400">MMCF</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.volume.toFixed(3)}</span>
                         </div>
                       )}
                       {selectedReading.total_volume_flow != null && (
-                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-400">Total Flow</span>
-                          <span className="text-white font-medium">{selectedReading.total_volume_flow}</span>
+                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600 dark:text-gray-400">Total Flow</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.total_volume_flow}</span>
                         </div>
                       )}
                       {selectedReading.battery != null && (
-                        <div className="flex justify-between text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-400">Battery</span>
-                          <span className="text-white font-medium">{selectedReading.battery}%</span>
+                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600 dark:text-gray-400">Battery</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.battery}%</span>
                         </div>
                       )}
                       <p className="text-xs text-gray-500 mt-2">
@@ -545,18 +545,18 @@ const Map = () => {
             )}
           </div>
 
-          <div className="mt-4 text-sm text-gray-400 text-center">
+          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
             Click on map markers to view device details • {devices.filter(d => d.latitude != null && d.longitude != null).length} devices on map • {devices.length} total devices
           </div>
         </div>
 
         {/* Device List */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Device List</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Device List</h2>
           {loading ? (
-            <div className="text-center text-gray-400 py-8">Loading devices...</div>
+            <div className="text-center text-gray-600 dark:text-gray-400 py-8">Loading devices...</div>
           ) : devices.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
+            <div className="text-center text-gray-600 dark:text-gray-400 py-8">
               No devices found. Add devices to see them on the map.
             </div>
           ) : (
@@ -567,18 +567,18 @@ const Map = () => {
                   <div
                     key={device.id}
                     onClick={() => handleDeviceClick(device)}
-                    className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800/70 cursor-pointer transition-all duration-200 border border-gray-700"
+                    className="p-4 bg-white dark:bg-gray-800/50 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/70 cursor-pointer transition-all duration-200 border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-white">{device.device_name}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{device.device_name}</h3>
                       <div className={`w-3 h-3 rounded-full ${
                         status === 'online' ? 'bg-green-500 animate-pulse' :
                         status === 'warning' ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`}></div>
                     </div>
-                    <p className="text-sm text-gray-400 mb-1">ID: {device.client_id}</p>
-                    <p className="text-sm text-gray-400 mb-1">📍 {device.location}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ID: {device.client_id}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">📍 {device.location}</p>
                     {device.latitude != null && device.longitude != null ? (
                       <p className="text-xs text-gray-500">
                         {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
@@ -599,12 +599,12 @@ const Map = () => {
       {/* Add Device Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-200 dark:border-gray-700">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-white">Add Device at Location</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Add Device at Location</h2>
                 {clickedLocation && (
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     {clickedLocation.lat.toFixed(4)}, {clickedLocation.lng.toFixed(4)}
                   </p>
                 )}
@@ -614,7 +614,7 @@ const Map = () => {
                   setShowAddModal(false);
                   setClickedLocation(null);
                 }}
-                className="text-gray-400 hover:text-white text-2xl"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl"
               >
                 ✕
               </button>
@@ -622,36 +622,36 @@ const Map = () => {
 
             <form onSubmit={handleAddDevice} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device ID</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device ID</label>
                 <input
                   type="text"
                   value={newDevice.client_id}
                   onChange={(e) => setNewDevice({...newDevice, client_id: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., modem2"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device Name</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device Name</label>
                 <input
                   type="text"
                   value={newDevice.device_name}
                   onChange={(e) => setNewDevice({...newDevice, device_name: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., Compressor Station 2"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Location</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Location</label>
                 <input
                   type="text"
                   value={newDevice.location}
                   onChange={(e) => setNewDevice({...newDevice, location: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., Lahore, Pakistan"
                   required
                 />
@@ -659,23 +659,23 @@ const Map = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Latitude</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Latitude</label>
                   <input
                     type="number"
                     step="any"
                     value={newDevice.latitude}
                     onChange={(e) => setNewDevice({...newDevice, latitude: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Longitude</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Longitude</label>
                   <input
                     type="number"
                     step="any"
                     value={newDevice.longitude}
                     onChange={(e) => setNewDevice({...newDevice, longitude: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>

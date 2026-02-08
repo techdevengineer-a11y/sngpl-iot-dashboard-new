@@ -179,8 +179,8 @@ const Notifications = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Notifications Center</h1>
-            <p className="text-gray-400 mt-1">Real-time system alerts and notifications</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notifications Center</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time system alerts and notifications</p>
           </div>
           <div className="flex space-x-2">
             <button
@@ -212,8 +212,8 @@ const Notifications = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Notifications</p>
-                <p className="text-3xl font-bold text-white mt-1">{stats.total}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Notifications</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
               </div>
               <div className="text-4xl">📬</div>
             </div>
@@ -222,7 +222,7 @@ const Notifications = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Unread</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Unread</p>
                 <p className="text-3xl font-bold text-blue-400 mt-1">{stats.unread}</p>
               </div>
               <div className="text-4xl">📨</div>
@@ -232,7 +232,7 @@ const Notifications = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Critical Alerts</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Critical Alerts</p>
                 <p className="text-3xl font-bold text-red-400 mt-1">{stats.critical}</p>
               </div>
               <div className="text-4xl">🚨</div>
@@ -242,7 +242,7 @@ const Notifications = () => {
           <div className="glass rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Alarms</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Alarms</p>
                 <p className="text-3xl font-bold text-yellow-400 mt-1">{stats.alarms}</p>
               </div>
               <div className="text-4xl">🔔</div>
@@ -258,7 +258,7 @@ const Notifications = () => {
               className={`px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                 filter === 'all'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
               }`}
             >
               All ({notifications.length})
@@ -268,7 +268,7 @@ const Notifications = () => {
               className={`px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                 filter === 'unread'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
               }`}
             >
               Unread ({stats.unread})
@@ -278,7 +278,7 @@ const Notifications = () => {
               className={`px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                 filter === 'critical'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
               }`}
             >
               Critical ({stats.critical})
@@ -288,7 +288,7 @@ const Notifications = () => {
               className={`px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                 filter === 'alarm'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
               }`}
             >
               Alarms ({stats.alarms})
@@ -298,7 +298,7 @@ const Notifications = () => {
               className={`px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                 filter === 'device_status'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
               }`}
             >
               Device Status ({notifications.filter(n => n.type === 'device_status').length})
@@ -310,13 +310,13 @@ const Notifications = () => {
         <div className="space-y-3">
           {loading ? (
             <div className="glass rounded-xl p-12 text-center">
-              <div className="text-gray-400">Loading notifications...</div>
+              <div className="text-gray-600 dark:text-gray-400">Loading notifications...</div>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="glass rounded-xl p-12 text-center">
               <div className="text-6xl mb-4">📭</div>
-              <h3 className="text-xl font-semibold text-white mb-2">No Notifications</h3>
-              <p className="text-gray-400">You're all caught up! No notifications to show.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Notifications</h3>
+              <p className="text-gray-600 dark:text-gray-400">You're all caught up! No notifications to show.</p>
             </div>
           ) : (
             filteredNotifications.map((notification) => (
@@ -332,13 +332,13 @@ const Notifications = () => {
                     <div className="text-4xl">{getNotificationIcon(notification.type, notification.severity)}</div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-semibold text-white">{notification.title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{notification.title}</h3>
                         {!notification.isRead && (
                           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
                         )}
                       </div>
                       <p className="text-gray-300 mb-2">{notification.message}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                         <span>{getTimeAgo(notification.timestamp)}</span>
                         <span>•</span>
                         <span className="capitalize">{notification.type.replace('_', ' ')}</span>
@@ -360,20 +360,20 @@ const Notifications = () => {
       {/* Notification Detail Modal */}
       {showModal && selectedNotification && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-2xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-2xl w-full border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center space-x-3">
                 <span className="text-5xl">{getNotificationIcon(selectedNotification.type, selectedNotification.severity)}</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{selectedNotification.title}</h2>
-                  <p className="text-gray-400 text-sm mt-1">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedNotification.title}</h2>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                     {new Date(selectedNotification.timestamp).toLocaleString()}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-white text-2xl"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl"
               >
                 ✕
               </button>
@@ -381,71 +381,71 @@ const Notifications = () => {
 
             <div className="space-y-4">
               <div className={`p-4 rounded-lg border-2 ${getSeverityColor(selectedNotification.severity)}`}>
-                <p className="text-white text-lg">{selectedNotification.message}</p>
+                <p className="text-gray-900 dark:text-white text-lg">{selectedNotification.message}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <p className="text-gray-400 text-sm mb-1">Type</p>
-                  <p className="text-white font-semibold capitalize">{selectedNotification.type.replace('_', ' ')}</p>
+                <div className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Type</p>
+                  <p className="text-gray-900 dark:text-white font-semibold capitalize">{selectedNotification.type.replace('_', ' ')}</p>
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <p className="text-gray-400 text-sm mb-1">Severity</p>
-                  <p className="text-white font-semibold capitalize">{selectedNotification.severity}</p>
+                <div className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Severity</p>
+                  <p className="text-gray-900 dark:text-white font-semibold capitalize">{selectedNotification.severity}</p>
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <p className="text-gray-400 text-sm mb-1">Time</p>
-                  <p className="text-white font-semibold">{getTimeAgo(selectedNotification.timestamp)}</p>
+                <div className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Time</p>
+                  <p className="text-gray-900 dark:text-white font-semibold">{getTimeAgo(selectedNotification.timestamp)}</p>
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <p className="text-gray-400 text-sm mb-1">Status</p>
-                  <p className="text-white font-semibold">{selectedNotification.isRead ? 'Read' : 'Unread'}</p>
+                <div className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Status</p>
+                  <p className="text-gray-900 dark:text-white font-semibold">{selectedNotification.isRead ? 'Read' : 'Unread'}</p>
                 </div>
               </div>
 
               {selectedNotification.type === 'alarm' && (
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <h3 className="text-white font-semibold mb-3">Alarm Details</h3>
+                <div className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <h3 className="text-gray-900 dark:text-white font-semibold mb-3">Alarm Details</h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-gray-400">Device</p>
-                      <p className="text-white">{selectedNotification.data.client_id}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Device</p>
+                      <p className="text-gray-900 dark:text-white">{selectedNotification.data.client_id}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Parameter</p>
-                      <p className="text-white capitalize">{selectedNotification.data.parameter}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Parameter</p>
+                      <p className="text-gray-900 dark:text-white capitalize">{selectedNotification.data.parameter}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Value</p>
-                      <p className="text-white">{selectedNotification.data.value}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Value</p>
+                      <p className="text-gray-900 dark:text-white">{selectedNotification.data.value}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Threshold</p>
-                      <p className="text-white">{selectedNotification.data.threshold}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Threshold</p>
+                      <p className="text-gray-900 dark:text-white">{selectedNotification.data.threshold}</p>
                     </div>
                   </div>
                 </div>
               )}
 
               {selectedNotification.type === 'device_status' && (
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <h3 className="text-white font-semibold mb-3">Device Details</h3>
+                <div className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <h3 className="text-gray-900 dark:text-white font-semibold mb-3">Device Details</h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-gray-400">Device Name</p>
-                      <p className="text-white">{selectedNotification.data.device_name}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Device Name</p>
+                      <p className="text-gray-900 dark:text-white">{selectedNotification.data.device_name}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Client ID</p>
-                      <p className="text-white">{selectedNotification.data.client_id}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Client ID</p>
+                      <p className="text-gray-900 dark:text-white">{selectedNotification.data.client_id}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Location</p>
-                      <p className="text-white">{selectedNotification.data.location}</p>
+                      <p className="text-gray-600 dark:text-gray-400">Location</p>
+                      <p className="text-gray-900 dark:text-white">{selectedNotification.data.location}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Last Seen</p>
-                      <p className="text-white">
+                      <p className="text-gray-600 dark:text-gray-400">Last Seen</p>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedNotification.data.last_seen
                           ? new Date(selectedNotification.data.last_seen).toLocaleString()
                           : 'Never'}

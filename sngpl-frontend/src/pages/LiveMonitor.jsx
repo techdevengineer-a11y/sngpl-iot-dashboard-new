@@ -128,11 +128,11 @@ const LiveMonitor = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Live Monitoring</h1>
-            <p className="text-gray-400 mt-1">Real-time device data with 2-second refresh</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Live Monitoring</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time device data with 2-second refresh</p>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Last Update: {lastUpdate.toLocaleTimeString()}
             </div>
             <div className="flex items-center space-x-2">
@@ -145,7 +145,7 @@ const LiveMonitor = () => {
         {/* Device Selection */}
         <div className="glass rounded-xl p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-white">Select Devices to Monitor</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Select Devices to Monitor</h2>
             <div className="space-x-2">
               <button
                 onClick={selectAll}
@@ -172,7 +172,7 @@ const LiveMonitor = () => {
                   className={`p-3 rounded-lg border-2 transition-all duration-200 ${
                     selectedDevices.includes(device.id)
                       ? 'border-blue-500 bg-blue-600/20'
-                      : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -184,8 +184,8 @@ const LiveMonitor = () => {
                       <div className="text-blue-400">✓</div>
                     )}
                   </div>
-                  <p className="text-white font-medium text-sm truncate">{device.device_name}</p>
-                  <p className="text-gray-400 text-xs truncate">{device.client_id}</p>
+                  <p className="text-gray-900 dark:text-white font-medium text-sm truncate">{device.device_name}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs truncate">{device.client_id}</p>
                 </button>
               );
             })}
@@ -196,8 +196,8 @@ const LiveMonitor = () => {
         {selectedDevices.length === 0 ? (
           <div className="glass rounded-xl p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Devices Selected</h3>
-            <p className="text-gray-400">Select devices above to start monitoring live data</p>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Devices Selected</h3>
+            <p className="text-gray-600 dark:text-gray-400">Select devices above to start monitoring live data</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -215,13 +215,13 @@ const LiveMonitor = () => {
                         status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
                       }`}></div>
                       <div>
-                        <h3 className="text-xl font-semibold text-white">{device.device_name}</h3>
-                        <p className="text-sm text-gray-400">{device.client_id} • {device.location}</p>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{device.device_name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{device.client_id} • {device.location}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-400">Last Reading</p>
-                      <p className="text-white font-medium">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Last Reading</p>
+                      <p className="text-gray-900 dark:text-white font-medium">
                         {reading ? new Date(reading.timestamp).toLocaleTimeString() : 'No data'}
                       </p>
                     </div>
@@ -229,9 +229,9 @@ const LiveMonitor = () => {
 
                   {reading ? (
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                      <div className="p-4 bg-gray-800/50 rounded-lg border-l-4 border-orange-500">
+                      <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border-l-4 border-orange-500">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm font-medium">Temperature</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Temperature</span>
                           <span className="text-2xl">🌡️</span>
                         </div>
                         <p className={`text-3xl font-bold ${getStatusColor(reading.temperature, 'temperature')}`}>
@@ -241,9 +241,9 @@ const LiveMonitor = () => {
                         <p className="text-xs text-gray-600 mt-1">Range: -10 to 150°F</p>
                       </div>
 
-                      <div className="p-4 bg-gray-800/50 rounded-lg border-l-4 border-blue-500">
+                      <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border-l-4 border-blue-500">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm font-medium">Static Pressure</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Static Pressure</span>
                           <span className="text-2xl">📊</span>
                         </div>
                         <p className={`text-3xl font-bold ${getStatusColor(reading.static_pressure, 'static_pressure')}`}>
@@ -253,9 +253,9 @@ const LiveMonitor = () => {
                         <p className="text-xs text-gray-600 mt-1">Range: 0 to 150 PSI</p>
                       </div>
 
-                      <div className="p-4 bg-gray-800/50 rounded-lg border-l-4 border-yellow-500">
+                      <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border-l-4 border-yellow-500">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm font-medium">Diff. Pressure</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Diff. Pressure</span>
                           <span className="text-2xl">⚡</span>
                         </div>
                         <p className={`text-3xl font-bold ${getStatusColor(reading.differential_pressure, 'differential_pressure')}`}>
@@ -265,9 +265,9 @@ const LiveMonitor = () => {
                         <p className="text-xs text-gray-600 mt-1">Range: 0 to 500 IWC</p>
                       </div>
 
-                      <div className="p-4 bg-gray-800/50 rounded-lg border-l-4 border-purple-500">
+                      <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border-l-4 border-purple-500">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm font-medium">Volume</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Volume</span>
                           <span className="text-2xl">📦</span>
                         </div>
                         <p className={`text-3xl font-bold ${getStatusColor(reading.volume, 'volume')}`}>
@@ -277,9 +277,9 @@ const LiveMonitor = () => {
                         <p className="text-xs text-gray-600 mt-1">Range: 0 to 25000 MCF</p>
                       </div>
 
-                      <div className="p-4 bg-gray-800/50 rounded-lg border-l-4 border-cyan-500">
+                      <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border-l-4 border-cyan-500">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm font-medium">Total Flow</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Flow</span>
                           <span className="text-2xl">💧</span>
                         </div>
                         <p className={`text-3xl font-bold ${getStatusColor(reading.total_volume_flow, 'total_volume_flow')}`}>
@@ -290,7 +290,7 @@ const LiveMonitor = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-400">
+                    <div className="text-center py-8 text-gray-600 dark:text-gray-400">
                       <p>No recent data available for this device</p>
                     </div>
                   )}
@@ -303,22 +303,22 @@ const LiveMonitor = () => {
         {/* Stats Summary */}
         {selectedDevices.length > 0 && (
           <div className="glass rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Monitoring Summary</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Monitoring Summary</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Devices Monitored</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Devices Monitored</p>
                 <p className="text-3xl font-bold text-blue-400">{selectedDevices.length}</p>
               </div>
               <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Active Readings</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Active Readings</p>
                 <p className="text-3xl font-bold text-green-400">{Object.keys(deviceReadings).length}</p>
               </div>
               <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Update Interval</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Update Interval</p>
                 <p className="text-3xl font-bold text-purple-400">2s</p>
               </div>
               <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Data Quality</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Data Quality</p>
                 <p className="text-3xl font-bold text-green-400">
                   {selectedDevices.length > 0
                     ? Math.round((Object.keys(deviceReadings).length / selectedDevices.length) * 100)

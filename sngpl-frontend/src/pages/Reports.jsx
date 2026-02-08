@@ -222,18 +222,18 @@ const Reports = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">Reports</h1>
-          <p className="text-gray-400 mt-1">Generate and export comprehensive system reports</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reports</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Generate and export comprehensive system reports</p>
         </div>
 
         {/* Report Configuration */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Report Configuration</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Report Configuration</h2>
 
           <div className="space-y-6">
             {/* Report Type Selection */}
             <div>
-              <label className="block text-sm text-gray-400 mb-3">Report Type</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-3">Report Type</label>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {reportTypes.map(type => (
                   <button
@@ -242,12 +242,12 @@ const Reports = () => {
                     className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
                       reportType === type.value
                         ? 'border-blue-500 bg-blue-600/20'
-                        : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600'
                     }`}
                   >
                     <div className="text-3xl mb-2">{type.icon}</div>
-                    <p className="text-white font-semibold mb-1">{type.label}</p>
-                    <p className="text-xs text-gray-400">{type.description}</p>
+                    <p className="text-gray-900 dark:text-white font-semibold mb-1">{type.label}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{type.description}</p>
                   </button>
                 ))}
               </div>
@@ -256,11 +256,11 @@ const Reports = () => {
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device Filter</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device Filter</label>
                 <select
                   value={selectedDevice}
                   onChange={(e) => setSelectedDevice(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   disabled={reportType === 'system_health'}
                 >
                   <option value="all">All Devices</option>
@@ -273,11 +273,11 @@ const Reports = () => {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Date Range</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Date Range</label>
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                 >
                   {dateRangeOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -303,21 +303,21 @@ const Reports = () => {
             {dateRange === 'custom' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Start Date</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
                   <input
                     type="datetime-local"
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">End Date</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">End Date</label>
                   <input
                     type="datetime-local"
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -329,7 +329,7 @@ const Reports = () => {
         {reportPreview && (
           <div className="glass rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-white">Report Preview</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Report Preview</h2>
               <div className="flex space-x-2">
                 <button
                   onClick={() => exportReport('pdf')}
@@ -354,20 +354,20 @@ const Reports = () => {
 
             <div className="space-y-6">
               {/* Report Header */}
-              <div className="border-b border-gray-700 pb-4">
-                <h3 className="text-2xl font-bold text-white mb-2">{reportPreview.type}</h3>
-                <p className="text-gray-400">Period: {reportPreview.period}</p>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{reportPreview.type}</h3>
+                <p className="text-gray-600 dark:text-gray-400">Period: {reportPreview.period}</p>
                 <p className="text-xs text-gray-500 mt-2">Generated on: {new Date().toLocaleString()}</p>
               </div>
 
               {/* Report Data */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {Object.entries(reportPreview).filter(([key]) => !['type', 'period'].includes(key)).map(([key, value]) => (
-                  <div key={key} className="p-4 bg-gray-800/50 rounded-lg">
-                    <p className="text-gray-400 text-sm mb-2 capitalize">
+                  <div key={key} className="p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 capitalize">
                       {key.replace(/_/g, ' ')}
                     </p>
-                    <p className="text-2xl font-bold text-white">{value}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
                   </div>
                 ))}
               </div>
@@ -379,8 +379,8 @@ const Reports = () => {
         {!reportPreview && (
           <div className="glass rounded-xl p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Report Generated</h3>
-            <p className="text-gray-400">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Report Generated</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               Configure your report settings above and click "Generate Report" to create a comprehensive analysis
             </p>
           </div>
@@ -388,24 +388,24 @@ const Reports = () => {
 
         {/* Quick Reports */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Quick Reports</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Reports</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-6 bg-gray-800/50 hover:bg-gray-800/70 rounded-lg transition-all duration-200 text-left border border-gray-700">
+            <button className="p-6 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/70 rounded-lg transition-all duration-200 text-left border border-gray-200 dark:border-gray-700">
               <div className="text-3xl mb-3">📈</div>
-              <h3 className="text-white font-semibold mb-2">Daily Summary</h3>
-              <p className="text-sm text-gray-400">Quick overview of today's activity</p>
+              <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Daily Summary</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Quick overview of today's activity</p>
             </button>
 
-            <button className="p-6 bg-gray-800/50 hover:bg-gray-800/70 rounded-lg transition-all duration-200 text-left border border-gray-700">
+            <button className="p-6 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/70 rounded-lg transition-all duration-200 text-left border border-gray-200 dark:border-gray-700">
               <div className="text-3xl mb-3">📅</div>
-              <h3 className="text-white font-semibold mb-2">Weekly Report</h3>
-              <p className="text-sm text-gray-400">Comprehensive 7-day analysis</p>
+              <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Weekly Report</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Comprehensive 7-day analysis</p>
             </button>
 
-            <button className="p-6 bg-gray-800/50 hover:bg-gray-800/70 rounded-lg transition-all duration-200 text-left border border-gray-700">
+            <button className="p-6 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/70 rounded-lg transition-all duration-200 text-left border border-gray-200 dark:border-gray-700">
               <div className="text-3xl mb-3">📆</div>
-              <h3 className="text-white font-semibold mb-2">Monthly Report</h3>
-              <p className="text-sm text-gray-400">30-day performance review</p>
+              <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Monthly Report</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">30-day performance review</p>
             </button>
           </div>
         </div>

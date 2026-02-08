@@ -207,14 +207,14 @@ const Analytics = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Analytics</h1>
-            <p className="text-gray-400 mt-1">Historical data analysis and insights</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Historical data analysis and insights</p>
           </div>
           <div className="flex items-center space-x-3">
             <select
               value={exportFormat}
               onChange={(e) => setExportFormat(e.target.value)}
-              className="px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+              className="px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
             >
               <option value="csv">CSV</option>
               <option value="xlsx">Excel</option>
@@ -231,15 +231,15 @@ const Analytics = () => {
 
         {/* Filters */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Filters</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Filters</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Device Selection */}
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Device</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device</label>
               <select
                 value={selectedDevice}
                 onChange={(e) => setSelectedDevice(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
               >
                 <option value="all">All Devices</option>
                 {devices.map(device => (
@@ -252,11 +252,11 @@ const Analytics = () => {
 
             {/* Parameter Selection */}
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Parameter</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Parameter</label>
               <select
                 value={selectedParameter}
                 onChange={(e) => setSelectedParameter(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
               >
                 {parameterOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -268,11 +268,11 @@ const Analytics = () => {
 
             {/* Time Range */}
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Time Range</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Time Range</label>
               <select
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
               >
                 {timeRangeOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -297,21 +297,21 @@ const Analytics = () => {
           {timeRange === 'custom' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Start Date</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
                 <input
                   type="datetime-local"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-2">End Date</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">End Date</label>
                 <input
                   type="datetime-local"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
@@ -322,19 +322,19 @@ const Analytics = () => {
         {statistics && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="glass rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-2">Minimum Value</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Minimum Value</p>
               <p className="text-3xl font-bold text-blue-400">{statistics.min}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-2">Maximum Value</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Maximum Value</p>
               <p className="text-3xl font-bold text-red-400">{statistics.max}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-2">Average Value</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Average Value</p>
               <p className="text-3xl font-bold text-green-400">{statistics.avg}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-gray-400 text-sm mb-2">Data Points</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Data Points</p>
               <p className="text-3xl font-bold text-purple-400">{statistics.count}</p>
             </div>
           </div>
@@ -344,13 +344,13 @@ const Analytics = () => {
         {loading ? (
           <div className="glass rounded-xl p-12 text-center">
             <div className="text-4xl mb-4">⏳</div>
-            <p className="text-gray-400">Loading analytics data...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading analytics data...</p>
           </div>
         ) : analyticsData.length === 0 ? (
           <div className="glass rounded-xl p-12 text-center">
             <div className="text-6xl mb-4">📈</div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Data Available</h3>
-            <p className="text-gray-400">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Data Available</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               Select different filters or wait for devices to send data
             </p>
             <p className="text-sm text-gray-500 mt-4">
@@ -361,7 +361,7 @@ const Analytics = () => {
           <div className="space-y-6">
             {/* Line Chart */}
             <div className="glass rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 {parameterOptions.find(p => p.value === selectedParameter)?.label} Trend
               </h2>
               <ResponsiveContainer width="100%" height={400}>
@@ -395,7 +395,7 @@ const Analytics = () => {
             {/* Bar Chart - Device Comparison */}
             {selectedDevice === 'all' && (
               <div className="glass rounded-xl p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Device Comparison</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Device Comparison</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={analyticsData.slice(-20)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -413,7 +413,7 @@ const Analytics = () => {
 
             {/* Multi-Parameter Line Chart */}
             <div className="glass rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">All Parameters Overview</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">All Parameters Overview</h2>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={analyticsData.slice(-50)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

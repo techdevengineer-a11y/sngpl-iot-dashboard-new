@@ -273,8 +273,8 @@ const Devices = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Devices</h1>
-            <p className="text-gray-400 mt-1">Real-time device monitoring and parameters</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Devices</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time device monitoring and parameters</p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
@@ -292,14 +292,14 @@ const Devices = () => {
                 <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
               </div>
-              <div className="text-gray-400 animate-pulse">Loading devices...</div>
+              <div className="text-gray-600 dark:text-gray-400 animate-pulse">Loading devices...</div>
             </div>
           </div>
         ) : devicesWithReadings.length === 0 ? (
           <div className="glass rounded-xl p-12 text-center animate-fade-in">
             <div className="text-6xl mb-4 animate-bounce">📡</div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Devices Yet</h3>
-            <p className="text-gray-400">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Devices Yet</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               Devices will appear here once they start sending data via MQTT
             </p>
             <button
@@ -313,20 +313,20 @@ const Devices = () => {
           <div className="glass rounded-xl overflow-hidden animate-fade-in">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-800/50 border-b border-gray-700">
+                <thead className="bg-gray-100 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Device Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Client ID</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Location</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Temperature (°F)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Static Pressure (PSI)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Diff. Pressure (IWC)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Battery (V)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Volume (MCF)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Total volume flow (MCF/DAY)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400 uppercase">Last Seen</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400 uppercase">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Device Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Client ID</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Location</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Temperature (°F)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Static Pressure (PSI)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Diff. Pressure (IWC)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Battery (V)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Volume (MCF)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Total volume flow (MCF/DAY)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Last Seen</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
@@ -348,14 +348,14 @@ const Devices = () => {
                               status === 'online' ? 'bg-green-500 animate-pulse' :
                               status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
                             }`}></div>
-                            <span className="text-white font-medium">{device.device_name}</span>
+                            <span className="text-gray-900 dark:text-white font-medium">{device.device_name}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="font-mono text-sm text-gray-300">{device.client_id}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-white">{device.location}</span>
+                          <span className="text-gray-900 dark:text-white">{device.location}</span>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`text-lg font-semibold ${reading ? 'text-blue-400' : 'text-gray-500'}`}>
@@ -388,7 +388,7 @@ const Devices = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-gray-400 text-sm">
+                          <span className="text-gray-600 dark:text-gray-400 text-sm">
                             {device.last_seen
                               ? new Date(device.last_seen).toLocaleString()
                               : 'Never'}
@@ -423,9 +423,9 @@ const Devices = () => {
       {/* Add Device Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700 animate-scale-in">
+          <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-200 dark:border-gray-700 animate-scale-in">
             <div className="flex justify-between items-start mb-6">
-              <h2 className="text-2xl font-bold text-white">Add New Device</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Device</h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-gray-400 hover:text-white text-2xl"
@@ -436,35 +436,35 @@ const Devices = () => {
 
             <form onSubmit={handleAddDevice} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device ID</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device ID</label>
                 <input
                   type="text"
                   value={newDevice.client_id}
                   onChange={(e) => setNewDevice({...newDevice, client_id: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., modem2"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device Name</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device Name</label>
                 <input
                   type="text"
                   value={newDevice.device_name}
                   onChange={(e) => setNewDevice({...newDevice, device_name: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., Compressor Station 2"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Device Type</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device Type</label>
                 <select
                   value={newDevice.device_type}
                   onChange={(e) => setNewDevice({...newDevice, device_type: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   required
                 >
                   <option value="EVC">EVC (Electronic Volume Corrector)</option>
@@ -473,12 +473,12 @@ const Devices = () => {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Location</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Location</label>
                 <input
                   type="text"
                   value={newDevice.location}
                   onChange={(e) => setNewDevice({...newDevice, location: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., Lahore, Pakistan"
                   required
                 />
@@ -486,23 +486,23 @@ const Devices = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Latitude</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Latitude</label>
                   <input
                     type="number"
                     step="any"
                     value={newDevice.latitude}
                     onChange={(e) => setNewDevice({...newDevice, latitude: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Longitude</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Longitude</label>
                   <input
                     type="number"
                     step="any"
                     value={newDevice.longitude}
                     onChange={(e) => setNewDevice({...newDevice, longitude: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -530,11 +530,11 @@ const Devices = () => {
       {/* Data History Modal */}
       {showHistoryModal && selectedDevice && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-6xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto animate-scale-in">
+          <div className="bg-gray-900 rounded-2xl p-8 max-w-6xl w-full border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto animate-scale-in">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-white">Data History</h2>
-                <p className="text-gray-400 mt-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Data History</h2>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
                   {selectedDevice.device_name} ({selectedDevice.client_id})
                 </p>
               </div>
@@ -547,10 +547,10 @@ const Devices = () => {
             </div>
 
             {/* Search Filters */}
-            <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+            <div className="glass rounded-lg p-4 mb-6">
               {/* Quick Filter Buttons */}
               <div className="mb-4">
-                <label className="block text-sm text-gray-400 mb-2">Quick Filters</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Quick Filters</label>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => handleQuickFilter('today')}
@@ -617,33 +617,33 @@ const Devices = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Start Date</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
                   <input
                     type="date"
                     value={historyFilters.startDate}
                     onChange={(e) => {
                       setHistoryFilters({...historyFilters, startDate: e.target.value, quickFilter: 'custom'});
                     }}
-                    className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">End Date</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">End Date</label>
                   <input
                     type="date"
                     value={historyFilters.endDate}
                     onChange={(e) => {
                       setHistoryFilters({...historyFilters, endDate: e.target.value, quickFilter: 'custom'});
                     }}
-                    className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Limit</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Limit</label>
                   <select
                     value={historyFilters.limit}
                     onChange={(e) => setHistoryFilters({...historyFilters, limit: parseInt(e.target.value)})}
-                    className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
                   >
                     <option value={50}>50 records</option>
                     <option value={100}>100 records</option>
@@ -676,26 +676,26 @@ const Devices = () => {
                     <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full"></div>
                     <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
                   </div>
-                  <div className="text-gray-400 animate-pulse">Loading history data...</div>
+                  <div className="text-gray-600 dark:text-gray-400 animate-pulse">Loading history data...</div>
                 </div>
               </div>
             ) : historyData.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📊</div>
-                <h3 className="text-xl font-semibold text-white mb-2">No Data Found</h3>
-                <p className="text-gray-400">Try adjusting your search filters</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Data Found</h3>
+                <p className="text-gray-600 dark:text-gray-400">Try adjusting your search filters</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-800/50 border-b border-gray-700">
+                  <thead className="bg-gray-100 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Timestamp</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Temp (°C)</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Static P. (bar)</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Diff P. (bar)</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Volume (m³)</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Flow (m³/h)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Timestamp</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Temp (°C)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Static P. (bar)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Diff P. (bar)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Volume (m³)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Flow (m³/h)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800">
@@ -723,7 +723,7 @@ const Devices = () => {
                     ))}
                   </tbody>
                 </table>
-                <div className="mt-4 text-sm text-gray-400 text-center">
+                <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
                   Showing {historyData.length} records
                 </div>
               </div>
