@@ -15,7 +15,7 @@ import {
   Download,
   Maximize2
 } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
 
@@ -1321,6 +1321,17 @@ const StationDetail = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value.toFixed(1)}°F`, 'Temperature']}
                 />
+                <Brush
+                  dataKey="timestamp"
+                  height={35}
+                  stroke="#8b1538"
+                  fill="#fef2f2"
+                  startIndex={Math.max(0, filterDataByDateRange(tempStartDate, tempEndDate, 200).length - 30)}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                  }}
+                />
                 <Line
                   type="monotone"
                   dataKey="temperature"
@@ -1380,6 +1391,17 @@ const StationDetail = () => {
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value.toFixed(2)} IWC`, 'Differential Pressure']}
                 />
+                <Brush
+                  dataKey="timestamp"
+                  height={35}
+                  stroke="#dc2626"
+                  fill="#fef2f2"
+                  startIndex={Math.max(0, filterDataByDateRange(diffPStartDate, diffPEndDate, 200).length - 30)}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                  }}
+                />
                 <Line
                   type="monotone"
                   dataKey="differential_pressure"
@@ -1438,6 +1460,17 @@ const StationDetail = () => {
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                 />
+                <Brush
+                  dataKey="timestamp"
+                  height={35}
+                  stroke="#16a34a"
+                  fill="#f0fdf4"
+                  startIndex={Math.max(0, filterDataByDateRange(staticPStartDate, staticPEndDate, 200).length - 30)}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                  }}
+                />
                 <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
                 <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
                 <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} activeDot={{ r: 5 }} />
@@ -1491,6 +1524,17 @@ const StationDetail = () => {
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value.toFixed(1)} MCF`, 'Volume']}
+                />
+                <Brush
+                  dataKey="timestamp"
+                  height={35}
+                  stroke="#9333ea"
+                  fill="#faf5ff"
+                  startIndex={Math.max(0, filterDataByDateRange(volumeStartDate, volumeEndDate, 200).length - 30)}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -1550,6 +1594,17 @@ const StationDetail = () => {
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => [`${value.toFixed(1)} MCF/day`, 'Flow Rate']}
+                />
+                <Brush
+                  dataKey="timestamp"
+                  height={35}
+                  stroke="#14b8a6"
+                  fill="#f0fdfa"
+                  startIndex={Math.max(0, filterDataByDateRange(flowStartDate, flowEndDate, 200).length - 30)}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -1612,6 +1667,17 @@ const StationDetail = () => {
                     const batteryValue = value || 12.5;
                     const status = batteryValue >= 12.5 ? 'Optimal' : batteryValue >= 11.8 ? 'Good' : batteryValue >= 11.0 ? 'Warning' : batteryValue >= 10.5 ? 'Low' : batteryValue >= 10.0 ? 'V.Low' : 'Critical';
                     return [`${batteryValue.toFixed(2)}V (${status})`, 'Battery'];
+                  }}
+                />
+                <Brush
+                  dataKey="timestamp"
+                  height={35}
+                  stroke="#eab308"
+                  fill="#fefce8"
+                  startIndex={Math.max(0, filterDataByDateRange(batteryStartDate, batteryEndDate, 200).length - 30)}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                   }}
                 />
                 <Line
