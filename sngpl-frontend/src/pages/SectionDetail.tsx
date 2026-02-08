@@ -524,8 +524,8 @@ const SectionDetail = () => {
 
         {/* Devices Table */}
         <div className="glass rounded-xl overflow-hidden">
-          <div className="overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 600px)', minHeight: '400px' }}>
-            <table className="w-full border-collapse">
+          <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: 'calc(100vh - 600px)', minHeight: '400px' }}>
+            <table className="w-full min-w-[1200px] border-collapse">
               <thead className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">#</th>
