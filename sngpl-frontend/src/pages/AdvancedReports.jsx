@@ -1268,7 +1268,7 @@ const AdvancedReports = () => {
                   <p className="text-xs text-gray-500">No devices found in this section</p>
                 </div>
               ) : (
-                <div className="overflow-auto border border-gray-200 rounded-lg" style={{ maxHeight: '500px' }}>
+                <div className="overflow-x-auto border border-gray-200 rounded-lg">
                   <table className="w-full border-collapse">
                     <thead className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
                       <tr>
@@ -1317,7 +1317,6 @@ const AdvancedReports = () => {
                             Sp. Gravity
                           </div>
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Reading</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
@@ -1427,15 +1426,6 @@ const AdvancedReports = () => {
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className="text-sm font-medium text-indigo-600">
                                 {device.latest_reading?.specific_gravity ?? '-'}
-                              </span>
-                            </td>
-
-                            {/* Last Reading */}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="text-xs text-gray-600">
-                                {device.last_reading_at
-                                  ? new Date(device.last_reading_at).toLocaleString()
-                                  : 'No data'}
                               </span>
                             </td>
 
