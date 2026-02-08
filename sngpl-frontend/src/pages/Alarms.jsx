@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAlarms, getAlarmsBySection, acknowledgeAlarm, deleteAlarm, deleteAllAlarms, getAlarmMonitoringStatus, toggleAlarmMonitoring } from '../services/api';
 import Layout from '../components/Layout';
+import SectionCards from '../components/SectionCards';
 import toast from 'react-hot-toast';
 import { Bell, AlertTriangle, CheckCircle, Clock, Activity, Trash2, PlayCircle, StopCircle, Gauge, WifiOff, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -267,98 +268,8 @@ const Alarms = () => {
           </div>
         </div>
 
-        {/* Section Cards Grid - 5 Cards Only */}
-        {sectionData.length === 0 ? (
-          <div className="glass rounded-xl p-12 text-center">
-            <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Section Data Available</h3>
-            <p className="text-gray-600">Waiting for section data to load...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sectionData.map((section, index) => {
-            const sectionAlarms = getAlarmsForSection(section.section_id);
-            const offlineDevices = section.total_devices - section.active_devices;
-            const isExpanded = expandedSection === section.section_id;
-
-            return (
-              <div
-                key={section.section_id}
-                onClick={() => handleSectionClick(section.section_id)}
-                className="glass rounded-xl p-6 transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20"
-              >
-                  {/* Header with Section Number */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-16 h-16 bg-gradient-to-br ${getSectionColor(index)} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                      <span className="text-2xl font-bold">{section.section_id}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600 mb-1">Active Alarms</div>
-                      <div className={`text-3xl font-bold ${section.active_alarms > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {section.active_alarms}
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        {section.high_severity_alarms > 0 && `${section.high_severity_alarms} High`}
-                        {section.high_severity_alarms > 0 && section.medium_severity_alarms > 0 && ' | '}
-                        {section.medium_severity_alarms > 0 && `${section.medium_severity_alarms} Med`}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section Name */}
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">{section.section_name}</h2>
-
-                  {/* Stats Grid - 2x2 */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {/* Total Devices */}
-                    <div className="bg-blue-100 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Gauge className="w-4 h-4 text-blue-600" />
-                        <div className="text-xs text-gray-600">Total</div>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">{section.total_devices}</div>
-                    </div>
-
-                    {/* Offline Devices */}
-                    <div className="bg-red-100 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <WifiOff className="w-4 h-4 text-red-600" />
-                        <div className="text-xs text-gray-600">Offline</div>
-                      </div>
-                      <div className="text-2xl font-bold text-red-600">{offlineDevices}</div>
-                    </div>
-
-                    {/* High Severity Alarms */}
-                    <div className="bg-red-100 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                        <div className="text-xs text-gray-600">High</div>
-                      </div>
-                      <div className="text-2xl font-bold text-red-600">{section.high_severity_alarms}</div>
-                    </div>
-
-                    {/* Medium Severity Alarms */}
-                    <div className="bg-yellow-100 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Activity className="w-4 h-4 text-yellow-600" />
-                        <div className="text-xs text-gray-600">Medium</div>
-                      </div>
-                      <div className="text-2xl font-bold text-yellow-600">{section.medium_severity_alarms}</div>
-                    </div>
-                  </div>
-
-                  {/* View Alarms Button */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-300">
-                    <span className="text-sm text-gray-600">View Section Alarms</span>
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-            );
-          })}
-          </div>
-        )}
+        {/* Section Overview Cards */}
+        <SectionCards onSectionClick={(sectionId) => navigate(`/alarms/${sectionId}`)} />
 
         {/* Last Updated */}
         <div className="text-center text-sm text-gray-500">
