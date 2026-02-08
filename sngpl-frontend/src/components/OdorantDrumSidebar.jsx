@@ -24,7 +24,7 @@ const OdorantDrumSidebar = ({ isOpen, onClose }) => {
 
   const fetchSectionsWithDevices = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
 
       // Fetch sections stats
       const sectionsRes = await fetch('/api/sections/stats', {
@@ -80,7 +80,7 @@ const OdorantDrumSidebar = ({ isOpen, onClose }) => {
   const fetchHistory = async (drumId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`/api/odorant/drums/${drumId}/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -105,7 +105,7 @@ const OdorantDrumSidebar = ({ isOpen, onClose }) => {
     if (!selectedDevice?.drum) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/odorant/drums/refill', {
         method: 'POST',
         headers: {
@@ -137,7 +137,7 @@ const OdorantDrumSidebar = ({ isOpen, onClose }) => {
 
   const handleAddDrum = async (device, sectionId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/odorant/drums', {
         method: 'POST',
         headers: {

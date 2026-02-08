@@ -35,7 +35,7 @@ const OdorantDrum = () => {
 
   const fetchDrums = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/odorant/drums', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -51,7 +51,7 @@ const OdorantDrum = () => {
   const fetchHistory = async (drumId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`/api/odorant/drums/${drumId}/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -69,7 +69,7 @@ const OdorantDrum = () => {
 
   const fetchSections = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/sections/stats', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -85,7 +85,7 @@ const OdorantDrum = () => {
 
   const fetchDevices = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/devices/', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -139,7 +139,7 @@ const OdorantDrum = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const payload = {
         device_id: deviceId,
         section_id: sectionId,
@@ -203,7 +203,7 @@ const OdorantDrum = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/odorant/drums/refill', {
         method: 'POST',
         headers: {

@@ -23,7 +23,7 @@ const OdorantDrumNew = () => {
 
   const fetchSectionsWithDevices = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
 
       // Fetch sections stats
       const sectionsRes = await fetch('/api/sections/stats', {
@@ -46,8 +46,6 @@ const OdorantDrumNew = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       const allDevices = devicesRes.ok ? await devicesRes.json() : [];
-
-      console.log('[ODORANT DRUM] Loaded devices:', allDevices.length);
 
       // Note: We don't fetch latest readings here to avoid 400+ API calls
       // MMCF will show as 0 until user expands a section
@@ -85,12 +83,6 @@ const OdorantDrumNew = () => {
             // volume is in MCF, so divide by 1000 to get MMCF
             const mcf = device.latest_reading?.volume || 0;
             const mmcf = mcf / 1000;
-
-            console.log(`[ODORANT DRUM] Device ${device.client_id}:`, {
-              latestVolumeMCF: device.latest_reading?.volume,
-              calculatedMCF: mcf,
-              calculatedMMCF: mmcf
-            });
 
             // Calculate odorant consumed based on MMCF (0.5 liters per MMCF)
             const odorantConsumed = mmcf * 0.5;
@@ -142,7 +134,7 @@ const OdorantDrumNew = () => {
   const fetchHistory = async (drumId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`/api/odorant/drums/${drumId}/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -167,7 +159,7 @@ const OdorantDrumNew = () => {
     if (!selectedDevice?.drum) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/odorant/drums/refill', {
         method: 'POST',
         headers: {
@@ -199,7 +191,7 @@ const OdorantDrumNew = () => {
 
   const handleAddDrum = async (device, sectionId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/odorant/drums', {
         method: 'POST',
         headers: {
