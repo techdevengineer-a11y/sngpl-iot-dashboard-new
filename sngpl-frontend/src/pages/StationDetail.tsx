@@ -15,7 +15,7 @@ import {
   Download,
   Maximize2
 } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
 
@@ -1293,55 +1293,46 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-orange-600">{latest?.temperature?.toFixed(1)}°F</span>
           </div>
-          <div className="flex-1 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 200)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    const diffDays = (new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
-                    }
-                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  style={{ fontSize: '13px' }}
-                  domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 200), 'temperature', 5)}
-                  label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value.toFixed(1)}°F`, 'Temperature']}
-                />
-                <Brush
-                  dataKey="timestamp"
-                  height={35}
-                  stroke="#8b1538"
-                  fill="#fef2f2"
-                  startIndex={Math.max(0, filterDataByDateRange(tempStartDate, tempEndDate, 200).length - 30)}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="temperature"
-                  stroke="#8b1538"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#8b1538', r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: '#8b1538' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 p-4 overflow-x-auto">
+            <div style={{ width: `${Math.max(100, filterDataByDateRange(tempStartDate, tempEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 200)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 200), 'temperature', 5)}
+                    label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(1)}°F`, 'Temperature']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="temperature"
+                    stroke="#8b1538"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#8b1538', r: 4, strokeWidth: 0 }}
+                    activeDot={{ r: 6, fill: '#8b1538' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
@@ -1363,55 +1354,46 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-blue-600">{latest?.differential_pressure?.toFixed(2)} IWC</span>
           </div>
-          <div className="flex-1 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 200)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    const diffDays = (new Date(diffPEndDate).getTime() - new Date(diffPStartDate).getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
-                    }
-                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  style={{ fontSize: '13px' }}
-                  domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 200), 'differential_pressure', 20)}
-                  label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value.toFixed(2)} IWC`, 'Differential Pressure']}
-                />
-                <Brush
-                  dataKey="timestamp"
-                  height={35}
-                  stroke="#dc2626"
-                  fill="#fef2f2"
-                  startIndex={Math.max(0, filterDataByDateRange(diffPStartDate, diffPEndDate, 200).length - 30)}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="differential_pressure"
-                  stroke="#dc2626"
-                  strokeWidth={2}
-                  dot={{ fill: '#dc2626', r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 p-4 overflow-x-auto">
+            <div style={{ width: `${Math.max(100, filterDataByDateRange(diffPStartDate, diffPEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 200)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(diffPEndDate).getTime() - new Date(diffPStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 200), 'differential_pressure', 20)}
+                    label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(2)} IWC`, 'Differential Pressure']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="differential_pressure"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    dot={{ fill: '#dc2626', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
@@ -1433,49 +1415,40 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-green-600">{latest?.static_pressure?.toFixed(1)} PSI</span>
           </div>
-          <div className="flex-1 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 200)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    const diffDays = (new Date(staticPEndDate).getTime() - new Date(staticPStartDate).getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
-                    }
-                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  style={{ fontSize: '13px' }}
-                  domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 200), 'static_pressure', 5)}
-                  label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                />
-                <Brush
-                  dataKey="timestamp"
-                  height={35}
-                  stroke="#16a34a"
-                  fill="#f0fdf4"
-                  startIndex={Math.max(0, filterDataByDateRange(staticPStartDate, staticPEndDate, 200).length - 30)}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                />
-                <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
-                <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
-                <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 p-4 overflow-x-auto">
+            <div style={{ width: `${Math.max(100, filterDataByDateRange(staticPStartDate, staticPEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 200)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(staticPEndDate).getTime() - new Date(staticPStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 200), 'static_pressure', 5)}
+                    label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                  />
+                  <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
@@ -1497,55 +1470,46 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-purple-600">{latest?.volume?.toFixed(1)} MCF</span>
           </div>
-          <div className="flex-1 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 200)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    const diffDays = (new Date(volumeEndDate).getTime() - new Date(volumeStartDate).getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
-                    }
-                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  style={{ fontSize: '13px' }}
-                  domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 200), 'volume', 5)}
-                  label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value.toFixed(1)} MCF`, 'Volume']}
-                />
-                <Brush
-                  dataKey="timestamp"
-                  height={35}
-                  stroke="#9333ea"
-                  fill="#faf5ff"
-                  startIndex={Math.max(0, filterDataByDateRange(volumeStartDate, volumeEndDate, 200).length - 30)}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="volume"
-                  stroke="#9333ea"
-                  strokeWidth={2}
-                  dot={{ fill: '#9333ea', r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 p-4 overflow-x-auto">
+            <div style={{ width: `${Math.max(100, filterDataByDateRange(volumeStartDate, volumeEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 200)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(volumeEndDate).getTime() - new Date(volumeStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 200), 'volume', 5)}
+                    label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(1)} MCF`, 'Volume']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="volume"
+                    stroke="#9333ea"
+                    strokeWidth={2}
+                    dot={{ fill: '#9333ea', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
@@ -1567,55 +1531,46 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-teal-600">{latest?.total_volume_flow?.toFixed(1)} MCF/day</span>
           </div>
-          <div className="flex-1 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 200)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    const diffDays = (new Date(flowEndDate).getTime() - new Date(flowStartDate).getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
-                    }
-                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  style={{ fontSize: '13px' }}
-                  domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 200), 'total_volume_flow', 5)}
-                  label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value.toFixed(1)} MCF/day`, 'Flow Rate']}
-                />
-                <Brush
-                  dataKey="timestamp"
-                  height={35}
-                  stroke="#14b8a6"
-                  fill="#f0fdfa"
-                  startIndex={Math.max(0, filterDataByDateRange(flowStartDate, flowEndDate, 200).length - 30)}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="total_volume_flow"
-                  stroke="#14b8a6"
-                  strokeWidth={2}
-                  dot={{ fill: '#14b8a6', r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 p-4 overflow-x-auto">
+            <div style={{ width: `${Math.max(100, filterDataByDateRange(flowStartDate, flowEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 200)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(flowEndDate).getTime() - new Date(flowStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 200), 'total_volume_flow', 5)}
+                    label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(1)} MCF/day`, 'Flow Rate']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total_volume_flow"
+                    stroke="#14b8a6"
+                    strokeWidth={2}
+                    dot={{ fill: '#14b8a6', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
@@ -1637,59 +1592,50 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-yellow-600">{batteryLevel.toFixed(2)}V</span>
           </div>
-          <div className="flex-1 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 200)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    const diffDays = (new Date(batteryEndDate).getTime() - new Date(batteryStartDate).getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays > 2) {
-                      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
-                    }
-                    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  style={{ fontSize: '13px' }}
-                  domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 200), 'battery', 5)}
-                  label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => {
-                    const batteryValue = value || 12.5;
-                    const status = batteryValue >= 12.5 ? 'Optimal' : batteryValue >= 11.8 ? 'Good' : batteryValue >= 11.0 ? 'Warning' : batteryValue >= 10.5 ? 'Low' : batteryValue >= 10.0 ? 'V.Low' : 'Critical';
-                    return [`${batteryValue.toFixed(2)}V (${status})`, 'Battery'];
-                  }}
-                />
-                <Brush
-                  dataKey="timestamp"
-                  height={35}
-                  stroke="#eab308"
-                  fill="#fefce8"
-                  startIndex={Math.max(0, filterDataByDateRange(batteryStartDate, batteryEndDate, 200).length - 30)}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="battery"
-                  stroke="#eab308"
-                  strokeWidth={2}
-                  dot={{ fill: '#eab308', r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 p-4 overflow-x-auto">
+            <div style={{ width: `${Math.max(100, filterDataByDateRange(batteryStartDate, batteryEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 200)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(batteryEndDate).getTime() - new Date(batteryStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 200), 'battery', 5)}
+                    label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => {
+                      const batteryValue = value || 12.5;
+                      const status = batteryValue >= 12.5 ? 'Optimal' : batteryValue >= 11.8 ? 'Good' : batteryValue >= 11.0 ? 'Warning' : batteryValue >= 10.5 ? 'Low' : batteryValue >= 10.0 ? 'V.Low' : 'Critical';
+                      return [`${batteryValue.toFixed(2)}V (${status})`, 'Battery'];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="battery"
+                    stroke="#eab308"
+                    strokeWidth={2}
+                    dot={{ fill: '#eab308', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
