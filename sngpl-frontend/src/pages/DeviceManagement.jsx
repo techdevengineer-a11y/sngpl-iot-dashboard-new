@@ -3,7 +3,6 @@ import { getDevices } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import SectionCards from '../components/SectionCards';
 
 const DeviceManagement = () => {
   const [devices, setDevices] = useState([]);
@@ -252,9 +251,6 @@ const DeviceManagement = () => {
             <p className="text-gray-600 dark:text-gray-400 mt-1">Manage device names and GPS coordinates by section</p>
           </div>
         </div>
-
-        {/* Section Overview Cards */}
-        <SectionCards />
 
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

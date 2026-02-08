@@ -5,7 +5,6 @@ import { getDevices, getReadings } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import SectionCards from '../components/SectionCards';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -293,9 +292,6 @@ const Map = () => {
             </button>
           </div>
         </div>
-
-        {/* Section Overview Cards */}
-        <SectionCards />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Eye, AlertCircle, TrendingUp, MapPin, Activity, Trash2, Thermometer, Gauge, Wind, Droplets, Battery, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import SectionCards from '../components/SectionCards';
 
 const UnderObservation = () => {
   const [devices, setDevices] = useState([]);
@@ -78,9 +77,6 @@ const UnderObservation = () => {
             </button>
           </div>
         </div>
-
-        {/* Section Overview Cards */}
-        <SectionCards />
 
         {/* Statistics Cards */}
         {devices.length > 0 && (
