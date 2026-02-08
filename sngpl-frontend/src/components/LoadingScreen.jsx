@@ -5,10 +5,10 @@ const LoadingScreen = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Navigate to dashboard after 4 seconds
+    // Navigate to dashboard after 2 seconds
     const timer = setTimeout(() => {
       navigate('/dashboard');
-    }, 4000);
+    }, 2000);
 
     return () => {
       clearTimeout(timer);
