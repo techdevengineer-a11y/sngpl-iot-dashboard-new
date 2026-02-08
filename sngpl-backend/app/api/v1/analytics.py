@@ -82,21 +82,35 @@ class PaginatedResponse(BaseModel):
 async def get_readings(
     device_id: Optional[int] = None,
     client_id: Optional[str] = None,
+    section_id: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     page: int = Query(1, ge=1, description="Page number (starts at 1)"),
     page_size: int = Query(100, ge=1, le=1000, description="Items per page (max 1000)"),
     db: Session = Depends(get_db)
 ):
-    """Get device readings with pagination and filters - Public endpoint. Can filter by device_id OR client_id"""
+    """Get device readings with pagination and filters - Public endpoint. Can filter by device_id, client_id, or section_id"""
     from app.models.models import Device
     query = db.query(DeviceReading)
 
-    # Apply filters - support both device_id and client_id
+    # Apply filters - support device_id, client_id, or section_id
     if device_id:
         query = query.filter(DeviceReading.device_id == device_id)
     elif client_id:
         query = query.filter(DeviceReading.client_id == client_id)
+    elif section_id:
+        # Get all device IDs for this section based on client_id pattern (SMS-{section}-XXX)
+        section_map = {'I': '1', 'II': '2', 'III': '3', 'IV': '4', 'V': '5'}
+        arabic_num = section_map.get(section_id, section_id)
+        section_devices = db.query(Device.id).filter(
+            (Device.client_id.like(f'SMS-{section_id}-%')) |
+            (Device.client_id.like(f'SMS-{arabic_num}-%'))
+        ).all()
+        device_ids = [d.id for d in section_devices]
+        if device_ids:
+            query = query.filter(DeviceReading.device_id.in_(device_ids))
+        else:
+            return {"total": 0, "page": page, "page_size": page_size, "total_pages": 0, "data": []}
 
     if start_date:
         query = query.filter(DeviceReading.timestamp >= start_date)

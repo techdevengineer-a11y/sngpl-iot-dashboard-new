@@ -47,6 +47,7 @@ const SectionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [showAlarmsOnly, setShowAlarmsOnly] = useState(false);
   const [flowHistoryData, setFlowHistoryData] = useState<any[]>([]);
+  const [flowLoading, setFlowLoading] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [observedDevices, setObservedDevices] = useState<number[]>([]);
 
@@ -254,22 +255,12 @@ const SectionDetail = () => {
       return;
     }
 
+    setFlowLoading(true);
     try {
-      // Fetch readings for all devices in this section (last 24 hours)
-      const deviceIds = sectionData.devices.map(d => d.id);
-
-      // Fetch readings for each device and aggregate
-      const allReadingsPromises = deviceIds.map(deviceId =>
-        fetch(`/api/analytics/readings?device_id=${deviceId}&page_size=200&page=1`)
-          .then(res => res.ok ? res.json() : { data: [] })
-          .then(result => result.data || [])
-          .catch(() => [])
-      );
-
-      const allDeviceReadings = await Promise.all(allReadingsPromises);
-
-      // Flatten all readings
-      const allReadings = allDeviceReadings.flat();
+      // Fetch readings for all devices in this section in a single API call
+      const response = await fetch(`/api/analytics/readings?section_id=${sectionData.section_id}&page_size=1000&page=1`);
+      const result = response.ok ? await response.json() : { data: [] };
+      const allReadings = result.data || [];
 
       if (allReadings.length === 0) {
         setFlowHistoryData([]);
@@ -327,6 +318,8 @@ const SectionDetail = () => {
     } catch (error) {
       console.error('[SectionDetail] Error fetching flow history:', error);
       setFlowHistoryData([]);
+    } finally {
+      setFlowLoading(false);
     }
   };
 
@@ -461,7 +454,14 @@ const SectionDetail = () => {
           </div>
 
           <div style={{ height: '300px' }}>
-            {flowHistoryData.length > 0 ? (
+            {flowLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-400 mb-3"></div>
+                  <p className="text-gray-400">Loading flow data...</p>
+                </div>
+              </div>
+            ) : flowHistoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={flowHistoryData}
