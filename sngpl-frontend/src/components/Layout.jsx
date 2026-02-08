@@ -50,19 +50,13 @@ const Layout = ({ children }) => {
   const menuItems = [
     { path: '/dashboard', label: 'DASHBOARD', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
     { path: '/sections', label: 'SECTIONS', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
-    { path: '/devices', label: 'DEVICES', icon: '📡', badge: null, gradient: 'from-violet-500 to-purple-500' },
     { path: '/alarms', label: 'ALERTS', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
-    { path: '/live-monitor', label: 'LIVE MONITOR', icon: '📺', badge: null, gradient: 'from-emerald-500 to-green-500' },
+    { path: '/advanced-reports', label: 'ADVANCED REPORTS', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
     { path: '/analytics-page', label: 'ANALYTICS', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
-    { path: '/advanced-reports', label: 'REPORTS', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
-    { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
-    { path: '/under-observation', label: 'OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
-    { path: '/offline-tracker', label: 'OFFLINE TRACKER', icon: '📴', badge: null, gradient: 'from-rose-500 to-red-500' },
-    { path: '/favourites', label: 'FAVOURITES', icon: '⭐', badge: null, gradient: 'from-amber-500 to-yellow-500' },
+    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
+    { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
     { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
-    { path: '/notifications', label: 'NOTIFICATIONS', icon: '🔕', badge: null, gradient: 'from-sky-500 to-blue-500' },
-    { path: '/device-management', label: 'MANAGE', icon: '🔧', badge: null, gradient: 'from-indigo-500 to-blue-500' },
-    { path: '/users', label: 'USERS', icon: '👥', badge: null, gradient: 'from-fuchsia-500 to-purple-500' },
+    { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
     { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
   ];
 
