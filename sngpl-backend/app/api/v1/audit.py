@@ -51,6 +51,9 @@ async def get_audit_logs(
     user_id: Optional[int] = Query(None, description="Filter by user ID"),
     action: Optional[str] = Query(None, description="Filter by action type"),
     resource_type: Optional[str] = Query(None, description="Filter by resource type"),
+    search: Optional[str] = Query(None, description="Search by username"),
+    start_date: Optional[datetime] = Query(None, description="Filter logs from this date"),
+    end_date: Optional[datetime] = Query(None, description="Filter logs until this date"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of logs to return"),
     offset: int = Query(0, ge=0, description="Number of logs to skip"),
     db: Session = Depends(get_db),
@@ -70,6 +73,9 @@ async def get_audit_logs(
         user_id=user_id,
         action=action,
         resource_type=resource_type,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
         limit=limit,
         offset=offset
     )
@@ -82,6 +88,12 @@ async def get_audit_logs(
         query = query.filter(AuditLog.action == action.upper())
     if resource_type:
         query = query.filter(AuditLog.resource_type == resource_type)
+    if search:
+        query = query.filter(AuditLog.username.ilike(f"%{search}%"))
+    if start_date:
+        query = query.filter(AuditLog.created_at >= start_date)
+    if end_date:
+        query = query.filter(AuditLog.created_at <= end_date)
 
     total = query.count()
 

@@ -109,6 +109,9 @@ class AuditService:
         user_id: Optional[int] = None,
         action: Optional[str] = None,
         resource_type: Optional[str] = None,
+        search: Optional[str] = None,
+        start_date: Optional[Any] = None,
+        end_date: Optional[Any] = None,
         limit: int = 100,
         offset: int = 0
     ):
@@ -120,6 +123,9 @@ class AuditService:
             user_id: Filter by user ID
             action: Filter by action type
             resource_type: Filter by resource type
+            search: Search by username substring
+            start_date: Filter logs from this date
+            end_date: Filter logs until this date
             limit: Maximum number of records to return
             offset: Number of records to skip
 
@@ -134,6 +140,12 @@ class AuditService:
             query = query.filter(AuditLog.action == action.upper())
         if resource_type:
             query = query.filter(AuditLog.resource_type == resource_type)
+        if search:
+            query = query.filter(AuditLog.username.ilike(f"%{search}%"))
+        if start_date:
+            query = query.filter(AuditLog.created_at >= start_date)
+        if end_date:
+            query = query.filter(AuditLog.created_at <= end_date)
 
         return query.offset(offset).limit(limit).all()
 

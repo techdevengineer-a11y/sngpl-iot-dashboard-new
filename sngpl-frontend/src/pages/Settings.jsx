@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Bell, Shield, Lock, Database, Eye, Globe, Palette, Save, Download, Plus, Trash2, Users, X, Mail } from 'lucide-react';
+import { Settings as SettingsIcon, User, Bell, Shield, Lock, Database, Eye, Globe, Palette, Save, Download, Plus, Trash2, Users, X, Mail, FileText, Monitor, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { getCurrentUser, updateUser, changePassword, getAllRoles, listUsers, getUserPermissions, createUser, deleteUser } from '../services/api';
+import { getCurrentUser, updateUser, changePassword, getAllRoles, listUsers, getUserPermissions, createUser, deleteUser, getAuditLogs } from '../services/api';
 
 const Settings = () => {
   const { user: authUser } = useAuth();
@@ -52,7 +52,9 @@ const Settings = () => {
     loginNotifications: true
   });
 
-  const tabs = [
+  const PAGE_SIZE = 20;
+
+  const baseTabs = [
     { id: 'account', label: 'Account', icon: User },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'display', label: 'Display & Preferences', icon: Palette },
@@ -60,6 +62,27 @@ const Settings = () => {
     { id: 'roles', label: 'Roles & Permissions', icon: Shield },
     { id: 'system', label: 'System', icon: Database }
   ];
+
+  const adminOnlyTabs = [
+    { id: 'user-logs', label: 'User Logs', icon: FileText },
+    { id: 'device-logs', label: 'Device Logs', icon: Monitor }
+  ];
+
+  const tabs = authUser?.role === 'admin' ? [...baseTabs, ...adminOnlyTabs] : baseTabs;
+
+  // User Logs state
+  const [userLogs, setUserLogs] = useState([]);
+  const [userLogsTotal, setUserLogsTotal] = useState(0);
+  const [userLogsPage, setUserLogsPage] = useState(1);
+  const [userLogsLoading, setUserLogsLoading] = useState(false);
+  const [userLogsFilters, setUserLogsFilters] = useState({ search: '', action: '', start_date: '', end_date: '' });
+
+  // Device Logs state
+  const [deviceLogs, setDeviceLogs] = useState([]);
+  const [deviceLogsTotal, setDeviceLogsTotal] = useState(0);
+  const [deviceLogsPage, setDeviceLogsPage] = useState(1);
+  const [deviceLogsLoading, setDeviceLogsLoading] = useState(false);
+  const [deviceLogsFilters, setDeviceLogsFilters] = useState({ search: '', action: '', start_date: '', end_date: '' });
 
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -154,6 +177,63 @@ const Settings = () => {
       setLoadingRoles(false);
     }
   };
+
+  // Load audit logs
+  const loadUserLogs = async (page = 1, filters = userLogsFilters) => {
+    setUserLogsLoading(true);
+    try {
+      const params = {
+        resource_type: 'user',
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE
+      };
+      if (filters.search) params.search = filters.search;
+      if (filters.action) params.action = filters.action;
+      if (filters.start_date) params.start_date = filters.start_date;
+      if (filters.end_date) params.end_date = filters.end_date;
+
+      const response = await getAuditLogs(params);
+      setUserLogs(response.data.logs);
+      setUserLogsTotal(response.data.total);
+    } catch (error) {
+      console.error('Failed to load user logs:', error);
+      toast.error('Failed to load user logs');
+    } finally {
+      setUserLogsLoading(false);
+    }
+  };
+
+  const loadDeviceLogs = async (page = 1, filters = deviceLogsFilters) => {
+    setDeviceLogsLoading(true);
+    try {
+      const params = {
+        resource_type: 'device',
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE
+      };
+      if (filters.search) params.search = filters.search;
+      if (filters.action) params.action = filters.action;
+      if (filters.start_date) params.start_date = filters.start_date;
+      if (filters.end_date) params.end_date = filters.end_date;
+
+      const response = await getAuditLogs(params);
+      setDeviceLogs(response.data.logs);
+      setDeviceLogsTotal(response.data.total);
+    } catch (error) {
+      console.error('Failed to load device logs:', error);
+      toast.error('Failed to load device logs');
+    } finally {
+      setDeviceLogsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'user-logs') {
+      loadUserLogs(userLogsPage, userLogsFilters);
+    } else if (activeTab === 'device-logs') {
+      loadDeviceLogs(deviceLogsPage, deviceLogsFilters);
+    }
+  }, [activeTab, userLogsPage, deviceLogsPage]);
 
   const handleCreateUser = async () => {
     // Validation
@@ -943,6 +1023,338 @@ const Settings = () => {
                   View Audit Trail
                 </button>
               </div>
+            </div>
+          </div>
+        );
+
+      case 'user-logs':
+        return (
+          <div className="space-y-6">
+            <div className="glass rounded-xl p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                User Logs
+              </h3>
+
+              {/* Filter Bar */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Username</label>
+                  <input
+                    type="text"
+                    placeholder="Search username..."
+                    value={userLogsFilters.search}
+                    onChange={(e) => setUserLogsFilters({ ...userLogsFilters, search: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Action</label>
+                  <select
+                    value={userLogsFilters.action}
+                    onChange={(e) => setUserLogsFilters({ ...userLogsFilters, action: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Actions</option>
+                    <option value="LOGIN">LOGIN</option>
+                    <option value="LOGOUT">LOGOUT</option>
+                    <option value="CREATE">CREATE</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    value={userLogsFilters.start_date}
+                    onChange={(e) => setUserLogsFilters({ ...userLogsFilters, start_date: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={userLogsFilters.end_date}
+                    onChange={(e) => setUserLogsFilters({ ...userLogsFilters, end_date: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={() => { setUserLogsPage(1); loadUserLogs(1, userLogsFilters); }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center gap-1"
+                  >
+                    <Filter className="w-3.5 h-3.5" />
+                    Filter
+                  </button>
+                  <button
+                    onClick={() => { const cleared = { search: '', action: '', start_date: '', end_date: '' }; setUserLogsFilters(cleared); setUserLogsPage(1); loadUserLogs(1, cleared); }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              {userLogsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading logs...</p>
+                </div>
+              ) : userLogs.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-lg font-medium">No logs found</p>
+                  <p className="text-sm">Try adjusting your filters</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Timestamp</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Username</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Action</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">IP Address</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">User Agent</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {userLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              {new Date(log.created_at).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{log.username || '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                log.action === 'LOGIN' ? 'bg-green-100 text-green-700' :
+                                log.action === 'LOGOUT' ? 'bg-yellow-100 text-yellow-700' :
+                                log.action === 'DELETE' ? 'bg-red-100 text-red-700' :
+                                log.action === 'CREATE' ? 'bg-blue-100 text-blue-700' :
+                                log.action === 'UPDATE' ? 'bg-purple-100 text-purple-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{log.ip_address || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              <span className="block max-w-[200px] truncate" title={log.user_agent || ''}>
+                                {log.user_agent || '-'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                log.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {log.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      Showing {((userLogsPage - 1) * PAGE_SIZE) + 1}–{Math.min(userLogsPage * PAGE_SIZE, userLogsTotal)} of {userLogsTotal} logs
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setUserLogsPage(p => Math.max(1, p - 1))}
+                        disabled={userLogsPage === 1}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors flex items-center gap-1"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-700 px-2">
+                        Page {userLogsPage} of {Math.max(1, Math.ceil(userLogsTotal / PAGE_SIZE))}
+                      </span>
+                      <button
+                        onClick={() => setUserLogsPage(p => p + 1)}
+                        disabled={userLogsPage >= Math.ceil(userLogsTotal / PAGE_SIZE)}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors flex items-center gap-1"
+                      >
+                        Next
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'device-logs':
+        return (
+          <div className="space-y-6">
+            <div className="glass rounded-xl p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-blue-600" />
+                Device Logs
+              </h3>
+
+              {/* Filter Bar */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Username</label>
+                  <input
+                    type="text"
+                    placeholder="Search username..."
+                    value={deviceLogsFilters.search}
+                    onChange={(e) => setDeviceLogsFilters({ ...deviceLogsFilters, search: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Action</label>
+                  <select
+                    value={deviceLogsFilters.action}
+                    onChange={(e) => setDeviceLogsFilters({ ...deviceLogsFilters, action: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Actions</option>
+                    <option value="CREATE">CREATE</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="VIEW">VIEW</option>
+                    <option value="EXPORT">EXPORT</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    value={deviceLogsFilters.start_date}
+                    onChange={(e) => setDeviceLogsFilters({ ...deviceLogsFilters, start_date: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={deviceLogsFilters.end_date}
+                    onChange={(e) => setDeviceLogsFilters({ ...deviceLogsFilters, end_date: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={() => { setDeviceLogsPage(1); loadDeviceLogs(1, deviceLogsFilters); }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center gap-1"
+                  >
+                    <Filter className="w-3.5 h-3.5" />
+                    Filter
+                  </button>
+                  <button
+                    onClick={() => { const cleared = { search: '', action: '', start_date: '', end_date: '' }; setDeviceLogsFilters(cleared); setDeviceLogsPage(1); loadDeviceLogs(1, cleared); }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              {deviceLogsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading logs...</p>
+                </div>
+              ) : deviceLogs.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Monitor className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-lg font-medium">No logs found</p>
+                  <p className="text-sm">Try adjusting your filters</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Timestamp</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Username</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Action</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Device ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">IP Address</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {deviceLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              {new Date(log.created_at).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{log.username || '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                log.action === 'DELETE' ? 'bg-red-100 text-red-700' :
+                                log.action === 'CREATE' ? 'bg-blue-100 text-blue-700' :
+                                log.action === 'UPDATE' ? 'bg-purple-100 text-purple-700' :
+                                log.action === 'VIEW' ? 'bg-green-100 text-green-700' :
+                                log.action === 'EXPORT' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{log.resource_id || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{log.ip_address || '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                log.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {log.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      Showing {((deviceLogsPage - 1) * PAGE_SIZE) + 1}–{Math.min(deviceLogsPage * PAGE_SIZE, deviceLogsTotal)} of {deviceLogsTotal} logs
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setDeviceLogsPage(p => Math.max(1, p - 1))}
+                        disabled={deviceLogsPage === 1}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors flex items-center gap-1"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-700 px-2">
+                        Page {deviceLogsPage} of {Math.max(1, Math.ceil(deviceLogsTotal / PAGE_SIZE))}
+                      </span>
+                      <button
+                        onClick={() => setDeviceLogsPage(p => p + 1)}
+                        disabled={deviceLogsPage >= Math.ceil(deviceLogsTotal / PAGE_SIZE)}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors flex items-center gap-1"
+                      >
+                        Next
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );
