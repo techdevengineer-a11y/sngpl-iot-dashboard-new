@@ -49,6 +49,7 @@ const Dashboard = () => {
   const [alertsData, setAlertsData] = useState<any[]>([]);
   const [selectedAlertParameter, setSelectedAlertParameter] = useState('all');
   const [selectedAlertSeverity, setSelectedAlertSeverity] = useState('all');
+  const [gravityData, setGravityData] = useState<{value: number | null, deviceId: string, timestamp: string}>({value: null, deviceId: '', timestamp: ''});
   const wsRef = useRef<WebSocket | null>(null);
   const wsReconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
@@ -61,6 +62,7 @@ const Dashboard = () => {
     connectWebSocket();
     generateBatteryData();
     generateAlertsData();
+    fetchGravityData();
 
     // Delay chart rendering to avoid dimension errors (reduced for faster load)
     setTimeout(() => setChartsReady(true), 300);
@@ -70,6 +72,7 @@ const Dashboard = () => {
       fetchDashboardData();
       generateBatteryData();
       generateAlertsData();
+      fetchGravityData();
     }, 10000);
 
     return () => {
@@ -361,7 +364,8 @@ const Dashboard = () => {
             'differential_pressure': '⚡',
             'battery': '🔋',
             'volume': '📦',
-            'total_volume_flow': '💧'
+            'total_volume_flow': '💧',
+            'specific_gravity': '⚖️'
           };
 
           // Map parameter names to units
@@ -371,7 +375,8 @@ const Dashboard = () => {
             'differential_pressure': 'IWC',
             'battery': 'V',
             'volume': 'MCF',
-            'total_volume_flow': 'MCF/day'
+            'total_volume_flow': 'MCF/day',
+            'specific_gravity': 'SG'
           };
 
           // Map threshold conditions to severity levels
@@ -402,6 +407,39 @@ const Dashboard = () => {
       console.error('Error fetching alerts:', error);
       setAlertsData([]);
     }
+  };
+
+  const fetchGravityData = async () => {
+    try {
+      const response = await fetch('/api/devices/');
+      if (response.ok) {
+        const devices = await response.json();
+        // Find latest device with specific_gravity value
+        let latestGravity: any = null;
+        for (const device of devices) {
+          if (device.latest_reading?.specific_gravity != null && device.latest_reading.specific_gravity > 0) {
+            if (!latestGravity || new Date(device.latest_reading.timestamp) > new Date(latestGravity.timestamp)) {
+              latestGravity = {
+                value: device.latest_reading.specific_gravity,
+                deviceId: device.client_id,
+                timestamp: device.latest_reading.timestamp
+              };
+            }
+          }
+        }
+        if (latestGravity) {
+          setGravityData(latestGravity);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching gravity data:', error);
+    }
+  };
+
+  const getGravityStatus = (value: number | null) => {
+    if (value === null) return { color: 'gray', status: 'No Data', bgClass: 'bg-gray-100', textClass: 'text-gray-600' };
+    if (value >= 0.58 && value <= 0.69) return { color: 'green', status: 'Normal', bgClass: 'bg-green-100', textClass: 'text-green-600' };
+    return { color: 'red', status: 'Abnormal', bgClass: 'bg-red-100', textClass: 'text-red-600' };
   };
 
   const getBatteryIcon = (level: number) => {
@@ -560,7 +598,7 @@ const Dashboard = () => {
           </div>
 
           {/* Current Stats Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <div className="bg-cyan-50 rounded-lg p-3 sm:p-4 border border-cyan-200">
               <div className="text-xs text-cyan-700 mb-1">Current Flow</div>
               <div className="text-2xl sm:text-3xl font-bold text-cyan-600">{currentFlow.toFixed(1)}</div>
@@ -583,6 +621,16 @@ const Dashboard = () => {
               <div className="text-xs text-yellow-700 mb-1">Active Stations</div>
               <div className="text-2xl sm:text-3xl font-bold text-yellow-600">{onlineDevices}/{totalDevices}</div>
               <div className="text-xs text-yellow-600 mt-1">Online</div>
+            </div>
+
+            <div className={`${getGravityStatus(gravityData.value).bgClass} rounded-lg p-3 sm:p-4 border ${gravityData.value !== null && (gravityData.value < 0.58 || gravityData.value > 0.69) ? 'border-red-300 animate-pulse' : 'border-indigo-200'}`}>
+              <div className={`text-xs ${getGravityStatus(gravityData.value).textClass} mb-1`}>Sp. Gravity (T114)</div>
+              <div className={`text-2xl sm:text-3xl font-bold ${getGravityStatus(gravityData.value).textClass}`}>
+                {gravityData.value !== null ? gravityData.value.toFixed(4) : 'N/A'}
+              </div>
+              <div className={`text-xs ${getGravityStatus(gravityData.value).textClass} mt-1`}>
+                {getGravityStatus(gravityData.value).status} {gravityData.deviceId ? `(${gravityData.deviceId})` : ''}
+              </div>
             </div>
           </div>
 
@@ -686,6 +734,7 @@ const Dashboard = () => {
                 <option value="Battery">🔋 Battery</option>
                 <option value="Volume">📦 Volume</option>
                 <option value="Total Flow">💧 Total Flow</option>
+                <option value="Specific Gravity">⚖️ Sp. Gravity</option>
               </select>
               <select
                 value={selectedAlertSeverity}

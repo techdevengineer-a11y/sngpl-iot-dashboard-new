@@ -276,6 +276,7 @@ class StandaloneMQTTListener:
         - Static Pressure: Yellow (<10 PSI), Red (>140 PSI) - ignore Green (10-90 PSI) and Light Red (90-140 PSI)
         - Differential Pressure: Yellow (<0 IWC), Red (>400 IWC) - ignore Green (0-300 IWC) and Light Red (300-400 IWC)
         - Battery: Red (<10V), Yellow (>14V) - ignore Light Red (10-10.5V) and Green (10.5-14V)
+        - Specific Gravity: Red (<0.58 or >0.69) - Green (0.58-0.69)
         """
         alarms_created = []
 
@@ -363,6 +364,28 @@ class StandaloneMQTTListener:
                     db, device_id, client_id, "battery", battery,
                     "high", 14.0, "Battery voltage high (Yellow zone)",
                     severity="medium"
+                )
+                if alarm:
+                    alarms_created.append(alarm)
+
+        # Specific Gravity thresholds - Normal range: 0.58 to 0.69
+        if reading.specific_gravity is not None:
+            gravity = reading.specific_gravity
+            # Red zone: < 0.58 (too low)
+            if gravity < 0.58:
+                alarm = self.create_alarm(
+                    db, device_id, client_id, "specific_gravity", gravity,
+                    "low", 0.58, "Specific Gravity too low (Red zone)",
+                    severity="high"
+                )
+                if alarm:
+                    alarms_created.append(alarm)
+            # Red zone: > 0.69 (too high)
+            elif gravity > 0.69:
+                alarm = self.create_alarm(
+                    db, device_id, client_id, "specific_gravity", gravity,
+                    "high", 0.69, "Specific Gravity too high (Red zone)",
+                    severity="high"
                 )
                 if alarm:
                     alarms_created.append(alarm)

@@ -113,6 +113,12 @@ const SectionAlarms = () => {
     return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100' };
   };
 
+  const getGravityColor = (gravity) => {
+    if (gravity < 0.58) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100' };
+    if (gravity > 0.69) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100' };
+    return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100' };
+  };
+
   const getSeverityColor = (alarm) => {
     if (alarm.parameter && alarm.value !== null && alarm.value !== undefined) {
       const value = parseFloat(alarm.value);
@@ -133,6 +139,9 @@ const SectionAlarms = () => {
         case 'volume_flow':
         case 'total_volume_flow':
           return getVolumeColor(value);
+        case 'specific_gravity':
+        case 'gravity':
+          return getGravityColor(value);
         default:
           break;
       }

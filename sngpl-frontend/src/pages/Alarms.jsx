@@ -137,6 +137,12 @@ const Alarms = () => {
     return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
   };
 
+  const getGravityColor = (gravity) => {
+    if (gravity < 0.58) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'Too Low', severity: 'high' };
+    if (gravity > 0.69) return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600', icon: 'text-red-500', bgSolid: 'bg-red-100', status: 'Too High', severity: 'high' };
+    return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600', icon: 'text-green-500', bgSolid: 'bg-green-100', status: 'Normal', severity: 'low' };
+  };
+
   // Get color based on alarm parameter type and value
   const getSeverityColor = (alarm) => {
     // If alarm has parameter type and value, use parameter-specific colors
@@ -159,6 +165,9 @@ const Alarms = () => {
         case 'volume_flow':
         case 'total_volume_flow':
           return getVolumeColor(value);
+        case 'specific_gravity':
+        case 'gravity':
+          return getGravityColor(value);
         default:
           // Fall back to severity-based colors
           break;
