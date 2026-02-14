@@ -91,6 +91,86 @@ class StandaloneMQTTListener:
             logger.warning(f"[WARNING] Unexpected disconnection from MQTT Broker, return code {rc}")
             print(f"[WARNING] Disconnected from broker. Attempting to reconnect...")
 
+    def convert_rt600(self, data):
+        """
+        Convert RT600 compact format to Four-Faith format (content array).
+        RT600 sends flat key-value pairs instead of content array.
+        Maps known RT600 field names to T10-T114 address format.
+        """
+        logger.info(f"[RT600] Converting compact format for device: {data.get('did', 'unknown')}")
+        print(f"[RT600] Converting compact format: {list(data.keys())}")
+
+        # RT600 field name to T-address mapping
+        rt600_mapping = {
+            "dp": "T10",                    # Differential Pressure
+            "differential_pressure": "T10",
+            "sp": "T11",                    # Static Pressure
+            "static_pressure": "T11",
+            "temp": "T12",                  # Temperature
+            "temperature": "T12",
+            "tvf": "T13",                   # Total Volume Flow
+            "total_volume_flow": "T13",
+            "vol": "T14",                   # Volume
+            "volume": "T14",
+            "bat": "T15",                   # Battery
+            "battery": "T15",
+            "maxsp": "T16",                 # Max Static Pressure
+            "max_static_pressure": "T16",
+            "minsp": "T17",                 # Min Static Pressure
+            "min_static_pressure": "T17",
+            "lhft": "T18",                  # Last Hour Flow Time
+            "last_hour_flow_time": "T18",
+            "lhdp": "T19",                  # Last Hour Diff Pressure
+            "last_hour_diff_pressure": "T19",
+            "lhsp": "T110",                 # Last Hour Static Pressure
+            "last_hour_static_pressure": "T110",
+            "lht": "T111",                  # Last Hour Temperature
+            "last_hour_temperature": "T111",
+            "lhv": "T112",                  # Last Hour Volume
+            "last_hour_volume": "T112",
+            "lhe": "T113",                  # Last Hour Energy
+            "last_hour_energy": "T113",
+            "sg": "T114",                   # Specific Gravity
+            "specific_gravity": "T114",
+            "gravity": "T114",
+        }
+
+        content = []
+        skip_keys = {"did", "device_id", "client_id", "Utime", "timestamp", "time", "type", "ver", "version"}
+
+        for key, value in data.items():
+            if key.lower() in skip_keys:
+                continue
+
+            # Check if key matches RT600 mapping
+            addr = rt600_mapping.get(key.lower())
+
+            # If key is already T-address format (T10, T11, etc.), use directly
+            if addr is None and key.upper().startswith("T") and key[1:].isdigit():
+                addr = key.upper()
+
+            if addr is not None:
+                try:
+                    content.append({"Addr": addr, "Addrv": float(value)})
+                except (ValueError, TypeError):
+                    logger.warning(f"[RT600] Could not convert value for {key}: {value}")
+
+        converted = {
+            "did": data.get("did", data.get("device_id", data.get("client_id", "unknown"))),
+            "content": content
+        }
+
+        # Preserve timestamp if present
+        if "Utime" in data:
+            converted["Utime"] = data["Utime"]
+        elif "timestamp" in data:
+            converted["Utime"] = data["timestamp"]
+
+        logger.info(f"[RT600] Converted {len(content)} fields for device {converted['did']}")
+        print(f"[RT600] Converted to Four-Faith format: {len(content)} parameters")
+
+        return converted
+
     def on_message(self, client, userdata, msg):
         """Callback when message received from MQTT broker"""
         try:
@@ -104,6 +184,10 @@ class StandaloneMQTTListener:
                 logger.warning(f"Malformed JSON on topic {msg.topic}: {raw_payload[:100]}... Error: {e}")
                 print(f"[WARNING] Malformed JSON received: {raw_payload[:100]}")
                 return
+
+            # If it's RT600 compact format (no "content" array), convert to Four-Faith format
+            if "content" not in payload and "did" in payload:
+                payload = self.convert_rt600(payload)
 
             # Print incoming message to console
             device_id = payload.get("did", "unknown")
