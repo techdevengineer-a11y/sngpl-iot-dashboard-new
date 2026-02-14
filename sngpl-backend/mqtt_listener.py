@@ -136,7 +136,7 @@ class StandaloneMQTTListener:
         }
 
         content = []
-        skip_keys = {"did", "device_id", "client_id", "Utime", "timestamp", "time", "type", "ver", "version"}
+        skip_keys = {"did", "device_id", "client_id", "utime", "timestamp", "time", "ts", "type", "ver", "version"}
 
         for key, value in data.items():
             if key.lower() in skip_keys:
@@ -163,6 +163,8 @@ class StandaloneMQTTListener:
         # Preserve timestamp if present
         if "Utime" in data:
             converted["Utime"] = data["Utime"]
+        elif "ts" in data:
+            converted["Utime"] = data["ts"]
         elif "timestamp" in data:
             converted["Utime"] = data["timestamp"]
 
@@ -180,10 +182,19 @@ class StandaloneMQTTListener:
             # Try to parse as JSON
             try:
                 payload = json.loads(raw_payload)
-            except json.JSONDecodeError as e:
-                logger.warning(f"Malformed JSON on topic {msg.topic}: {raw_payload[:100]}... Error: {e}")
-                print(f"[WARNING] Malformed JSON received: {raw_payload[:100]}")
-                return
+            except json.JSONDecodeError:
+                # RT600 devices sometimes send JSON with trailing commas - fix and retry
+                import re
+                cleaned = re.sub(r',\s*}', '}', raw_payload)
+                cleaned = re.sub(r',\s*]', ']', cleaned)
+                try:
+                    payload = json.loads(cleaned)
+                    logger.info(f"[RT600] Fixed malformed JSON (trailing comma) on topic {msg.topic}")
+                    print(f"[RT600] Fixed trailing comma in JSON from {msg.topic}")
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Malformed JSON on topic {msg.topic}: {raw_payload[:100]}... Error: {e}")
+                    print(f"[WARNING] Malformed JSON received: {raw_payload[:100]}")
+                    return
 
             # If it's RT600 compact format (no "content" array), convert to Four-Faith format
             if "content" not in payload and "did" in payload:
