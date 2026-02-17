@@ -18,7 +18,6 @@ import {
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
-import FullscreenAmChart from '../components/FullscreenAmChart';
 
 interface DeviceReading {
   timestamp: string;
@@ -1278,86 +1277,368 @@ const StationDetail = () => {
       </motion.div>
 
       {/* Fullscreen Temperature Chart Modal */}
-      <FullscreenAmChart
-        isOpen={isChartFullscreen}
-        onClose={() => setIsChartFullscreen(false)}
-        title={`Temperature History - ${deviceData.device_name}`}
-        icon={<Thermometer className="w-5 h-5 text-orange-500" />}
-        currentValue={`${latest?.temperature?.toFixed(1)}°F`}
-        currentValueColor="text-orange-600"
-        data={filterDataByDateRange(tempStartDate, tempEndDate, 500)}
-        series={[{ dataKey: 'temperature', name: 'Temperature (°F)', color: '#8b1538', strokeWidth: 2.5 }]}
-        yAxisLabel="Temperature (°F)"
-      />
+      {isChartFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
+            <button
+              onClick={() => setIsChartFullscreen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-2">
+              <Thermometer className="w-5 h-5 text-orange-500" />
+              <span className="text-sm font-semibold text-gray-800">Temperature History - {deviceData.device_name}</span>
+            </div>
+            <span className="text-sm font-medium text-orange-600">{latest?.temperature?.toFixed(1)}°F</span>
+          </div>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 500), 'temperature', 5)}
+                    label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(1)}°F`, 'Temperature']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="temperature"
+                    stroke="#8b1538"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#8b1538', r: 4, strokeWidth: 0 }}
+                    activeDot={{ r: 6, fill: '#8b1538' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Differential Pressure Chart Modal */}
-      <FullscreenAmChart
-        isOpen={isDiffPFullscreen}
-        onClose={() => setIsDiffPFullscreen(false)}
-        title={`Differential Pressure History - ${deviceData.device_name}`}
-        icon={<Wind className="w-5 h-5 text-blue-500" />}
-        currentValue={`${latest?.differential_pressure?.toFixed(2)} IWC`}
-        currentValueColor="text-blue-600"
-        data={filterDataByDateRange(diffPStartDate, diffPEndDate, 500)}
-        series={[{ dataKey: 'differential_pressure', name: 'Differential Pressure (IWC)', color: '#dc2626' }]}
-        yAxisLabel="Differential Pressure (IWC)"
-      />
+      {isDiffPFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
+            <button
+              onClick={() => setIsDiffPFullscreen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-2">
+              <Wind className="w-5 h-5 text-blue-500" />
+              <span className="text-sm font-semibold text-gray-800">Differential Pressure History - {deviceData.device_name}</span>
+            </div>
+            <span className="text-sm font-medium text-blue-600">{latest?.differential_pressure?.toFixed(2)} IWC</span>
+          </div>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(diffPEndDate).getTime() - new Date(diffPStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 500), 'differential_pressure', 20)}
+                    label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(2)} IWC`, 'Differential Pressure']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="differential_pressure"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    dot={{ fill: '#dc2626', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Pressure History Chart Modal */}
-      <FullscreenAmChart
-        isOpen={isPressureFullscreen}
-        onClose={() => setIsPressureFullscreen(false)}
-        title={`Pressure History - ${deviceData.device_name}`}
-        icon={<Gauge className="w-5 h-5 text-green-500" />}
-        currentValue={`${latest?.static_pressure?.toFixed(1)} PSI`}
-        currentValueColor="text-green-600"
-        data={filterDataByDateRange(staticPStartDate, staticPEndDate, 500)}
-        series={[
-          { dataKey: 'static_pressure', name: 'Static (PSI)', color: '#16a34a' },
-          { dataKey: 'max_static_pressure', name: 'Max (PSI)', color: '#3b82f6' },
-          { dataKey: 'min_static_pressure', name: 'Min (PSI)', color: '#6366f1' },
-        ]}
-        yAxisLabel="Pressure (PSI)"
-      />
+      {isPressureFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
+            <button
+              onClick={() => setIsPressureFullscreen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-2">
+              <Gauge className="w-5 h-5 text-green-500" />
+              <span className="text-sm font-semibold text-gray-800">Pressure History - {deviceData.device_name}</span>
+            </div>
+            <span className="text-sm font-medium text-green-600">{latest?.static_pressure?.toFixed(1)} PSI</span>
+          </div>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(staticPEndDate).getTime() - new Date(staticPStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 500), 'static_pressure', 5)}
+                    label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                  />
+                  <Line type="monotone" dataKey="static_pressure" name="Static" stroke="#16a34a" strokeWidth={2} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="max_static_pressure" name="Max" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="min_static_pressure" name="Min" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Volume Chart Modal */}
-      <FullscreenAmChart
-        isOpen={isVolumeFullscreen}
-        onClose={() => setIsVolumeFullscreen(false)}
-        title={`Volume History - ${deviceData.device_name}`}
-        icon={<Droplets className="w-5 h-5 text-purple-500" />}
-        currentValue={`${latest?.volume?.toFixed(1)} MCF`}
-        currentValueColor="text-purple-600"
-        data={filterDataByDateRange(volumeStartDate, volumeEndDate, 500)}
-        series={[{ dataKey: 'volume', name: 'Volume (MCF)', color: '#9333ea' }]}
-        yAxisLabel="Volume (MCF)"
-      />
+      {isVolumeFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
+            <button
+              onClick={() => setIsVolumeFullscreen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-2">
+              <Droplets className="w-5 h-5 text-purple-500" />
+              <span className="text-sm font-semibold text-gray-800">Volume History - {deviceData.device_name}</span>
+            </div>
+            <span className="text-sm font-medium text-purple-600">{latest?.volume?.toFixed(1)} MCF</span>
+          </div>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(volumeEndDate).getTime() - new Date(volumeStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 500), 'volume', 5)}
+                    label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(1)} MCF`, 'Volume']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="volume"
+                    stroke="#9333ea"
+                    strokeWidth={2}
+                    dot={{ fill: '#9333ea', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Flow Rate Chart Modal */}
-      <FullscreenAmChart
-        isOpen={isFlowFullscreen}
-        onClose={() => setIsFlowFullscreen(false)}
-        title={`Flow Rate History - ${deviceData.device_name}`}
-        icon={<TrendingUp className="w-5 h-5 text-teal-500" />}
-        currentValue={`${latest?.total_volume_flow?.toFixed(1)} MCF/day`}
-        currentValueColor="text-teal-600"
-        data={filterDataByDateRange(flowStartDate, flowEndDate, 500)}
-        series={[{ dataKey: 'total_volume_flow', name: 'Flow Rate (MCF/day)', color: '#14b8a6' }]}
-        yAxisLabel="Flow Rate (MCF/day)"
-      />
+      {isFlowFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
+            <button
+              onClick={() => setIsFlowFullscreen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-teal-500" />
+              <span className="text-sm font-semibold text-gray-800">Flow Rate History - {deviceData.device_name}</span>
+            </div>
+            <span className="text-sm font-medium text-teal-600">{latest?.total_volume_flow?.toFixed(1)} MCF/day</span>
+          </div>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(flowEndDate).getTime() - new Date(flowStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 500), 'total_volume_flow', 5)}
+                    label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value.toFixed(1)} MCF/day`, 'Flow Rate']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total_volume_flow"
+                    stroke="#14b8a6"
+                    strokeWidth={2}
+                    dot={{ fill: '#14b8a6', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Battery Chart Modal */}
-      <FullscreenAmChart
-        isOpen={isBatteryFullscreen}
-        onClose={() => setIsBatteryFullscreen(false)}
-        title={`Battery Voltage History - ${deviceData.device_name}`}
-        icon={<Battery className="w-5 h-5 text-yellow-500" />}
-        currentValue={`${batteryLevel.toFixed(2)}V`}
-        currentValueColor="text-yellow-600"
-        data={filterDataByDateRange(batteryStartDate, batteryEndDate, 500)}
-        series={[{ dataKey: 'battery', name: 'Battery (V)', color: '#eab308' }]}
-        yAxisLabel="Voltage (V)"
-      />
+      {isBatteryFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
+            <button
+              onClick={() => setIsBatteryFullscreen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-2">
+              <Battery className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm font-semibold text-gray-800">Battery Voltage History - {deviceData.device_name}</span>
+            </div>
+            <span className="text-sm font-medium text-yellow-600">{batteryLevel.toFixed(2)}V</span>
+          </div>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(batteryEndDate).getTime() - new Date(batteryStartDate).getTime()) / (1000 * 60 * 60 * 24);
+                      if (diffDays > 2) {
+                        return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+                      }
+                      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    }}
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '13px' }}
+                    domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 500), 'battery', 5)}
+                    label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => {
+                      const batteryValue = value || 12.5;
+                      const status = batteryValue >= 12.5 ? 'Optimal' : batteryValue >= 11.8 ? 'Good' : batteryValue >= 11.0 ? 'Warning' : batteryValue >= 10.5 ? 'Low' : batteryValue >= 10.0 ? 'V.Low' : 'Critical';
+                      return [`${batteryValue.toFixed(2)}V (${status})`, 'Battery'];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="battery"
+                    stroke="#eab308"
+                    strokeWidth={2}
+                    dot={{ fill: '#eab308', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Export Modal */}
       <ExportModal
