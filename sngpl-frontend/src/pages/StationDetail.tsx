@@ -1293,10 +1293,10 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-orange-600">{latest?.temperature?.toFixed(1)}°F</span>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto">
-            <div style={{ width: `${Math.max(100, filterDataByDateRange(tempStartDate, tempEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 200)}>
+                <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1314,7 +1314,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 200), 'temperature', 5)}
+                    domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 500), 'temperature', 5)}
                     label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1354,10 +1354,10 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-blue-600">{latest?.differential_pressure?.toFixed(2)} IWC</span>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto">
-            <div style={{ width: `${Math.max(100, filterDataByDateRange(diffPStartDate, diffPEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 200)}>
+                <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1375,7 +1375,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 200), 'differential_pressure', 20)}
+                    domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 500), 'differential_pressure', 20)}
                     label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1415,10 +1415,10 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-green-600">{latest?.static_pressure?.toFixed(1)} PSI</span>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto">
-            <div style={{ width: `${Math.max(100, filterDataByDateRange(staticPStartDate, staticPEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 200)}>
+                <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1436,7 +1436,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 200), 'static_pressure', 5)}
+                    domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 500), 'static_pressure', 5)}
                     label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1470,10 +1470,10 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-purple-600">{latest?.volume?.toFixed(1)} MCF</span>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto">
-            <div style={{ width: `${Math.max(100, filterDataByDateRange(volumeStartDate, volumeEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 200)}>
+                <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1491,7 +1491,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 200), 'volume', 5)}
+                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 500), 'volume', 5)}
                     label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1531,10 +1531,10 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-teal-600">{latest?.total_volume_flow?.toFixed(1)} MCF/day</span>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto">
-            <div style={{ width: `${Math.max(100, filterDataByDateRange(flowStartDate, flowEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 200)}>
+                <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1552,7 +1552,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 200), 'total_volume_flow', 5)}
+                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 500), 'total_volume_flow', 5)}
                     label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1592,10 +1592,10 @@ const StationDetail = () => {
             </div>
             <span className="text-sm font-medium text-yellow-600">{batteryLevel.toFixed(2)}V</span>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto">
-            <div style={{ width: `${Math.max(100, filterDataByDateRange(batteryStartDate, batteryEndDate, 200).length * 15)}px`, minWidth: '100%', height: '100%' }}>
+          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 200)}>
+                <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1613,7 +1613,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 200), 'battery', 5)}
+                    domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 500), 'battery', 5)}
                     label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
