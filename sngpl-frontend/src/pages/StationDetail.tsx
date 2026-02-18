@@ -114,11 +114,9 @@ const StationDetail = () => {
   // Export modal state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  // History logs pagination (server-side, 1000 per page)
+  // History logs pagination (1000 loaded, 100 per page)
   const [historyPage, setHistoryPage] = useState(1);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyTotalPages, setHistoryTotalPages] = useState(1);
-  const historyPageSize = 1000;
+  const historyPerPage = 100;
 
   // Fullscreen chart state
   const [isChartFullscreen, setIsChartFullscreen] = useState(false); // Temperature
@@ -184,17 +182,13 @@ const StationDetail = () => {
     }
   };
 
-  const fetchHistoricalData = async (page = 1) => {
+  const fetchHistoricalData = async () => {
     try {
-      // Fetch 1000 readings per page for history logs (server-side pagination)
-      const response = await fetch(`/api/analytics/readings?device_id=${stationId}&page_size=1000&page=${page}`);
+      // Fetch latest 1000 readings for history logs
+      const response = await fetch(`/api/analytics/readings?device_id=${stationId}&page_size=1000&page=1`);
       if (response.ok) {
         const result = await response.json();
         const readings = result.data || [];
-
-        setHistoryTotal(result.total || 0);
-        setHistoryTotalPages(result.total_pages || 1);
-        setHistoryPage(page);
 
         if (readings && readings.length > 0) {
           // Sort readings by timestamp descending (most recent first)
@@ -1137,7 +1131,7 @@ const StationDetail = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-                <p className="text-sm text-gray-600 mt-1">{historyTotal} readings — Page {historyPage} of {historyTotalPages}</p>
+                <p className="text-sm text-gray-600 mt-1">{historyData.length} readings — Page {historyPage} of {Math.ceil(historyData.length / historyPerPage)}</p>
               </div>
               <button
                 onClick={() => setIsExportModalOpen(true)}
@@ -1165,10 +1159,10 @@ const StationDetail = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {historyData.map((reading, index) => (
+                {historyData.slice((historyPage - 1) * historyPerPage, historyPage * historyPerPage).map((reading, index) => (
                   <tr key={index} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-700">{(historyPage - 1) * historyPageSize + index + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">{(historyPage - 1) * historyPerPage + index + 1}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{formatTimestamp(reading.timestamp)}</span>
@@ -1215,28 +1209,28 @@ const StationDetail = () => {
             </table>
           </div>
           {/* Pagination Controls */}
-          {historyTotalPages > 1 && (
+          {historyData.length > historyPerPage && (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <span className="text-sm text-gray-600">
-                Showing {(historyPage - 1) * historyPageSize + 1}–{Math.min(historyPage * historyPageSize, historyTotal)} of {historyTotal}
+                Showing {(historyPage - 1) * historyPerPage + 1}–{Math.min(historyPage * historyPerPage, historyData.length)} of {historyData.length}
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => fetchHistoricalData(1)}
+                  onClick={() => setHistoryPage(1)}
                   disabled={historyPage === 1}
                   className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   First
                 </button>
                 <button
-                  onClick={() => fetchHistoricalData(Math.max(1, historyPage - 1))}
+                  onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
                   disabled={historyPage === 1}
                   className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Prev
                 </button>
                 {(() => {
-                  const totalPages = historyTotalPages;
+                  const totalPages = Math.ceil(historyData.length / historyPerPage);
                   const maxVisible = 5;
                   let start = Math.max(1, historyPage - Math.floor(maxVisible / 2));
                   let end = Math.min(totalPages, start + maxVisible - 1);
@@ -1248,7 +1242,7 @@ const StationDetail = () => {
                     pages.push(
                       <button
                         key={i}
-                        onClick={() => fetchHistoricalData(i)}
+                        onClick={() => setHistoryPage(i)}
                         className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                           i === historyPage
                             ? 'bg-blue-600 text-white'
@@ -1262,15 +1256,15 @@ const StationDetail = () => {
                   return pages;
                 })()}
                 <button
-                  onClick={() => fetchHistoricalData(Math.min(historyTotalPages, historyPage + 1))}
-                  disabled={historyPage === historyTotalPages}
+                  onClick={() => setHistoryPage(p => Math.min(Math.ceil(historyData.length / historyPerPage), p + 1))}
+                  disabled={historyPage === Math.ceil(historyData.length / historyPerPage)}
                   className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                 </button>
                 <button
-                  onClick={() => fetchHistoricalData(historyTotalPages)}
-                  disabled={historyPage === historyTotalPages}
+                  onClick={() => setHistoryPage(Math.ceil(historyData.length / historyPerPage))}
+                  disabled={historyPage === Math.ceil(historyData.length / historyPerPage)}
                   className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Last
