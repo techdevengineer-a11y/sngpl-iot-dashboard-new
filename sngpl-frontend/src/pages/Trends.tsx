@@ -89,6 +89,10 @@ const Trends = () => {
   const [latestReading, setLatestReading] = useState<DeviceReading | null>(null);
   const [batteryHistory, setBatteryHistory] = useState<any[]>([]);
 
+  // History logs pagination (1000 loaded, 100 per page = 10 pages)
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPerPage = 100;
+
   // Custom date range states for each parameter
   const getDefaultStartDate = () => {
     const date = new Date();
@@ -225,9 +229,7 @@ const Trends = () => {
 
   const fetchHistoricalData = async () => {
     try {
-      // OPTIMIZATION: Only fetch 200 readings instead of 1000
-      // This is enough for charts (50 points each) with some buffer for filtering
-      const response = await fetch(`/api/analytics/readings?client_id=${deviceId}&page_size=200&page=1`);
+      const response = await fetch(`/api/analytics/readings?client_id=${deviceId}&page_size=1000&page=1`);
       if (response.ok) {
         const result = await response.json();
         const readings = result.data || [];
@@ -539,6 +541,7 @@ const Trends = () => {
   };
 
   const last50 = getLast50Readings();
+  const hourlyData = getHourlyReadings(historyData, 1000);
 
   return (
     <Layout>
@@ -1031,7 +1034,7 @@ const Trends = () => {
           <div className="p-6 border-b border-gray-300">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-              <p className="text-sm text-gray-600 mt-1">Hourly readings (one per hour to avoid duplicates)</p>
+              <p className="text-sm text-gray-600 mt-1">{hourlyData.length} readings — Page {historyPage} of {Math.ceil(hourlyData.length / historyPerPage)}</p>
             </div>
           </div>
           <div className="overflow-auto" style={{ maxHeight: '500px' }}>
@@ -1050,10 +1053,10 @@ const Trends = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {getHourlyReadings(historyData, 500).map((reading, index) => (
+                {hourlyData.slice((historyPage - 1) * historyPerPage, historyPage * historyPerPage).map((reading, index) => (
                   <tr key={index} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-700">{index + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">{(historyPage - 1) * historyPerPage + index + 1}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{formatTimestamp(reading.timestamp)}</span>
@@ -1098,6 +1101,68 @@ const Trends = () => {
               </tbody>
             </table>
           </div>
+          {/* Pagination Controls */}
+          {hourlyData.length > historyPerPage && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                Showing {(historyPage - 1) * historyPerPage + 1}–{Math.min(historyPage * historyPerPage, hourlyData.length)} of {hourlyData.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHistoryPage(1)}
+                  disabled={historyPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                  disabled={historyPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Prev
+                </button>
+                {(() => {
+                  const totalPages = Math.ceil(hourlyData.length / historyPerPage);
+                  const maxVisible = 5;
+                  let start = Math.max(1, historyPage - Math.floor(maxVisible / 2));
+                  let end = Math.min(totalPages, start + maxVisible - 1);
+                  if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+                  const pages = [];
+                  for (let i = start; i <= end; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setHistoryPage(i)}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                          i === historyPage
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+                  return pages;
+                })()}
+                <button
+                  onClick={() => setHistoryPage(p => Math.min(Math.ceil(hourlyData.length / historyPerPage), p + 1))}
+                  disabled={historyPage === Math.ceil(hourlyData.length / historyPerPage)}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setHistoryPage(Math.ceil(hourlyData.length / historyPerPage))}
+                  disabled={historyPage === Math.ceil(hourlyData.length / historyPerPage)}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     </Layout>
