@@ -21,9 +21,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # MQTT
-    MQTT_BROKER: str = "broker.emqx.io"
+    MQTT_BROKER: str = "localhost"
     MQTT_PORT: int = 1883
-    MQTT_TOPIC: str = "evc/data"
+    MQTT_TOPIC: str = "sngpl/telemetry/#"
+    MQTT_USERNAME: str = ""
+    MQTT_PASSWORD: str = ""
 
     # Redis Cache
     REDIS_HOST: str = "localhost"

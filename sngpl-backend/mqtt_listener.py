@@ -57,7 +57,7 @@ class StandaloneMQTTListener:
         logger.info("Standalone MQTT Listener initialized")
         logger.info(f"Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
         logger.info(f"Topic: {settings.MQTT_TOPIC}")
-        logger.info(f"Database: {settings.DATABASE_URL}")
+        logger.info(f"Database: ***connected***")
 
     def on_connect(self, client, userdata, flags, rc):
         """Callback when connected to MQTT broker"""
@@ -569,7 +569,7 @@ class StandaloneMQTTListener:
             print(f"{'='*60}")
             print(f"  Broker:   {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
             print(f"  Topic:    {settings.MQTT_TOPIC}")
-            print(f"  Database: {settings.DATABASE_URL}")
+            print(f"  Database: ***masked***")
             print(f"{'='*60}\n")
             print(f"[INFO] Connecting to MQTT broker...")
             print(f"[INFO] Waiting for incoming MQTT messages...")
@@ -581,6 +581,11 @@ class StandaloneMQTTListener:
             if not os.path.exists(flag_file):
                 open(flag_file, 'a').close()
                 print(f"[INFO] Alarm monitoring: ENABLED")
+
+            # Set authentication credentials if configured
+            if settings.MQTT_USERNAME and settings.MQTT_PASSWORD:
+                self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
+                print(f"[INFO] MQTT auth enabled for user: {settings.MQTT_USERNAME}")
 
             self.client.connect(settings.MQTT_BROKER, settings.MQTT_PORT, 60)
 

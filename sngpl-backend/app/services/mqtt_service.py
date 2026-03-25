@@ -334,11 +334,16 @@ class MQTTService:
             self.client.on_disconnect = self.on_disconnect
             self.client.on_message = self.on_message
 
+            # Set authentication credentials if configured
+            if settings.MQTT_USERNAME and settings.MQTT_PASSWORD:
+                self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
+                logger.info(f"MQTT authentication enabled for user: {settings.MQTT_USERNAME}")
+
             try:
                 self.client.connect(settings.MQTT_BROKER, settings.MQTT_PORT, 60)
                 self.client.loop_forever()
             except Exception as e:
-                print(f"Error connecting to MQTT broker: {e}")
+                logger.error(f"Error connecting to MQTT broker: {e}")
 
         self.thread = threading.Thread(target=run, daemon=True)
         self.thread.start()
