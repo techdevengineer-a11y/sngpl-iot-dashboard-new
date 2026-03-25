@@ -73,10 +73,13 @@ def cache_response(
             if client is None:
                 return await func(*args, **kwargs)
 
-            # Build cache key from prefix and function arguments
-            # For simplicity, we'll use just the prefix + function name
-            # In production, you might want to include specific params
+            # Build cache key from prefix, function name, and path parameters
             cache_key = f"{key_prefix}:{func.__name__}"
+
+            # Include path/query parameters in cache key to avoid cross-section caching
+            for k, v in kwargs.items():
+                if k != 'db' and k != 'current_user' and k != 'request' and v is not None:
+                    cache_key += f":{k}={v}"
 
             # Add user context if available (for user-specific caching)
             if 'current_user' in kwargs:
