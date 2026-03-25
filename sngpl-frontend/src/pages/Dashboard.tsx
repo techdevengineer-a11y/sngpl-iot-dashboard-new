@@ -65,7 +65,7 @@ const Dashboard = () => {
     fetchGravityData();
 
     // Delay chart rendering to avoid dimension errors (reduced for faster load)
-    setTimeout(() => setChartsReady(true), 300);
+    setTimeout(() => setChartsReady(true), 500);
 
     // Refresh data every 10 seconds for smooth updates
     const dataInterval = setInterval(() => {
@@ -635,9 +635,9 @@ const Dashboard = () => {
           </div>
 
           {/* Chart */}
-          <div className="h-48 xl:h-64 2xl:h-80 min-h-[192px]">
+          <div className="min-h-[192px]" style={{ height: '250px' }}>
             {chartsReady && historicalFlow.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={192}>
+              <ResponsiveContainer width="100%" height={250}>
                 <AreaChart data={historicalFlow}>
                   <defs>
                     <linearGradient id="colorFlow" x1="0" y1="0" x2="0" y2="1">
@@ -833,8 +833,8 @@ const Dashboard = () => {
 
             {/* Bar Chart - Horizontal Scroll Container */}
             <div className="flex-1 overflow-x-auto overflow-y-hidden" style={{ maxHeight: '320px', minHeight: '260px' }}>
-              <div style={{ minWidth: `${Math.max(filteredBatteryData.length * 25, 100)}px`, height: '100%', minHeight: '260px' }}>
-                {chartsReady && <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={260}>
+              <div style={{ minWidth: `${Math.max(filteredBatteryData.length * 25, 100)}px`, height: '260px' }}>
+                {chartsReady && <ResponsiveContainer width="100%" height={260}>
                   <BarChart
                     data={filteredBatteryData}
                     margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
