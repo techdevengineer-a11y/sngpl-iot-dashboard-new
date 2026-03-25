@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # MQTT
     MQTT_BROKER: str = "localhost"
     MQTT_PORT: int = 1883
-    MQTT_TOPIC: str = "sngpl/telemetry/#"
+    MQTT_TOPIC: str = "hello/evc"
     MQTT_USERNAME: str = ""
     MQTT_PASSWORD: str = ""
 

@@ -64,19 +64,11 @@ class StandaloneMQTTListener:
         if rc == 0:
             logger.info(f"[OK] Connected to MQTT Broker: {settings.MQTT_BROKER}")
             self.connected = True
-            # Subscribe to multiple topics
+            # Subscribe to topic
             client.subscribe(settings.MQTT_TOPIC)
             logger.info(f"[OK] Subscribed to topic: {settings.MQTT_TOPIC}")
-            client.subscribe("evc/topic")
-            logger.info(f"[OK] Subscribed to topic: evc/topic")
-            # Subscribe to wildcard to catch all evc messages
-            client.subscribe("evc/#")
-            logger.info(f"[OK] Subscribed to topic: evc/# (wildcard)")
             print(f"\n[INFO] MQTT Listener is now running and waiting for messages...")
-            print(f"[INFO] Subscribed to topics:")
-            print(f"       - {settings.MQTT_TOPIC} (Primary topic)")
-            print(f"       - evc/topic (Additional topic)")
-            print(f"       - evc/# (All evc messages - wildcard)")
+            print(f"[INFO] Subscribed to topic: {settings.MQTT_TOPIC}")
             print(f"[INFO] Press Ctrl+C to stop\n")
         else:
             logger.error(f"[ERROR] Failed to connect to MQTT Broker, return code {rc}")
