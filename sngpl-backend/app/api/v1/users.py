@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict
 from pydantic import BaseModel, EmailStr, field_validator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.db.database import get_db
 from app.models.models import User
@@ -443,8 +443,8 @@ async def change_password(
 
     # Update password
     current_user.hashed_password = new_password_hash
-    current_user.last_password_change = datetime.utcnow()
-    current_user.password_changed_at = datetime.utcnow()
+    current_user.last_password_change = datetime.now(timezone.utc)
+    current_user.password_changed_at = datetime.now(timezone.utc)
     current_user.must_change_password = False
 
     db.commit()

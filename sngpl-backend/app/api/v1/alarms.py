@@ -267,11 +267,16 @@ async def delete_all_alarms(
 
 
 @router.get("/monitoring/status")
-async def get_alarm_monitoring_status(current_user: User = Depends(get_current_user)):
-    """Get current alarm monitoring status"""
-    import os
-    flag_file = "/tmp/alarm_monitoring_enabled"
-    is_enabled = os.path.exists(flag_file)
+async def get_alarm_monitoring_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get current alarm monitoring status (persisted in database)"""
+    from app.models.models import SecuritySettings
+    setting = db.query(SecuritySettings).filter(
+        SecuritySettings.setting_key == "alarm_monitoring_enabled"
+    ).first()
+    is_enabled = setting.setting_value == "true" if setting else False
     return {"enabled": is_enabled}
 
 
@@ -281,22 +286,31 @@ async def toggle_alarm_monitoring(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Toggle alarm monitoring on/off"""
-    import os
-    flag_file = "/tmp/alarm_monitoring_enabled"
+    """Toggle alarm monitoring on/off (persisted in database)"""
+    from app.models.models import SecuritySettings
 
-    if os.path.exists(flag_file):
-        # Disable monitoring
-        os.remove(flag_file)
-        is_enabled = False
-        action = "STOP"
-        message = "Alarm monitoring stopped"
+    setting = db.query(SecuritySettings).filter(
+        SecuritySettings.setting_key == "alarm_monitoring_enabled"
+    ).first()
+
+    if setting:
+        # Toggle existing setting
+        is_enabled = setting.setting_value != "true"
+        setting.setting_value = "true" if is_enabled else "false"
     else:
-        # Enable monitoring
-        open(flag_file, 'a').close()
+        # Create setting (default to enabled on first toggle)
         is_enabled = True
-        action = "START"
-        message = "Alarm monitoring started"
+        setting = SecuritySettings(
+            setting_key="alarm_monitoring_enabled",
+            setting_value="true",
+            description="Whether alarm monitoring is active"
+        )
+        db.add(setting)
+
+    db.commit()
+
+    action = "START" if is_enabled else "STOP"
+    message = "Alarm monitoring started" if is_enabled else "Alarm monitoring stopped"
 
     # Audit log
     audit_service.log_from_request(

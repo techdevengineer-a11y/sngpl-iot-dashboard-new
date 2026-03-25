@@ -62,8 +62,61 @@ class MQTTService:
         except Exception as e:
             logger.error(f"Error processing MQTT message: {e}", exc_info=True)
 
+    def validate_mqtt_payload(self, data):
+        """Validate MQTT payload structure and values to reject spoofed/malformed data"""
+        # Must have device ID
+        client_id = data.get("did", "").strip()
+        if not client_id:
+            return False, "Missing device ID (did)"
+
+        # Device ID must match expected pattern (SMS-X-NNN or known prefixes)
+        import re
+        if not re.match(r'^(SMS-[IV]+-\d+|EVC-\d+|modem\d+)$', client_id):
+            logger.warning(f"Rejected message with invalid device ID pattern: {client_id}")
+            return False, f"Invalid device ID pattern: {client_id}"
+
+        # Must have content array
+        content = data.get("content", [])
+        if not isinstance(content, list):
+            return False, "content must be a list"
+
+        # Validate sensor values are within physically possible ranges
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            addr = item.get("Addr", "")
+            try:
+                value = float(item.get("Addrv", 0))
+            except (ValueError, TypeError):
+                return False, f"Non-numeric value for {addr}"
+
+            # Reject physically impossible values
+            range_limits = {
+                "T10": (-1000, 5000),    # Differential Pressure IWC
+                "T11": (-100, 5000),     # Static Pressure PSI
+                "T12": (-100, 500),      # Temperature °F
+                "T13": (-1, 1000000),    # Total Volume Flow MCF/day
+                "T14": (-1, 10000000),   # Volume MCF
+                "T15": (0, 30),          # Battery V
+                "T16": (-100, 5000),     # Max Static Pressure
+                "T17": (-100, 5000),     # Min Static Pressure
+            }
+            if addr in range_limits:
+                low, high = range_limits[addr]
+                if value < low or value > high:
+                    logger.warning(f"Rejected {client_id}: {addr}={value} outside range [{low}, {high}]")
+                    return False, f"{addr} value {value} outside physical range"
+
+        return True, "OK"
+
     def process_device_data(self, data):
         """Process device data and save to database"""
+        # Validate payload before processing
+        is_valid, reason = self.validate_mqtt_payload(data)
+        if not is_valid:
+            logger.warning(f"Rejected MQTT payload: {reason}")
+            return
+
         db = SessionLocal()
 
         try:
@@ -74,24 +127,12 @@ class MQTTService:
                 logger.warning("No device ID in MQTT message, skipping")
                 return
 
-            # Find or create device
+            # Find device (do NOT auto-create - only accept known devices)
             device = db.query(Device).filter(Device.client_id == client_id).first()
 
             if not device:
-                # Create new device if it doesn't exist
-                logger.info(f"Creating new device: {client_id}")
-                device = Device(
-                    client_id=client_id,
-                    device_name=f"Device {client_id}",
-                    location="Unknown",
-                    latitude=0.0,
-                    longitude=0.0,
-                    is_active=True
-                )
-                db.add(device)
-                db.commit()
-                db.refresh(device)
-                logger.info(f"Device {client_id} created successfully with ID {device.id}")
+                logger.warning(f"Rejected message from unknown device: {client_id}")
+                return
 
             # Update last seen (using local time to match frontend)
             device.last_seen = datetime.now()

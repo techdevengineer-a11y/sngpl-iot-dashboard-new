@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 import bcrypt
 from pydantic import BaseModel, field_validator, Field, EmailStr
@@ -104,7 +104,7 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -165,7 +165,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         raise HTTPException(status_code=400, detail="Inactive user")
 
     # Update last login timestamp
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(timezone.utc)
     db.commit()
 
     # Log successful login
@@ -194,7 +194,19 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 
 @router.post("/register", response_model=UserResponse)
 @limiter.limit("3/hour")  # Very strict rate limit for registration
-async def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
+async def register(
+    request: Request,
+    user_data: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Only admins can register new users
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can register new users"
+        )
+
     # Check if user exists
     if db.query(User).filter(User.username == user_data.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -221,9 +233,9 @@ async def register(request: Request, user_data: UserCreate, db: Session = Depend
         request=request,
         action="CREATE",
         resource_type="user",
-        user=new_user,
+        user=current_user,
         resource_id=new_user.id,
-        details={"email": new_user.email, "role": new_user.role},
+        details={"email": new_user.email, "role": new_user.role, "created_by": current_user.username},
         status="success"
     )
 

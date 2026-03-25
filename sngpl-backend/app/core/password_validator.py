@@ -131,13 +131,13 @@ class PasswordValidator:
             password_hash: Hashed password to store
         """
         from app.models.models import PasswordHistory
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         # Add to history
         password_history = PasswordHistory(
             user_id=user_id,
             password_hash=password_hash,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(password_history)
 

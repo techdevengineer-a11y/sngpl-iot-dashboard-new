@@ -8,7 +8,7 @@ from sqlalchemy import func, case, and_, literal
 from typing import List, Dict, Any
 from app.db.database import get_db
 from app.models.models import Device, DeviceReading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.core.redis_client import cache_response
 
 router = APIRouter(prefix="/sections", tags=["sections"])
@@ -163,7 +163,7 @@ async def get_section_stats(db: Session = Depends(get_db)):
     return {
         'sections': sections,
         'all_sms': all_sms,
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -197,14 +197,38 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
             (Device.client_id.like(f'SMS-{arabic_num}-%'))
         ).all()
 
-    # Prepare device data with latest readings
+    # Get device IDs for batch query
+    device_ids = [d.id for d in devices]
+
+    # Single query: get latest reading per device using subquery (fixes N+1)
+    latest_reading_subq = (
+        db.query(
+            DeviceReading.device_id,
+            func.max(DeviceReading.timestamp).label('max_timestamp')
+        )
+        .filter(DeviceReading.device_id.in_(device_ids))
+        .group_by(DeviceReading.device_id)
+        .subquery()
+    )
+
+    latest_readings_query = (
+        db.query(DeviceReading)
+        .join(
+            latest_reading_subq,
+            and_(
+                DeviceReading.device_id == latest_reading_subq.c.device_id,
+                DeviceReading.timestamp == latest_reading_subq.c.max_timestamp
+            )
+        )
+        .all()
+    )
+
+    # Build lookup map: device_id -> latest reading
+    readings_map = {r.device_id: r for r in latest_readings_query}
+
+    # Build device list with pre-fetched readings
     device_list = []
     for device in devices:
-        # Get latest reading
-        latest_reading = db.query(DeviceReading).filter(
-            DeviceReading.device_id == device.id
-        ).order_by(DeviceReading.timestamp.desc()).first()
-
         device_data = {
             'id': device.id,
             'client_id': device.client_id,
@@ -217,6 +241,7 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
             'last_seen': device.last_seen.isoformat() if device.last_seen else None,
         }
 
+        latest_reading = readings_map.get(device.id)
         if latest_reading:
             device_data['latest_reading'] = {
                 'timestamp': latest_reading.timestamp.isoformat(),
@@ -286,30 +311,44 @@ async def get_section_summary(section_id: str, db: Session = Depends(get_db)):
     if not devices:
         raise HTTPException(status_code=404, detail="No devices found for this section")
 
-    # Calculate aggregated statistics
-    total_temp = 0
-    total_pressure = 0
-    total_diff_pressure = 0
-    total_volume = 0
-    total_volume_flow = 0
-    reading_count = 0
+    device_ids = [d.id for d in devices]
 
-    for device in devices:
-        latest = db.query(DeviceReading).filter(
-            DeviceReading.device_id == device.id
-        ).order_by(DeviceReading.timestamp.desc()).first()
+    # Single aggregation query instead of N+1 per-device queries
+    latest_reading_subq = (
+        db.query(
+            DeviceReading.device_id,
+            func.max(DeviceReading.timestamp).label('max_timestamp')
+        )
+        .filter(DeviceReading.device_id.in_(device_ids))
+        .group_by(DeviceReading.device_id)
+        .subquery()
+    )
 
-        if latest:
-            total_temp += latest.temperature or 0
-            total_pressure += latest.static_pressure or 0
-            total_diff_pressure += latest.differential_pressure or 0
-            total_volume += latest.volume or 0
-            total_volume_flow += latest.total_volume_flow or 0
-            reading_count += 1
+    aggregates = (
+        db.query(
+            func.count(DeviceReading.id).label('reading_count'),
+            func.avg(DeviceReading.temperature).label('avg_temp'),
+            func.avg(DeviceReading.static_pressure).label('avg_pressure'),
+            func.avg(DeviceReading.differential_pressure).label('avg_diff_pressure'),
+            func.sum(DeviceReading.volume).label('total_volume'),
+            func.sum(DeviceReading.total_volume_flow).label('total_volume_flow'),
+        )
+        .join(
+            latest_reading_subq,
+            and_(
+                DeviceReading.device_id == latest_reading_subq.c.device_id,
+                DeviceReading.timestamp == latest_reading_subq.c.max_timestamp
+            )
+        )
+        .first()
+    )
 
-    avg_temp = total_temp / reading_count if reading_count > 0 else 0
-    avg_pressure = total_pressure / reading_count if reading_count > 0 else 0
-    avg_diff_pressure = total_diff_pressure / reading_count if reading_count > 0 else 0
+    reading_count = aggregates.reading_count or 0
+    avg_temp = float(aggregates.avg_temp or 0)
+    avg_pressure = float(aggregates.avg_pressure or 0)
+    avg_diff_pressure = float(aggregates.avg_diff_pressure or 0)
+    total_volume = float(aggregates.total_volume or 0)
+    total_volume_flow = float(aggregates.total_volume_flow or 0)
 
     return {
         'section_id': section_id,

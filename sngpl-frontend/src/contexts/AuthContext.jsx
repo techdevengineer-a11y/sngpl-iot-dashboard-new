@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
       } catch (error) {
         sessionStorage.removeItem('token');
+        setUser(null);
       }
     }
     setLoading(false);
@@ -51,6 +52,32 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     toast.success('Logged out successfully');
   };
+
+  // Auto-logout on token expiry or tab inactivity (30 min)
+  useEffect(() => {
+    let inactivityTimer;
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        if (user) {
+          logout();
+          toast.error('Session expired due to inactivity');
+        }
+      }, 30 * 60 * 1000); // 30 minutes
+    };
+
+    if (user) {
+      window.addEventListener('mousemove', resetTimer);
+      window.addEventListener('keydown', resetTimer);
+      resetTimer();
+    }
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+    };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
