@@ -165,6 +165,39 @@ class StandaloneMQTTListener:
 
         return converted
 
+    def convert_telemetry_data(self, data):
+        """
+        Convert TelemetryData format to Four-Faith content array.
+        Payload: {"device_Id":"FK...", "TelemetryData":{"t10":{"time":"...","value":1.12}, ...}}
+        """
+        device_id = data.get("device_Id", data.get("device_id", "unknown"))
+        telemetry = data.get("TelemetryData", {})
+
+        logger.info(f"[TELEMETRY] Converting TelemetryData format for device: {device_id}")
+        print(f"[TELEMETRY] Converting payload with {len(telemetry)} parameters for {device_id}")
+
+        content = []
+        for key, entry in telemetry.items():
+            addr = key.upper()
+            if not addr.startswith("T"):
+                continue
+            try:
+                value = float(entry.get("value", 0)) if isinstance(entry, dict) else float(entry)
+                content.append({"Addr": addr, "Addrv": value})
+            except (ValueError, TypeError):
+                logger.warning(f"[TELEMETRY] Could not convert {key}: {entry}")
+
+        converted = {
+            "did": device_id,
+            "content": content
+        }
+
+        if "time" in data:
+            converted["Utime"] = data["time"]
+
+        logger.info(f"[TELEMETRY] Converted {len(content)} fields for device {device_id}")
+        return converted
+
     def on_message(self, client, userdata, msg):
         """Callback when message received from MQTT broker"""
         try:
@@ -188,12 +221,14 @@ class StandaloneMQTTListener:
                     print(f"[WARNING] Malformed JSON received: {raw_payload[:100]}")
                     return
 
-            # If it's RT600 compact format (no "content" array), convert to Four-Faith format
-            if "content" not in payload and "did" in payload:
+            # Convert non-standard formats to Four-Faith content array format
+            if "TelemetryData" in payload:
+                payload = self.convert_telemetry_data(payload)
+            elif "content" not in payload and "did" in payload:
                 payload = self.convert_rt600(payload)
 
             # Print incoming message to console
-            device_id = payload.get("did", "unknown")
+            device_id = payload.get("did", payload.get("device_Id", "unknown"))
             print(f"\n{'='*60}")
             print(f"[MQTT] Message received on topic: {msg.topic}")
             print(f"[MQTT] Device ID: {device_id}")
