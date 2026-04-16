@@ -55,6 +55,7 @@ class Device(Base):
     location = Column(String, index=True)
     latitude = Column(Float)
     longitude = Column(Float)
+    serial_number = Column(String, unique=True, index=True, nullable=True)
     is_active = Column(Boolean, default=True, index=True)
     last_seen = Column(DateTime(timezone=True), index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

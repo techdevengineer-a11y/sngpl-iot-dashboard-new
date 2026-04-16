@@ -214,20 +214,28 @@ class StandaloneMQTTListener:
         db = SessionLocal()
 
         try:
-            # Get device ID from 'did' field (try multiple possible field names)
-            client_id = data.get("did", data.get("device_id", data.get("client_id", ""))).strip()
+            # Get device ID from 'did' field (try multiple possible field names, including device_Id with capital I)
+            client_id = data.get("did", data.get("device_Id", data.get("device_id", data.get("client_id", "")))).strip()
 
             if not client_id:
                 logger.warning(f"No device ID in MQTT message, skipping. Payload keys: {list(data.keys())}")
                 print(f"[WARNING] No device ID found. Available fields: {list(data.keys())}")
                 return
 
-            # Find or create device
+            # Find device: first by client_id, then by serial_number mapping
             device = db.query(Device).filter(Device.client_id == client_id).first()
 
             if not device:
-                # Create new device if it doesn't exist
-                # Automatically assign to OTHER section if not SMS device
+                # Check if this ID matches a device's serial_number (modem hardware serial → mapped device)
+                device = db.query(Device).filter(Device.serial_number == client_id).first()
+                if device:
+                    logger.info(f"[SERIAL MAP] Matched serial {client_id} → device {device.client_id}")
+                    print(f"[SERIAL MAP] {client_id} → {device.client_id}")
+                    # Use the mapped client_id for the reading
+                    client_id = device.client_id
+
+            if not device:
+                # Create new device if it doesn't exist and no serial mapping found
                 device_type = "OTHER" if not client_id.startswith("SMS-") else "SMS"
 
                 logger.info(f"Creating new {device_type} device: {client_id}")

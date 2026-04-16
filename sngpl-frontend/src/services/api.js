@@ -213,6 +213,10 @@ export const getSystemMetrics = () => api.get('/dashboard/system-metrics');
 export const getParameterAverages = (hours = 24) => api.get('/dashboard/parameter-averages', { params: { hours } });
 export const getStatusOverview = () => api.get('/dashboard/status-overview');
 
+// Serial Number Mapping
+export const getSerialMappings = () => api.get('/devices/serial-mappings/all');
+export const updateSerialNumber = (clientId, serialNumber) => api.put(`/devices/${clientId}/serial-number`, { serial_number: serialNumber });
+
 // Stations APIs
 export const getStationStats = () => api.get('/stations/stats');
 export const getStationDevices = (stationId) => api.get(`/stations/${stationId}/devices`);

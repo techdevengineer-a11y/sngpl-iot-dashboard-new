@@ -75,6 +75,7 @@ class DeviceResponse(BaseModel):
     location: str
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    serial_number: Optional[str] = None
     is_active: bool
     last_seen: Optional[datetime] = None
     latest_reading: Optional[LatestReading] = None
@@ -150,6 +151,7 @@ async def get_devices(db: Session = Depends(get_db)):
             "location": device.location,
             "latitude": device.latitude,
             "longitude": device.longitude,
+            "serial_number": device.serial_number,
             "is_active": device.is_active,
             "last_seen": device.last_seen,
             "section_id": section_id,
@@ -316,3 +318,93 @@ async def get_device_readings(client_id: str, limit: int = 100, db: Session = De
     readings = db.query(DeviceReading).filter(DeviceReading.device_id == device.id).order_by(DeviceReading.timestamp.desc()).limit(limit).all()
 
     return readings
+
+
+# --- Serial Number Mapping Endpoints ---
+
+class SerialMappingResponse(BaseModel):
+    id: int
+    client_id: str
+    device_name: Optional[str] = None
+    serial_number: Optional[str] = None
+    section_id: Optional[str] = None
+    location: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SerialMappingUpdate(BaseModel):
+    serial_number: Optional[str] = Field(None, max_length=100, description="Modem hardware serial number")
+
+    @field_validator("serial_number")
+    @classmethod
+    def validate_serial(cls, v):
+        if v is not None:
+            v = v.strip()
+            if v == "":
+                return None
+            if not all(c.isalnum() or c in ['_', '-'] for c in v):
+                raise ValueError("Serial number can only contain letters, numbers, underscores, and hyphens")
+        return v
+
+
+@router.get("/serial-mappings/all", response_model=List[SerialMappingResponse])
+async def get_serial_mappings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Get all devices with their serial number mappings"""
+    devices = db.query(Device).order_by(Device.client_id).all()
+    result = []
+    for device in devices:
+        section_id = None
+        if device.client_id and device.client_id.startswith("SMS-"):
+            parts = device.client_id.split("-")
+            if len(parts) >= 2:
+                section_id = parts[1]
+        result.append(SerialMappingResponse(
+            id=device.id,
+            client_id=device.client_id,
+            device_name=device.device_name,
+            serial_number=device.serial_number,
+            section_id=section_id,
+            location=device.location,
+        ))
+    return result
+
+
+@router.put("/{client_id}/serial-number")
+async def update_serial_number(
+    client_id: str,
+    mapping: SerialMappingUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Map a modem serial number to a device"""
+    device = db.query(Device).filter(Device.client_id == client_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    if mapping.serial_number:
+        existing = db.query(Device).filter(
+            Device.serial_number == mapping.serial_number,
+            Device.id != device.id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Serial number already mapped to device {existing.client_id}"
+            )
+
+    device.serial_number = mapping.serial_number
+    db.commit()
+    db.refresh(device)
+
+    audit_service.log_from_request(
+        db=db, request=request,
+        action="UPDATE", resource_type="device",
+        user=current_user, resource_id=device.id,
+        details={"client_id": client_id, "serial_number": mapping.serial_number, "field": "serial_number"},
+        status="success"
+    )
+
+    return {"message": f"Serial number {'mapped' if mapping.serial_number else 'removed'} successfully", "client_id": client_id, "serial_number": mapping.serial_number}

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Bell, Shield, Lock, Database, Eye, Globe, Palette, Save, Download, Plus, Trash2, Users, X, Mail, FileText, Monitor, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings as SettingsIcon, User, Bell, Shield, Lock, Database, Eye, Globe, Palette, Save, Download, Plus, Trash2, Users, X, Mail, FileText, Monitor, Search, Filter, ChevronLeft, ChevronRight, Link2, Check } from 'lucide-react';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { getCurrentUser, updateUser, changePassword, getAllRoles, listUsers, getUserPermissions, createUser, deleteUser, getAuditLogs } from '../services/api';
+import { getCurrentUser, updateUser, changePassword, getAllRoles, listUsers, getUserPermissions, createUser, deleteUser, getAuditLogs, getSerialMappings, updateSerialNumber } from '../services/api';
 
 const Settings = () => {
   const { user: authUser } = useAuth();
@@ -56,6 +56,7 @@ const Settings = () => {
 
   const baseTabs = [
     { id: 'account', label: 'Account', icon: User },
+    { id: 'device-mapping', label: 'Device Mapping', icon: Link2 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'display', label: 'Display & Preferences', icon: Palette },
     { id: 'security', label: 'Security', icon: Lock },
@@ -83,6 +84,14 @@ const Settings = () => {
   const [deviceLogsPage, setDeviceLogsPage] = useState(1);
   const [deviceLogsLoading, setDeviceLogsLoading] = useState(false);
   const [deviceLogsFilters, setDeviceLogsFilters] = useState({ search: '', action: '', start_date: '', end_date: '' });
+
+  // Device Mapping state
+  const [serialMappings, setSerialMappings] = useState([]);
+  const [serialMappingsLoading, setSerialMappingsLoading] = useState(false);
+  const [editingSerial, setEditingSerial] = useState(null);
+  const [editSerialValue, setEditSerialValue] = useState('');
+  const [serialFilter, setSerialFilter] = useState('');
+  const [serialSectionFilter, setSerialSectionFilter] = useState('ALL');
 
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -148,6 +157,9 @@ const Settings = () => {
     if (activeTab === 'roles') {
       loadRolesAndPermissions();
     }
+    if (activeTab === 'device-mapping') {
+      loadSerialMappings();
+    }
   }, [activeTab]);
 
   const loadRolesAndPermissions = async () => {
@@ -175,6 +187,34 @@ const Settings = () => {
       }
     } finally {
       setLoadingRoles(false);
+    }
+  };
+
+  // Load serial number mappings
+  const loadSerialMappings = async () => {
+    setSerialMappingsLoading(true);
+    try {
+      const response = await getSerialMappings();
+      setSerialMappings(response.data);
+    } catch (error) {
+      console.error('Failed to load serial mappings:', error);
+      toast.error('Failed to load device mappings');
+    } finally {
+      setSerialMappingsLoading(false);
+    }
+  };
+
+  const handleSaveSerial = async (clientId, serialOverride) => {
+    const value = serialOverride !== undefined ? serialOverride : editSerialValue;
+    try {
+      await updateSerialNumber(clientId, value || null);
+      toast.success(`Serial number ${value ? 'mapped' : 'removed'} for ${clientId}`);
+      setEditingSerial(null);
+      setEditSerialValue('');
+      loadSerialMappings();
+    } catch (error) {
+      const msg = error.response?.data?.detail || 'Failed to update serial number';
+      toast.error(msg);
     }
   };
 
@@ -1355,6 +1395,168 @@ const Settings = () => {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        );
+
+      case 'device-mapping':
+        const filteredMappings = serialMappings.filter(d => {
+          const matchesSearch = !serialFilter ||
+            d.client_id.toLowerCase().includes(serialFilter.toLowerCase()) ||
+            (d.serial_number && d.serial_number.toLowerCase().includes(serialFilter.toLowerCase())) ||
+            (d.device_name && d.device_name.toLowerCase().includes(serialFilter.toLowerCase()));
+          const matchesSection = serialSectionFilter === 'ALL' ||
+            (serialSectionFilter === 'OTHER' ? !d.section_id : d.section_id === serialSectionFilter);
+          return matchesSearch && matchesSection;
+        });
+
+        return (
+          <div className="space-y-6">
+            <div className="glass rounded-xl p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-blue-600" />
+                Device Serial Number Mapping
+              </h3>
+              <p className="text-gray-500 text-sm mb-6">
+                Map modem hardware serial numbers to device client IDs. When a modem sends data using its serial number,
+                the system will automatically route it to the correct device and section.
+              </p>
+
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search by client ID, serial number, or name..."
+                      value={serialFilter}
+                      onChange={(e) => setSerialFilter(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <select
+                  value={serialSectionFilter}
+                  onChange={(e) => setSerialSectionFilter(e.target.value)}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="ALL">All Sections</option>
+                  <option value="I">Section I</option>
+                  <option value="II">Section II</option>
+                  <option value="III">Section III</option>
+                  <option value="IV">Section IV</option>
+                  <option value="V">Section V</option>
+                  <option value="OTHER">Other Devices</option>
+                </select>
+              </div>
+
+              {serialMappingsLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Client ID</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Device Name</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Section</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Serial Number</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredMappings.map((device) => (
+                        <tr key={device.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4 font-mono text-blue-600">{device.client_id}</td>
+                          <td className="py-3 px-4 text-gray-700">{device.device_name || '-'}</td>
+                          <td className="py-3 px-4">
+                            {device.section_id ? (
+                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                Section {device.section_id}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
+                                Other
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {editingSerial === device.client_id ? (
+                              <input
+                                type="text"
+                                value={editSerialValue}
+                                onChange={(e) => setEditSerialValue(e.target.value)}
+                                placeholder="e.g. FK3130442674"
+                                className="w-full px-3 py-1.5 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveSerial(device.client_id);
+                                  if (e.key === 'Escape') { setEditingSerial(null); setEditSerialValue(''); }
+                                }}
+                              />
+                            ) : (
+                              <span className={`font-mono ${device.serial_number ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                                {device.serial_number || 'Not mapped'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {editingSerial === device.client_id ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleSaveSerial(device.client_id)}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs flex items-center gap-1"
+                                >
+                                  <Check className="w-3 h-3" /> Save
+                                </button>
+                                <button
+                                  onClick={() => { setEditingSerial(null); setEditSerialValue(''); }}
+                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-xs"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => { setEditingSerial(device.client_id); setEditSerialValue(device.serial_number || ''); }}
+                                  className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-xs font-medium"
+                                >
+                                  {device.serial_number ? 'Edit' : 'Map'}
+                                </button>
+                                {device.serial_number && (
+                                  <button
+                                    onClick={() => handleSaveSerial(device.client_id, null)}
+                                    className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-xs font-medium"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredMappings.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No devices found matching your filters.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-800 mb-1">How it works</h4>
+                <p className="text-xs text-blue-700">
+                  When a modem sends data with its hardware serial number (e.g., FK3130442674), the system checks if that
+                  serial is mapped to any device. If mapped, the data is automatically routed to the correct device (e.g., SMS-II-063)
+                  and appears in the correct section. No code changes needed for new devices.
+                </p>
+              </div>
             </div>
           </div>
         );
