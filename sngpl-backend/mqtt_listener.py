@@ -64,11 +64,13 @@ class StandaloneMQTTListener:
         if rc == 0:
             logger.info(f"[OK] Connected to MQTT Broker: {settings.MQTT_BROKER}")
             self.connected = True
-            # Subscribe to topic
-            client.subscribe(settings.MQTT_TOPIC)
-            logger.info(f"[OK] Subscribed to topic: {settings.MQTT_TOPIC}")
+            # Subscribe to topics
+            topics = [settings.MQTT_TOPIC, "hello/evc", "hello/#", "evc/#"]
+            for t in topics:
+                client.subscribe(t)
+            logger.info(f"[OK] Subscribed to topics: {topics}")
             print(f"\n[INFO] MQTT Listener is now running and waiting for messages...")
-            print(f"[INFO] Subscribed to topic: {settings.MQTT_TOPIC}")
+            print(f"[INFO] Subscribed to topics: {topics}")
             print(f"[INFO] Press Ctrl+C to stop\n")
         else:
             logger.error(f"[ERROR] Failed to connect to MQTT Broker, return code {rc}")
