@@ -259,20 +259,17 @@ class StandaloneMQTTListener:
                 print(f"[WARNING] No device ID found. Available fields: {list(data.keys())}")
                 return
 
-            # Find device: first by client_id, then by serial_number mapping
-            device = db.query(Device).filter(Device.client_id == client_id).first()
+            # Find device: check serial_number mapping FIRST (takes priority), then client_id
+            device = db.query(Device).filter(Device.serial_number == client_id).first()
+            if device:
+                logger.info(f"[SERIAL MAP] Matched serial {client_id} → device {device.client_id}")
+                print(f"[SERIAL MAP] {client_id} → {device.client_id}")
+                client_id = device.client_id
+            else:
+                device = db.query(Device).filter(Device.client_id == client_id).first()
 
             if not device:
-                # Check if this ID matches a device's serial_number (modem hardware serial → mapped device)
-                device = db.query(Device).filter(Device.serial_number == client_id).first()
-                if device:
-                    logger.info(f"[SERIAL MAP] Matched serial {client_id} → device {device.client_id}")
-                    print(f"[SERIAL MAP] {client_id} → {device.client_id}")
-                    # Use the mapped client_id for the reading
-                    client_id = device.client_id
-
-            if not device:
-                # Create new device if it doesn't exist and no serial mapping found
+                # Create new device if no serial mapping and no client_id match
                 device_type = "OTHER" if not client_id.startswith("SMS-") else "SMS"
 
                 logger.info(f"Creating new {device_type} device: {client_id}")
