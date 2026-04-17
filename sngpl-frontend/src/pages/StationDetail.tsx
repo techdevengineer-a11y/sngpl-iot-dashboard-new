@@ -1293,8 +1293,8 @@ const StationDetail = () => {
             <span className="text-sm font-medium text-orange-600">{latest?.temperature?.toFixed(1)}°F</span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, height: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, minHeight: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1354,8 +1354,8 @@ const StationDetail = () => {
             <span className="text-sm font-medium text-blue-600">{latest?.differential_pressure?.toFixed(2)} IWC</span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, height: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, minHeight: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1415,8 +1415,8 @@ const StationDetail = () => {
             <span className="text-sm font-medium text-green-600">{latest?.static_pressure?.toFixed(1)} PSI</span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, height: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, minHeight: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1470,8 +1470,8 @@ const StationDetail = () => {
             <span className="text-sm font-medium text-purple-600">{latest?.volume?.toFixed(1)} MCF</span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, height: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, minHeight: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1531,8 +1531,8 @@ const StationDetail = () => {
             <span className="text-sm font-medium text-teal-600">{latest?.total_volume_flow?.toFixed(1)} MCF/day</span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, height: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, minHeight: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1592,8 +1592,8 @@ const StationDetail = () => {
             <span className="text-sm font-medium text-yellow-600">{batteryLevel.toFixed(2)}V</span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, height: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, minHeight: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
