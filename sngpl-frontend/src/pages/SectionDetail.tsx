@@ -76,12 +76,14 @@ const SectionDetail = () => {
     }
   }, [sectionId]);
 
-  // Regenerate flow history whenever section data changes
+  // Load flow history once when section first loads, then refresh every 60s
   useEffect(() => {
     if (sectionData?.devices && sectionData.devices.length > 0) {
-      generateFlowHistory();
+      generateFlowHistory(true);
+      const flowInterval = setInterval(() => generateFlowHistory(false), 60000);
+      return () => clearInterval(flowInterval);
     }
-  }, [sectionData]);
+  }, [sectionData?.section_id]);
 
   const fetchSectionDevices = async () => {
     try {
@@ -249,13 +251,13 @@ const SectionDetail = () => {
     : sectionData?.devices || [];
 
   // Fetch and aggregate historical flow data for all devices in the section
-  const generateFlowHistory = async () => {
+  const generateFlowHistory = async (showSpinner = true) => {
     if (!sectionData?.devices || sectionData.devices.length === 0) {
       setFlowHistoryData([]);
       return;
     }
 
-    setFlowLoading(true);
+    if (showSpinner) setFlowLoading(true);
     try {
       // Fetch readings for all devices in this section in a single API call
       const response = await fetch(`/api/analytics/readings?section_id=${sectionData.section_id}&page_size=1000&page=1`);
