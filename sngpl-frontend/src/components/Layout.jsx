@@ -61,28 +61,31 @@ const Layout = ({ children }) => {
   ];
 
   useEffect(() => {
+    const controller = new AbortController();
+    const fetchNotifications = async () => {
+      try {
+        const alarms = await getAlarms({ limit: 10 });
+        if (controller.signal.aborted) return;
+        const recentNotifications = alarms.slice(0, 5).map(alarm => ({
+          id: alarm.id,
+          title: `${alarm.severity.toUpperCase()}: ${alarm.parameter}`,
+          message: `Device ${alarm.client_id} - ${alarm.value}`,
+          timestamp: alarm.triggered_at,
+          severity: alarm.severity,
+          isRead: alarm.is_acknowledged
+        }));
+        setNotifications(recentNotifications);
+        setUnreadCount(recentNotifications.filter(n => !n.isRead).length);
+      } catch (error) {
+        if (error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+          console.error('Error fetching notifications:', error);
+        }
+      }
+    };
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => { controller.abort(); clearInterval(interval); };
   }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const alarms = await getAlarms({ limit: 10 });
-      const recentNotifications = alarms.slice(0, 5).map(alarm => ({
-        id: alarm.id,
-        title: `${alarm.severity.toUpperCase()}: ${alarm.parameter}`,
-        message: `Device ${alarm.client_id} - ${alarm.value}`,
-        timestamp: alarm.triggered_at,
-        severity: alarm.severity,
-        isRead: alarm.is_acknowledged
-      }));
-      setNotifications(recentNotifications);
-      setUnreadCount(recentNotifications.filter(n => !n.isRead).length);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
 
   const getTimeAgo = (timestamp) => {
     const now = new Date();
