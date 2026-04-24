@@ -27,7 +27,7 @@ export const ALARM_THRESHOLDS: Record<string, AlarmThreshold> = {
     high: { min: 15000, max: 25000 }, // Above 15000 MCF
   },
   total_volume_flow: {
-    parameter: 'Total Volume Flow',
+    parameter: 'Flow Rate',
     low: { min: 0, max: 10000 },     // Below 10000 MCF/day
     medium: { min: 10000, max: 25000 }, // 10000-25000 MCF/day
     high: { min: 25000, max: 40000 }, // Above 25000 MCF/day

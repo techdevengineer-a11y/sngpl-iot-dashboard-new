@@ -324,7 +324,7 @@ const Devices = () => {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Diff. Pressure (IWC)</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Battery (V)</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Volume (MCF)</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Total volume flow (MCF/DAY)</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Flow Rate (MCF/DAY)</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Last Seen</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Actions</th>
                   </tr>

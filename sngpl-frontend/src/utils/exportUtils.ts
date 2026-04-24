@@ -198,7 +198,7 @@ export const exportStationSummary = (
     'Static Pressure (PSI)': stationData.latest_reading?.static_pressure ?? 'N/A',
     'Differential Pressure (IWC)': stationData.latest_reading?.differential_pressure ?? 'N/A',
     'Volume': stationData.latest_reading?.volume ?? 'N/A',
-    'Total Volume Flow (m³)': stationData.latest_reading?.total_volume_flow ?? 'N/A',
+    'Flow Rate (m³)': stationData.latest_reading?.total_volume_flow ?? 'N/A',
   }];
 
   switch (format) {

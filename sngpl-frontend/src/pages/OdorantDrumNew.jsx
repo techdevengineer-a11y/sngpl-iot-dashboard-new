@@ -290,7 +290,7 @@ const OdorantDrumNew = () => {
                       <span className="text-2xl font-bold">{section.section_id}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-600 mb-1">Total Flow</div>
+                      <div className="text-sm text-gray-600 mb-1">Flow Rate</div>
                       <div className="text-3xl font-bold text-cyan-600">{section.cumulative_volume_flow?.toFixed(1) || '0'}</div>
                       <div className="text-xs text-gray-600">{section.unit || 'MCF/day'}</div>
                     </div>

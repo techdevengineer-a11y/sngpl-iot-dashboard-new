@@ -107,7 +107,7 @@ const AverageValuesChart: React.FC<AverageValuesChartProps> = ({ paramAverages }
             type="monotone"
             dataKey="totalFlow"
             stroke="#06b6d4"
-            name="Total Flow (MCF/d)"
+            name="Flow Rate (MCF/d)"
             strokeWidth={2}
             dot={false}
           />

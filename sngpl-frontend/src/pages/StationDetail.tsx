@@ -748,7 +748,7 @@ const StationDetail = () => {
           <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm text-gray-600">Total Volume Flow</p>
+                <p className="text-sm text-gray-600">Flow Rate</p>
                 <p className="text-xs text-gray-500">{flowUnit}</p>
               </div>
               <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
@@ -1110,7 +1110,7 @@ const StationDetail = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-cyan-600" />
-                Total Volume Flow History
+                Flow Rate History
               </h3>
               <button
                 onClick={() => setIsFlowFullscreen(true)}

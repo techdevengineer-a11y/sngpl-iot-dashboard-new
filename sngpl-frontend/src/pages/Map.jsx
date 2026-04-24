@@ -523,7 +523,7 @@ const Map = () => {
                       )}
                       {selectedReading.total_volume_flow != null && (
                         <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">Total Flow</span>
+                          <span className="text-gray-600 dark:text-gray-400">Flow Rate</span>
                           <span className="text-gray-900 dark:text-white font-medium">{selectedReading.total_volume_flow}</span>
                         </div>
                       )}

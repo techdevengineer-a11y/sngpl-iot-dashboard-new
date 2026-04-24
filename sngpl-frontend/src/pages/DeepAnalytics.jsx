@@ -265,7 +265,7 @@ const DeepAnalytics = () => {
       static_pressure: 'Static Pressure',
       differential_pressure: 'Differential Pressure',
       volume: 'Volume',
-      total_volume_flow: 'Total Volume Flow'
+      total_volume_flow: 'Flow Rate'
     };
     return names[param] || param;
   };

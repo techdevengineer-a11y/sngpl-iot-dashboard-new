@@ -454,7 +454,7 @@ const SectionDetail = () => {
               <TrendingUp className="w-6 h-6 text-cyan-400" />
             </div>
             <div>
-              <div className="text-sm text-gray-400">Total Volume Flow</div>
+              <div className="text-sm text-gray-400">Flow Rate</div>
               <div className="text-4xl font-bold text-cyan-400">{totalFlow.toFixed(2)}</div>
               <div className="text-sm text-gray-400">MCF/day</div>
             </div>
@@ -466,7 +466,7 @@ const SectionDetail = () => {
           <div className="mb-4">
             <h3 className="text-xl font-semibold text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-cyan-400" />
-              Section Total Volume Flow (Last 24 Hours)
+              Section Flow Rate (Last 24 Hours)
             </h3>
             <p className="text-sm text-gray-400 mt-1">
               Sum of all device flows in {sectionData?.section_name}
@@ -518,7 +518,7 @@ const SectionDetail = () => {
                       borderRadius: '8px',
                       color: '#fff'
                     }}
-                    formatter={(value: any) => [value.toFixed(2) + ' MCF/day', 'Total Flow']}
+                    formatter={(value: any) => [value.toFixed(2) + ' MCF/day', 'Flow Rate']}
                     labelFormatter={(label) => `Time: ${label}`}
                   />
                   <Area

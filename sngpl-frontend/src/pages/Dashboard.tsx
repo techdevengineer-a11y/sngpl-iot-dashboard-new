@@ -591,7 +591,7 @@ const Dashboard = () => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <Zap className="w-8 h-8 text-cyan-600" />
-                Total Volume Flow
+                Flow Rate
               </h2>
               <p className="text-gray-600 text-sm mt-1">Real-time aggregated gas flow monitoring</p>
             </div>
@@ -672,7 +672,7 @@ const Dashboard = () => {
                     strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#colorFlow)"
-                    name="Total Volume Flow (MCF/day)"
+                    name="Flow Rate (MCF/day)"
                     animationDuration={500}
                   />
                 </AreaChart>
@@ -733,7 +733,7 @@ const Dashboard = () => {
                 <option value="Diff. Pressure">⚡ Diff. Pressure</option>
                 <option value="Battery">🔋 Battery</option>
                 <option value="Volume">📦 Volume</option>
-                <option value="Total Flow">💧 Total Flow</option>
+                <option value="Flow Rate">💧 Flow Rate</option>
                 <option value="Specific Gravity">⚖️ Sp. Gravity</option>
               </select>
               <select

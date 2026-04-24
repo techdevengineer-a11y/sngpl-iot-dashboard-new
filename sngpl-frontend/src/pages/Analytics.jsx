@@ -190,7 +190,7 @@ const Analytics = () => {
     { value: 'static_pressure', label: 'Static Pressure' },
     { value: 'differential_pressure', label: 'Differential Pressure' },
     { value: 'volume', label: 'Volume (MCF)' },
-    { value: 'total_volume_flow', label: 'Total Volume Flow (MCF/day)' }
+    { value: 'total_volume_flow', label: 'Flow Rate (MCF/day)' }
   ];
 
   const timeRangeOptions = [
@@ -427,7 +427,7 @@ const Analytics = () => {
                   <Line type="monotone" dataKey="static_pressure" stroke="#10B981" name="Static Pressure" />
                   <Line type="monotone" dataKey="differential_pressure" stroke="#3B82F6" name="Diff. Pressure" />
                   <Line type="monotone" dataKey="volume" stroke="#8B5CF6" name="Volume (MCF)" />
-                  <Line type="monotone" dataKey="total_volume_flow" stroke="#EC4899" name="Total Flow (MCF/day)" />
+                  <Line type="monotone" dataKey="total_volume_flow" stroke="#EC4899" name="Flow Rate (MCF/day)" />
                 </LineChart>
               </ResponsiveContainer>
             </div>

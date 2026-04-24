@@ -279,7 +279,7 @@ const LiveMonitor = () => {
 
                       <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border-l-4 border-cyan-500">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Flow</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Flow Rate</span>
                           <span className="text-2xl">💧</span>
                         </div>
                         <p className={`text-3xl font-bold ${getStatusColor(reading.total_volume_flow, 'total_volume_flow')}`}>

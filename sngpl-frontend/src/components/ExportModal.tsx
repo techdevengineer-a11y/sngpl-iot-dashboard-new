@@ -256,7 +256,7 @@ const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportT
               <li>• Differential Pressure (IWC)</li>
               <li>• Volume (MCF)</li>
               <li>• Volume (MMCF)</li>
-              <li>• Total Volume Flow (MCF/day)</li>
+              <li>• Flow Rate (MCF/day)</li>
               <li>• Battery Voltage (V)</li>
               <li>• Timestamps for all readings</li>
             </ul>
