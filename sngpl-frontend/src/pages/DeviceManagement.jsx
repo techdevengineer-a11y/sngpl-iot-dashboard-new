@@ -11,11 +11,32 @@ const DeviceManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentDevice, setCurrentDevice] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null);
+  const [deviceMeters, setDeviceMeters] = useState({});
   const [formData, setFormData] = useState({
     device_name: '',
     latitude: '',
     longitude: ''
   });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('device_meters');
+      if (saved) setDeviceMeters(JSON.parse(saved));
+    } catch (e) {
+      console.error('Error loading device meters:', e);
+    }
+  }, []);
+
+  const saveMeterInfo = (clientId, field, value) => {
+    setDeviceMeters(prev => {
+      const updated = {
+        ...prev,
+        [clientId]: { ...(prev[clientId] || { meter_type: '', units: '' }), [field]: value }
+      };
+      localStorage.setItem('device_meters', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const sections = [
     { id: 'ALL', name: 'All Sections', color: 'blue' },
@@ -372,6 +393,8 @@ const DeviceManagement = () => {
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Client ID</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Device Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Meter Type</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Units</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Location</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Latitude</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Longitude</th>
@@ -408,6 +431,32 @@ const DeviceManagement = () => {
                             />
                           ) : (
                             <span className="text-gray-900 dark:text-white font-medium">{device.device_name}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={deviceMeters[device.client_id]?.meter_type || ''}
+                              onChange={(e) => saveMeterInfo(device.client_id, 'meter_type', e.target.value)}
+                              placeholder="e.g., Daniel 3410"
+                              className="w-full px-3 py-1 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-blue-500"
+                            />
+                          ) : (
+                            <span className="text-gray-300 text-sm">{deviceMeters[device.client_id]?.meter_type || '-'}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={deviceMeters[device.client_id]?.units || ''}
+                              onChange={(e) => saveMeterInfo(device.client_id, 'units', e.target.value)}
+                              placeholder="e.g., MCF"
+                              className="w-full px-3 py-1 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-blue-500"
+                            />
+                          ) : (
+                            <span className="text-gray-300 text-sm">{deviceMeters[device.client_id]?.units || '-'}</span>
                           )}
                         </td>
                         <td className="px-6 py-4">

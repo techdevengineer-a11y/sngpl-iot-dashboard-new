@@ -50,6 +50,7 @@ const SectionDetail = () => {
   const [flowLoading, setFlowLoading] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [observedDevices, setObservedDevices] = useState<number[]>([]);
+  const [deviceMeters, setDeviceMeters] = useState<Record<string, { meter_type?: string; units?: string }>>({});
 
   // Load observed devices from localStorage
   useEffect(() => {
@@ -61,6 +62,15 @@ const SectionDetail = () => {
         setObservedDevices(deviceIds);
       } catch (e) {
         console.error('Error loading observed devices:', e);
+      }
+    }
+
+    const meters = localStorage.getItem('device_meters');
+    if (meters) {
+      try {
+        setDeviceMeters(JSON.parse(meters));
+      } catch (e) {
+        console.error('Error loading device meters:', e);
       }
     }
   }, []);
@@ -630,12 +640,16 @@ const SectionDetail = () => {
 
                       {/* Meter Type */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">-</span>
+                        <span className="text-sm text-gray-900">
+                          {deviceMeters[device.client_id]?.meter_type || '-'}
+                        </span>
                       </td>
 
                       {/* Units */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">-</span>
+                        <span className="text-sm text-gray-900">
+                          {deviceMeters[device.client_id]?.units || '-'}
+                        </span>
                       </td>
 
                       {/* Status */}
