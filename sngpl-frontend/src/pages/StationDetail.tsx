@@ -13,7 +13,8 @@ import {
   MapPin,
   Clock,
   Download,
-  Maximize2
+  Maximize2,
+  Camera
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -76,6 +77,52 @@ const getBatteryColor = (voltage: number) => {
   if (voltage < 10.5) return { bg: 'bg-red-200', text: 'text-red-700', status: 'Low', color: '#f87171' };
   if (voltage <= 14) return { bg: 'bg-green-100', text: 'text-green-600', status: 'Normal', color: '#16a34a' };
   return { bg: 'bg-yellow-100', text: 'text-yellow-600', status: 'High', color: '#eab308' };
+};
+
+// Serializes the fullscreen chart SVG, rasterizes it, and triggers a PNG download.
+// No external deps — purely native browser APIs.
+const downloadChartScreenshot = (filename: string) => {
+  const container = document.querySelector('.fullscreen-modal-chart') as HTMLElement | null;
+  if (!container) return;
+  const svg = container.querySelector('svg') as SVGSVGElement | null;
+  if (!svg) return;
+  const rect = svg.getBoundingClientRect();
+  const width = Math.ceil(rect.width);
+  const height = Math.ceil(rect.height);
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('width', String(width));
+  clone.setAttribute('height', String(height));
+  const svgString = new XMLSerializer().serializeToString(clone);
+  const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { URL.revokeObjectURL(url); return; }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, width, height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob((pngBlob) => {
+      if (!pngBlob) return;
+      const pngUrl = URL.createObjectURL(pngBlob);
+      const a = document.createElement('a');
+      a.href = pngUrl;
+      a.download = `${filename}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(pngUrl);
+    }, 'image/png');
+  };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
 };
 
 const StationDetail = () => {
@@ -1404,11 +1451,21 @@ const StationDetail = () => {
               <Thermometer className="w-5 h-5 text-orange-500" />
               <span className="text-sm font-semibold text-gray-800">Temperature History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-orange-600">{latest?.temperature?.toFixed(1)}°F</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-orange-600">{latest?.temperature?.toFixed(1)}°F</span>
+              <button
+                onClick={() => downloadChartScreenshot(`temperature-${deviceData.device_name}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg transition-colors shadow-sm"
+                title="Download as PNG"
+              >
+                <Camera className="w-4 h-4" />
+                Screenshot
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, minHeight: 250 }}>
-              <ResponsiveContainer width="100%" height={250}>
+          <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1467,15 +1524,25 @@ const StationDetail = () => {
                 {isEVC ? 'Primary Volume History' : 'Differential Pressure History'} - {deviceData.device_name}
               </span>
             </div>
-            <span className={`text-sm font-medium ${isEVC ? 'text-purple-600' : 'text-blue-600'}`}>
-              {isEVC
-                ? `${latest?.primary_volume != null ? latest.primary_volume.toFixed(1) : '-'} ft³`
-                : `${latest?.differential_pressure?.toFixed(2)} IWC`}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-medium ${isEVC ? 'text-purple-600' : 'text-blue-600'}`}>
+                {isEVC
+                  ? `${latest?.primary_volume != null ? latest.primary_volume.toFixed(1) : '-'} ft³`
+                  : `${latest?.differential_pressure?.toFixed(2)} IWC`}
+              </span>
+              <button
+                onClick={() => downloadChartScreenshot(`${isEVC ? 'primary-volume' : 'differential-pressure'}-${deviceData.device_name}`)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg transition-colors shadow-sm bg-gradient-to-r ${isEVC ? 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' : 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'}`}
+                title="Download as PNG"
+              >
+                <Camera className="w-4 h-4" />
+                Screenshot
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, minHeight: 250 }}>
-              <ResponsiveContainer width="100%" height={250}>
+          <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1534,11 +1601,21 @@ const StationDetail = () => {
               <Gauge className="w-5 h-5 text-green-500" />
               <span className="text-sm font-semibold text-gray-800">Pressure History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-green-600">{latest?.static_pressure?.toFixed(1)} PSI</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-green-600">{latest?.static_pressure?.toFixed(1)} PSI</span>
+              <button
+                onClick={() => downloadChartScreenshot(`pressure-${deviceData.device_name}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg transition-colors shadow-sm"
+                title="Download as PNG"
+              >
+                <Camera className="w-4 h-4" />
+                Screenshot
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, minHeight: 250 }}>
-              <ResponsiveContainer width="100%" height={250}>
+          <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1589,15 +1666,25 @@ const StationDetail = () => {
               <Droplets className="w-5 h-5 text-purple-500" />
               <span className="text-sm font-semibold text-gray-800">Volume History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-purple-600">
-              {isEVC
-                ? `${latest?.volume_ft3 != null ? latest.volume_ft3.toFixed(1) : '-'} ft³`
-                : `${latest?.volume?.toFixed(1)} MCF`}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-purple-600">
+                {isEVC
+                  ? `${latest?.volume_ft3 != null ? latest.volume_ft3.toFixed(1) : '-'} ft³`
+                  : `${latest?.volume?.toFixed(1)} MCF`}
+              </span>
+              <button
+                onClick={() => downloadChartScreenshot(`volume-${deviceData.device_name}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg transition-colors shadow-sm"
+                title="Download as PNG"
+              >
+                <Camera className="w-4 h-4" />
+                Screenshot
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, minHeight: 250 }}>
-              <ResponsiveContainer width="100%" height={250}>
+          <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1654,15 +1741,25 @@ const StationDetail = () => {
               <TrendingUp className="w-5 h-5 text-teal-500" />
               <span className="text-sm font-semibold text-gray-800">Flow Rate History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-teal-600">
-              {isEVC
-                ? `${latest?.total_volume_flow_ft3h != null ? latest.total_volume_flow_ft3h.toFixed(1) : '-'} ft³/h`
-                : `${latest?.total_volume_flow?.toFixed(1)} MCF/day`}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-teal-600">
+                {isEVC
+                  ? `${latest?.total_volume_flow_ft3h != null ? latest.total_volume_flow_ft3h.toFixed(1) : '-'} ft³/h`
+                  : `${latest?.total_volume_flow?.toFixed(1)} MCF/day`}
+              </span>
+              <button
+                onClick={() => downloadChartScreenshot(`flow-rate-${deviceData.device_name}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg transition-colors shadow-sm"
+                title="Download as PNG"
+              >
+                <Camera className="w-4 h-4" />
+                Screenshot
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, minHeight: 250 }}>
-              <ResponsiveContainer width="100%" height={250}>
+          <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1719,11 +1816,21 @@ const StationDetail = () => {
               <Battery className="w-5 h-5 text-yellow-500" />
               <span className="text-sm font-semibold text-gray-800">Battery Voltage History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-yellow-600">{batteryLevel.toFixed(2)}V</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-yellow-600">{batteryLevel.toFixed(2)}V</span>
+              <button
+                onClick={() => downloadChartScreenshot(`battery-${deviceData.device_name}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-lg transition-colors shadow-sm"
+                title="Download as PNG"
+              >
+                <Camera className="w-4 h-4" />
+                Screenshot
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, minHeight: 250 }}>
-              <ResponsiveContainer width="100%" height={250}>
+          <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 500)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -1749,8 +1856,8 @@ const StationDetail = () => {
                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                     labelFormatter={(value) => new Date(value).toLocaleString()}
                     formatter={(value: any) => {
-                      const batteryValue = value || 12.5;
-                      const status = batteryValue >= 12.5 ? 'Optimal' : batteryValue >= 11.8 ? 'Good' : batteryValue >= 11.0 ? 'Warning' : batteryValue >= 10.5 ? 'Low' : batteryValue >= 10.0 ? 'V.Low' : 'Critical';
+                      const batteryValue = value || 0;
+                      const status = getBatteryColor(batteryValue).status;
                       return [`${batteryValue.toFixed(2)}V (${status})`, 'Battery'];
                     }}
                   />
