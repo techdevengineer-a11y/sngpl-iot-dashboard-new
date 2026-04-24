@@ -293,7 +293,7 @@ async def update_device_name(
 
 class MeterInfoUpdate(BaseModel):
     meter_type: Optional[str] = Field(None, description="'FC' or 'EVC'")
-    units: Optional[str] = Field(None, description="'MCF', 'CF', or 'CM'")
+    units: Optional[str] = Field(None, max_length=16, description="Unit code (site-specific, e.g. MCF, CF, CM, CMS)")
 
     @field_validator("meter_type")
     @classmethod
@@ -308,11 +308,14 @@ class MeterInfoUpdate(BaseModel):
     @field_validator("units")
     @classmethod
     def validate_units(cls, v):
-        if v is None or v == "":
+        if v is None:
             return None
         v = v.strip().upper()
-        if v not in ("MCF", "CF", "CM"):
-            raise ValueError("units must be 'MCF', 'CF', or 'CM'")
+        if v == "":
+            return None
+        # Allow any short alphanumeric unit code (sites use MCF, CF, CM, CMS, m³, etc.)
+        if len(v) > 16:
+            raise ValueError("units must be 16 characters or fewer")
         return v
 
 
