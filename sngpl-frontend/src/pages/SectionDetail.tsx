@@ -543,9 +543,9 @@ const SectionDetail = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">#</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">{sectionId === 'II' ? 'SMS/Device' : 'Device'}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Meter Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Units</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     <div className="flex items-center gap-1">
                       <Thermometer className="w-3 h-3" />
@@ -639,6 +639,18 @@ const SectionDetail = () => {
                         </div>
                       </td>
 
+                      {/* Status */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          device.is_active
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          <Activity className="w-3 h-3" />
+                          {device.is_active ? 'Online' : 'Offline'}
+                        </span>
+                      </td>
+
                       {/* Meter Type */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
@@ -650,18 +662,6 @@ const SectionDetail = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
                           {getMeterInfo(device.client_id, deviceMeters).units || '-'}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          device.is_active
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          <Activity className="w-3 h-3" />
-                          {device.is_active ? 'Online' : 'Offline'}
                         </span>
                       </td>
 
