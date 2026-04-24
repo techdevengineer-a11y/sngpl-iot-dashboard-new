@@ -227,7 +227,7 @@ const StationDetail = () => {
           const battHist = sortedReadings.map((reading: any) => ({
             timestamp: new Date(reading.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
             voltage: reading.battery || 12.5,
-            color: (reading.battery || 12.5) >= 12.5 ? '#16a34a' : (reading.battery || 12.5) >= 11.8 ? '#eab308' : '#dc2626'
+            color: getBatteryColor(reading.battery || 12.5).color
           }));
           setBatteryHistory(battHist);
         } else {
@@ -296,7 +296,7 @@ const StationDetail = () => {
       battHist.push({
         timestamp: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         voltage: batteryLevel,
-        color: batteryLevel >= 12.5 ? '#16a34a' : batteryLevel >= 11.8 ? '#eab308' : '#dc2626'
+        color: getBatteryColor(batteryLevel).color
       });
     }
 
@@ -1193,15 +1193,14 @@ const StationDetail = () => {
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelFormatter={(value) => new Date(value).toLocaleString()}
                 formatter={(value: any) => {
-                  const status = value >= 12.5 ? 'Good' : value >= 11.8 ? 'Medium' : 'Low';
+                  const status = getBatteryColor(value || 0).status;
                   return [`${value?.toFixed(2) || '0'}V (${status})`, 'Battery'];
                 }}
               />
               <Bar dataKey="battery" radius={[4, 4, 0, 0]}>
                 {filterDataByDateRange(batteryStartDate, batteryEndDate, 20).map((entry: any, index: number) => {
                   const batteryValue = entry.battery || 12.5;
-                  const color = batteryValue >= 12.5 ? '#16a34a' : batteryValue >= 11.8 ? '#eab308' : '#dc2626';
-                  return <Cell key={`cell-${index}`} fill={color} />;
+                  return <Cell key={`cell-${index}`} fill={getBatteryColor(batteryValue).color} />;
                 })}
               </Bar>
             </BarChart>
