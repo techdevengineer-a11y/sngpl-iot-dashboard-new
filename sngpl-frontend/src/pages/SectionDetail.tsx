@@ -532,6 +532,8 @@ const SectionDetail = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">#</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">{sectionId === 'II' ? 'SMS/Device' : 'Device'}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Meter Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Units</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     <div className="flex items-center gap-1">
@@ -624,6 +626,16 @@ const SectionDetail = () => {
                             </div>
                           )}
                         </div>
+                      </td>
+
+                      {/* Meter Type */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">-</span>
+                      </td>
+
+                      {/* Units */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">-</span>
                       </td>
 
                       {/* Status */}
