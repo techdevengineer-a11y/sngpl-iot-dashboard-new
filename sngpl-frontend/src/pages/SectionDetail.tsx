@@ -16,6 +16,11 @@ interface DeviceReading {
   volume: number;
   total_volume_flow: number;
   battery?: number;
+  // EVC-only (ft3)
+  volume_ft3?: number | null;
+  total_volume_flow_ft3h?: number | null;
+  last_hour_volume_ft3?: number | null;
+  primary_volume?: number | null;
 }
 
 interface Device {
@@ -29,6 +34,8 @@ interface Device {
   latitude: number | null;
   longitude: number | null;
   section_id: number | null;
+  meter_type?: string | null;
+  units?: string | null;
   is_active: boolean;
   last_seen: string | null;
   latest_reading: DeviceReading | null;
@@ -578,14 +585,20 @@ const SectionDetail = () => {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     <div className="flex items-center gap-1">
+                      <Droplets className="w-3 h-3 text-purple-600" />
+                      Primary Volume (ft³)
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <div className="flex items-center gap-1">
                       <Droplets className="w-3 h-3" />
-                      Volume (MCF)
+                      Volume
                     </div>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" />
-                      Flow (MCF/d)
+                      Flow
                     </div>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
@@ -654,14 +667,14 @@ const SectionDetail = () => {
                       {/* Meter Type */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
-                          {getMeterInfo(device.client_id, deviceMeters).meter_type || '-'}
+                          {getMeterInfo(device.client_id, deviceMeters, device as any).meter_type || '-'}
                         </span>
                       </td>
 
                       {/* Units */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
-                          {getMeterInfo(device.client_id, deviceMeters).units || '-'}
+                          {getMeterInfo(device.client_id, deviceMeters, device as any).units || '-'}
                         </span>
                       </td>
 
@@ -697,24 +710,49 @@ const SectionDetail = () => {
                         </span>
                       </td>
 
-                      {/* Differential Pressure */}
+                      {/* Differential Pressure — FC only */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
-                          {device.latest_reading?.differential_pressure?.toFixed(1) || '-'}
+                          {getMeterInfo(device.client_id, deviceMeters, device as any).meter_type === 'EVC'
+                            ? '-'
+                            : (device.latest_reading?.differential_pressure?.toFixed(1) || '-')}
                         </span>
                       </td>
 
-                      {/* Volume (MCF) */}
+                      {/* Primary Volume — EVC only */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
-                          {device.latest_reading?.volume?.toFixed(1) || '-'}
+                        <span className="text-sm font-medium text-purple-700">
+                          {getMeterInfo(device.client_id, deviceMeters, device as any).meter_type === 'EVC'
+                            ? (device.latest_reading?.primary_volume != null
+                                ? `${device.latest_reading.primary_volume.toFixed(1)} ft³`
+                                : '-')
+                            : '-'}
                         </span>
                       </td>
 
-                      {/* Total Volume Flow */}
+                      {/* Volume — ft³ for EVC, MCF for FC */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">
+                          {getMeterInfo(device.client_id, deviceMeters, device as any).meter_type === 'EVC'
+                            ? (device.latest_reading?.volume_ft3 != null
+                                ? `${device.latest_reading.volume_ft3.toFixed(1)} ft³`
+                                : '-')
+                            : (device.latest_reading?.volume != null
+                                ? `${device.latest_reading.volume.toFixed(1)} MCF`
+                                : '-')}
+                        </span>
+                      </td>
+
+                      {/* Total Volume Flow — ft³/h for EVC, MCF/d for FC */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm font-medium text-cyan-700">
-                          {device.latest_reading?.total_volume_flow?.toFixed(1) || '-'}
+                          {getMeterInfo(device.client_id, deviceMeters, device as any).meter_type === 'EVC'
+                            ? (device.latest_reading?.total_volume_flow_ft3h != null
+                                ? `${device.latest_reading.total_volume_flow_ft3h.toFixed(1)} ft³/h`
+                                : '-')
+                            : (device.latest_reading?.total_volume_flow != null
+                                ? `${device.latest_reading.total_volume_flow.toFixed(1)} MCF/d`
+                                : '-')}
                         </span>
                       </td>
 

@@ -61,6 +61,11 @@ class LatestReading(BaseModel):
     battery: Optional[float] = None
     volume: Optional[float] = None
     total_volume_flow: Optional[float] = None
+    # EVC-only (ft3) fields
+    volume_ft3: Optional[float] = None
+    total_volume_flow_ft3h: Optional[float] = None
+    last_hour_volume_ft3: Optional[float] = None
+    primary_volume: Optional[float] = None
     timestamp: Optional[datetime] = None
 
     class Config:
@@ -76,6 +81,8 @@ class DeviceResponse(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     serial_number: Optional[str] = None
+    meter_type: Optional[str] = None   # 'FC' | 'EVC'
+    units: Optional[str] = None        # 'MCF' | 'CF' | 'CM'
     is_active: bool
     last_seen: Optional[datetime] = None
     latest_reading: Optional[LatestReading] = None
@@ -152,6 +159,8 @@ async def get_devices(db: Session = Depends(get_db)):
             "latitude": device.latitude,
             "longitude": device.longitude,
             "serial_number": device.serial_number,
+            "meter_type": device.meter_type,
+            "units": device.units,
             "is_active": device.is_active,
             "last_seen": device.last_seen,
             "section_id": section_id,
@@ -169,6 +178,10 @@ async def get_devices(db: Session = Depends(get_db)):
                 "battery": latest_reading.battery,
                 "volume": latest_reading.volume,
                 "total_volume_flow": latest_reading.total_volume_flow,
+                "volume_ft3": latest_reading.volume_ft3,
+                "total_volume_flow_ft3h": latest_reading.total_volume_flow_ft3h,
+                "last_hour_volume_ft3": latest_reading.last_hour_volume_ft3,
+                "primary_volume": latest_reading.primary_volume,
                 "timestamp": latest_reading.timestamp
             }
 
@@ -276,6 +289,87 @@ async def update_device_name(
     )
 
     return device
+
+
+class MeterInfoUpdate(BaseModel):
+    meter_type: Optional[str] = Field(None, description="'FC' or 'EVC'")
+    units: Optional[str] = Field(None, description="'MCF', 'CF', or 'CM'")
+
+    @field_validator("meter_type")
+    @classmethod
+    def validate_meter_type(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip().upper()
+        if v not in ("FC", "EVC"):
+            raise ValueError("meter_type must be 'FC' or 'EVC'")
+        return v
+
+    @field_validator("units")
+    @classmethod
+    def validate_units(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip().upper()
+        if v not in ("MCF", "CF", "CM"):
+            raise ValueError("units must be 'MCF', 'CF', or 'CM'")
+        return v
+
+
+@router.patch("/{client_id}/meter", response_model=DeviceResponse)
+async def update_device_meter(
+    client_id: str,
+    payload: MeterInfoUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a device's meter_type and/or units (authoritative source)."""
+    device = db.query(Device).filter(Device.client_id == client_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    changed = {}
+    if payload.meter_type is not None:
+        device.meter_type = payload.meter_type
+        changed["meter_type"] = payload.meter_type
+    if payload.units is not None:
+        device.units = payload.units
+        changed["units"] = payload.units
+
+    db.commit()
+    db.refresh(device)
+
+    audit_service.log_from_request(
+        db=db, request=request,
+        action="UPDATE", resource_type="device",
+        user=current_user, resource_id=device.id,
+        details={"client_id": client_id, **changed, "field": "meter"},
+        status="success"
+    )
+
+    # Re-attach section_id derivation for response consistency
+    section_id = None
+    if device.client_id and device.client_id.startswith("SMS-"):
+        parts = device.client_id.split("-")
+        if len(parts) >= 2:
+            section_id = parts[1]
+    return DeviceResponse(
+        id=device.id,
+        client_id=device.client_id,
+        device_name=device.device_name,
+        device_type=device.device_type,
+        location=device.location,
+        latitude=device.latitude,
+        longitude=device.longitude,
+        serial_number=device.serial_number,
+        meter_type=device.meter_type,
+        units=device.units,
+        is_active=device.is_active,
+        last_seen=device.last_seen,
+        latest_reading=None,
+        section_id=section_id,
+    )
 
 
 @router.delete("/{client_id}")

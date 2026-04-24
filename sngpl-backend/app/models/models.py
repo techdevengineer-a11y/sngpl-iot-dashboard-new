@@ -56,6 +56,9 @@ class Device(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     serial_number = Column(String, unique=True, index=True, nullable=True)
+    # Meter classification — FC (flow computer, MCF) or EVC (electronic volume corrector, ft3/m3)
+    meter_type = Column(String, nullable=True, index=True)  # 'FC' | 'EVC'
+    units = Column(String, nullable=True)                   # 'MCF' | 'CF' | 'CM'
     is_active = Column(Boolean, default=True, index=True)
     last_seen = Column(DateTime(timezone=True), index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -96,6 +99,12 @@ class DeviceReading(Base):
     last_hour_volume = Column(Float)  # T112 - Last Hour Volume
     last_hour_energy = Column(Float)  # T113 - Last Hour Energy
     specific_gravity = Column(Float)  # T114 - Specific Gravity In Use
+
+    # EVC-only fields (ft3), populated when payload uses E-prefix addresses
+    volume_ft3 = Column(Float)               # E14 - Volume (ft3)
+    total_volume_flow_ft3h = Column(Float)   # E13 - Total Volume Flow (ft3/h)
+    last_hour_volume_ft3 = Column(Float)     # E112 - Last Hour Volume (ft3)
+    primary_volume = Column(Float)           # E115 - Primary Volume (ft3, EVC only)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

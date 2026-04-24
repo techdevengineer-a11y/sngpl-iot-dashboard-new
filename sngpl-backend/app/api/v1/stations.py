@@ -237,6 +237,8 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
             'location': device.location,
             'latitude': device.latitude,
             'longitude': device.longitude,
+            'meter_type': device.meter_type,
+            'units': device.units,
             'is_active': device.is_active,
             'last_seen': device.last_seen.isoformat() if device.last_seen else None,
         }
@@ -260,7 +262,12 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
                 'last_hour_temperature': latest_reading.last_hour_temperature,
                 'last_hour_volume': latest_reading.last_hour_volume,
                 'last_hour_energy': latest_reading.last_hour_energy,
-                'specific_gravity': latest_reading.specific_gravity
+                'specific_gravity': latest_reading.specific_gravity,
+                # EVC-only (ft3) fields
+                'volume_ft3': latest_reading.volume_ft3,
+                'total_volume_flow_ft3h': latest_reading.total_volume_flow_ft3h,
+                'last_hour_volume_ft3': latest_reading.last_hour_volume_ft3,
+                'primary_volume': latest_reading.primary_volume,
             }
         else:
             device_data['latest_reading'] = None

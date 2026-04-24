@@ -36,6 +36,11 @@ class ReadingResponse(BaseModel):
     last_hour_volume: Optional[float] = None
     last_hour_energy: Optional[float] = None
     specific_gravity: Optional[float] = None
+    # EVC-only (ft3)
+    volume_ft3: Optional[float] = None
+    total_volume_flow_ft3h: Optional[float] = None
+    last_hour_volume_ft3: Optional[float] = None
+    primary_volume: Optional[float] = None
     timestamp: datetime
 
     class Config:
@@ -64,6 +69,10 @@ class ReadingResponse(BaseModel):
             "last_hour_volume": obj.last_hour_volume if obj.last_hour_volume is not None else 0,
             "last_hour_energy": obj.last_hour_energy if obj.last_hour_energy is not None else 0,
             "specific_gravity": obj.specific_gravity if obj.specific_gravity is not None else 0,
+            "volume_ft3": obj.volume_ft3,
+            "total_volume_flow_ft3h": obj.total_volume_flow_ft3h,
+            "last_hour_volume_ft3": obj.last_hour_volume_ft3,
+            "primary_volume": obj.primary_volume,
             "timestamp": obj.timestamp
         }
         return ReadingResponse(**data)

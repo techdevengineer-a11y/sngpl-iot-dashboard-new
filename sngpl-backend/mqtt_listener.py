@@ -127,6 +127,8 @@ class StandaloneMQTTListener:
             "sg": "T114",                   # Specific Gravity
             "specific_gravity": "T114",
             "gravity": "T114",
+            "pv": "E115",                   # Primary Volume (EVC only, ft3)
+            "primary_volume": "E115",
         }
 
         content = []
@@ -327,25 +329,38 @@ class StandaloneMQTTListener:
                 print(f"⚠️  [DUPLICATE] Skipped duplicate reading for {client_id} at {current_timestamp}")
                 return
 
+            # E-prefix (EVC) addresses share shared-column values with T-prefix fallback.
+            # MCF fields (T13/T14/T112) only populate from T-prefix; EVC values go to *_ft3 columns.
+            def pick(*keys):
+                for k in keys:
+                    v = sensor_data.get(k)
+                    if v is not None:
+                        return v
+                return 0.0
+
             reading = DeviceReading(
                 device_id=device.id,
                 client_id=client_id,
-                temperature=sensor_data.get("T12", 0.0),
-                static_pressure=sensor_data.get("T11", 0.0),
-                max_static_pressure=sensor_data.get("T16", 0.0),    # T16 = Max Static Pressure
-                min_static_pressure=sensor_data.get("T17", 0.0),    # T17 = Min Static Pressure
-                differential_pressure=sensor_data.get("T10", 0.0),
-                volume=sensor_data.get("T14", 0.0),                 # T14 = Volume (MCF)
-                total_volume_flow=sensor_data.get("T13", 0.0),     # T13 = Total Volume Flow (MCF/day)
-                battery=sensor_data.get("T15", 0.0),                # T15 = Battery (V)
-                # New analytics parameters
-                last_hour_flow_time=sensor_data.get("T18", 0.0),           # T18 - Last Hour Flow Time
-                last_hour_diff_pressure=sensor_data.get("T19", 0.0),       # T19 - Last Hour Differential Pressure
-                last_hour_static_pressure=sensor_data.get("T110", 0.0),    # T110 - Last Hour Static Pressure
-                last_hour_temperature=sensor_data.get("T111", 0.0),        # T111 - Last Hour Temperature
-                last_hour_volume=sensor_data.get("T112", 0.0),             # T112 - Last Hour Volume
-                last_hour_energy=sensor_data.get("T113", 0.0),             # T113 - Last Hour Energy
-                specific_gravity=sensor_data.get("T114", 0.0),             # T114 - Specific Gravity In Use
+                temperature=pick("T12", "E12"),
+                static_pressure=pick("T11", "E11"),
+                max_static_pressure=pick("T16", "E16"),
+                min_static_pressure=pick("T17", "E17"),
+                differential_pressure=pick("T10", "E10"),
+                volume=sensor_data.get("T14", 0.0),                        # FC only (MCF)
+                total_volume_flow=sensor_data.get("T13", 0.0),             # FC only (MCF/day)
+                battery=pick("T15", "E15"),
+                last_hour_flow_time=pick("T18", "E18"),
+                last_hour_diff_pressure=pick("T19", "E19"),
+                last_hour_static_pressure=pick("T110", "E110"),
+                last_hour_temperature=pick("T111", "E111"),
+                last_hour_volume=sensor_data.get("T112", 0.0),             # FC only (MCF)
+                last_hour_energy=pick("T113", "E113"),
+                specific_gravity=pick("T114", "E114"),
+                # EVC-only (ft3) fields
+                volume_ft3=sensor_data.get("E14"),
+                total_volume_flow_ft3h=sensor_data.get("E13"),
+                last_hour_volume_ft3=sensor_data.get("E112"),
+                primary_volume=sensor_data.get("E115"),
                 timestamp=current_timestamp
             )
             db.add(reading)
@@ -358,15 +373,23 @@ class StandaloneMQTTListener:
 
             db.commit()
 
-            # Print to console and log
+            # Print to console and log (show ft3 fields when EVC payload supplied them)
+            is_evc = reading.volume_ft3 is not None or reading.primary_volume is not None
+            if is_evc:
+                vol_str = f"Volume: {(reading.volume_ft3 or 0):.1f} ft3"
+                flow_str = f"Volume Flow: {(reading.total_volume_flow_ft3h or 0):.1f} ft3/h"
+                pv_str = f" | Primary Volume: {(reading.primary_volume or 0):.1f} ft3"
+            else:
+                vol_str = f"Volume: {reading.volume:.1f} MCF"
+                flow_str = f"Volume Flow: {reading.total_volume_flow:.1f} MCF/day"
+                pv_str = ""
             save_message = (
                 f"[DATABASE] Saved reading for {client_id} | "
                 f"Temp: {reading.temperature:.1f}°F | "
                 f"Pressure: {reading.static_pressure:.1f} PSI (Max: {reading.max_static_pressure:.1f}, Min: {reading.min_static_pressure:.1f}) | "
                 f"Diff Pressure: {reading.differential_pressure:.1f} IWC | "
                 f"Battery: {reading.battery:.2f}V | "
-                f"Volume: {reading.volume:.1f} MCF | "
-                f"Volume Flow: {reading.total_volume_flow:.1f} MCF/day"
+                f"{vol_str} | {flow_str}{pv_str}"
             )
             print(f"[OK] {save_message}")
             logger.info(save_message)

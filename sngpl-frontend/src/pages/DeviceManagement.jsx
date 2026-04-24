@@ -30,7 +30,8 @@ const DeviceManagement = () => {
     }
   }, []);
 
-  const saveMeterInfo = (clientId, field, value) => {
+  const saveMeterInfo = async (clientId, field, value) => {
+    // Optimistic cache update (so UI switches instantly)
     setDeviceMeters(prev => {
       const updated = {
         ...prev,
@@ -39,6 +40,17 @@ const DeviceManagement = () => {
       localStorage.setItem('device_meters', JSON.stringify(updated));
       return updated;
     });
+
+    // Persist to backend (authoritative)
+    try {
+      await api.patch(`/devices/${clientId}/meter`, { [field]: value });
+      setDevices(prev => prev.map(d =>
+        d.client_id === clientId ? { ...d, [field]: value } : d
+      ));
+    } catch (err) {
+      console.error(`Failed to save ${field} for ${clientId}:`, err);
+      toast.error(`Failed to save ${field}. It may revert on refresh.`);
+    }
   };
 
   const sections = [
@@ -480,14 +492,14 @@ const DeviceManagement = () => {
                           {isEditing ? (
                             <input
                               type="text"
-                              value={getMeterInfo(device.client_id, deviceMeters).meter_type}
+                              value={getMeterInfo(device.client_id, deviceMeters, device).meter_type}
                               onChange={(e) => saveMeterInfo(device.client_id, 'meter_type', e.target.value)}
                               placeholder="EVC or FC"
                               className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
-                          ) : getMeterInfo(device.client_id, deviceMeters).meter_type ? (
+                          ) : getMeterInfo(device.client_id, deviceMeters, device).meter_type ? (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                              {getMeterInfo(device.client_id, deviceMeters).meter_type}
+                              {getMeterInfo(device.client_id, deviceMeters, device).meter_type}
                             </span>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
@@ -497,14 +509,14 @@ const DeviceManagement = () => {
                           {isEditing ? (
                             <input
                               type="text"
-                              value={getMeterInfo(device.client_id, deviceMeters).units}
+                              value={getMeterInfo(device.client_id, deviceMeters, device).units}
                               onChange={(e) => saveMeterInfo(device.client_id, 'units', e.target.value)}
                               placeholder="CF, CM, MCF"
                               className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
-                          ) : getMeterInfo(device.client_id, deviceMeters).units ? (
+                          ) : getMeterInfo(device.client_id, deviceMeters, device).units ? (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
-                              {getMeterInfo(device.client_id, deviceMeters).units}
+                              {getMeterInfo(device.client_id, deviceMeters, device).units}
                             </span>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>

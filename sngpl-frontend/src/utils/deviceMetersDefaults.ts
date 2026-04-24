@@ -79,12 +79,15 @@ export const DEFAULT_DEVICE_METERS: Record<string, MeterInfo> = {
 
 export const getMeterInfo = (
   clientId: string,
-  overrides: Record<string, { meter_type?: string; units?: string }>
+  overrides: Record<string, { meter_type?: string; units?: string }>,
+  serverDevice?: { meter_type?: string | null; units?: string | null } | null
 ): MeterInfo => {
+  // Priority: backend DB (source of truth) > localStorage override > hardcoded defaults
+  const server = serverDevice || undefined;
   const override = overrides[clientId];
   const defaults = DEFAULT_DEVICE_METERS[clientId];
   return {
-    meter_type: override?.meter_type ?? defaults?.meter_type ?? '',
-    units: override?.units ?? defaults?.units ?? '',
+    meter_type: server?.meter_type ?? override?.meter_type ?? defaults?.meter_type ?? '',
+    units: server?.units ?? override?.units ?? defaults?.units ?? '',
   };
 };

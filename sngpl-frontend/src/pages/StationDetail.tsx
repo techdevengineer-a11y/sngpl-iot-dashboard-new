@@ -18,6 +18,7 @@ import {
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
+import { getMeterInfo } from '../utils/deviceMetersDefaults';
 
 interface DeviceReading {
   timestamp: string;
@@ -29,6 +30,11 @@ interface DeviceReading {
   volume: number;
   total_volume_flow: number;
   battery?: number;
+  // EVC-only (ft3)
+  volume_ft3?: number | null;
+  total_volume_flow_ft3h?: number | null;
+  last_hour_volume_ft3?: number | null;
+  primary_volume?: number | null;
 }
 
 interface Device {
@@ -36,6 +42,8 @@ interface Device {
   client_id: string;
   device_name: string;
   location: string;
+  meter_type?: string | null;
+  units?: string | null;
   is_active: boolean;
   last_seen: string | null;
   latest_reading: DeviceReading | null;
@@ -78,6 +86,20 @@ const StationDetail = () => {
   const [historyData, setHistoryData] = useState<DeviceReading[]>([]);
   const [latestReading, setLatestReading] = useState<DeviceReading | null>(null);
   const [batteryHistory, setBatteryHistory] = useState<any[]>([]);
+  const [deviceMeters, setDeviceMeters] = useState<Record<string, { meter_type?: string; units?: string }>>({});
+
+  useEffect(() => {
+    const meters = localStorage.getItem('device_meters');
+    if (meters) {
+      try { setDeviceMeters(JSON.parse(meters)); } catch {}
+    }
+  }, []);
+
+  const isEVC = deviceData?.client_id
+    ? getMeterInfo(deviceData.client_id, deviceMeters, deviceData as any).meter_type === 'EVC'
+    : false;
+  const volUnit = isEVC ? 'ft³' : 'MCF';
+  const flowUnit = isEVC ? 'ft³/h' : 'MCF/day';
 
   // Custom date range states for each parameter
   const getDefaultStartDate = () => {
@@ -338,7 +360,9 @@ const StationDetail = () => {
 
   // Export history logs to CSV
   const exportHistoryLogs = () => {
-    const headers = ['#', 'Timestamp', 'Temperature (°F)', 'Static P (PSI)', 'Diff P (IWC)', 'Volume (MCF)', 'Flow (MCF/day)', 'Battery (%)'];
+    const headers = isEVC
+      ? ['#', 'Timestamp', 'Temperature (°F)', 'Static P (PSI)', 'Primary Volume (ft³)', 'Volume (ft³)', 'Flow (ft³/h)', 'Battery (V)']
+      : ['#', 'Timestamp', 'Temperature (°F)', 'Static P (PSI)', 'Diff P (IWC)', 'Volume (MCF)', 'Flow (MCF/day)', 'Battery (V)'];
     const csvContent = [
       headers.join(','),
       ...historyData.map((reading, index) => [
@@ -346,10 +370,16 @@ const StationDetail = () => {
         formatTimestamp(reading.timestamp),
         reading.temperature.toFixed(1),
         reading.static_pressure.toFixed(1),
-        reading.differential_pressure.toFixed(2),
-        reading.volume.toFixed(1),
-        reading.total_volume_flow.toFixed(1),
-        reading.battery?.toFixed(0) || '-'
+        isEVC
+          ? (reading.primary_volume != null ? reading.primary_volume.toFixed(1) : '-')
+          : reading.differential_pressure.toFixed(2),
+        isEVC
+          ? (reading.volume_ft3 != null ? reading.volume_ft3.toFixed(1) : '-')
+          : reading.volume.toFixed(1),
+        isEVC
+          ? (reading.total_volume_flow_ft3h != null ? reading.total_volume_flow_ft3h.toFixed(1) : '-')
+          : reading.total_volume_flow.toFixed(1),
+        reading.battery?.toFixed(2) || '-'
       ].join(','))
     ].join('\n');
 
@@ -643,36 +673,56 @@ const StationDetail = () => {
             </div>
           </motion.div>
 
-          {/* Differential Pressure */}
-          <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm text-gray-600">Differential Pressure</p>
-                <p className="text-xs text-gray-500">IWC</p>
+          {/* Differential Pressure (FC) or Primary Volume (EVC) */}
+          {isEVC ? (
+            <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm text-gray-600">Primary Volume</p>
+                  <p className="text-xs text-gray-500">ft³</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Droplets className="w-6 h-6 text-purple-600" />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Wind className="w-6 h-6 text-blue-600" />
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-gray-900">
+                  {latest?.primary_volume != null ? latest.primary_volume.toFixed(1) : '-'}
+                </span>
+                <span className="text-sm text-gray-500">ft³</span>
               </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-900">
-                {latest?.differential_pressure?.toFixed(2) || '0.00'}
-              </span>
-              <span className="text-sm text-gray-500">IWC</span>
-            </div>
-            <div className="mt-2">
-              <span className={`text-xs font-medium ${getDifferentialPressureColor(latest?.differential_pressure || 0).text}`}>
-                {getDifferentialPressureColor(latest?.differential_pressure || 0).status}
-              </span>
-            </div>
-          </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm text-gray-600">Differential Pressure</p>
+                  <p className="text-xs text-gray-500">IWC</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Wind className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-gray-900">
+                  {latest?.differential_pressure?.toFixed(2) || '0.00'}
+                </span>
+                <span className="text-sm text-gray-500">IWC</span>
+              </div>
+              <div className="mt-2">
+                <span className={`text-xs font-medium ${getDifferentialPressureColor(latest?.differential_pressure || 0).text}`}>
+                  {getDifferentialPressureColor(latest?.differential_pressure || 0).status}
+                </span>
+              </div>
+            </motion.div>
+          )}
 
           {/* Volume */}
           <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-xl p-6">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-sm text-gray-600">Volume</p>
-                <p className="text-xs text-gray-500">MCF</p>
+                <p className="text-xs text-gray-500">{volUnit}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                 <Droplets className="w-6 h-6 text-purple-600" />
@@ -680,9 +730,11 @@ const StationDetail = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.volume?.toFixed(1) || '0.0'}
+                {isEVC
+                  ? (latest?.volume_ft3 != null ? latest.volume_ft3.toFixed(1) : '-')
+                  : (latest?.volume?.toFixed(1) || '0.0')}
               </span>
-              <span className="text-sm text-gray-500">MCF</span>
+              <span className="text-sm text-gray-500">{volUnit}</span>
             </div>
             {hasAlarm('volume') && (
               <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
@@ -697,7 +749,7 @@ const StationDetail = () => {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-sm text-gray-600">Total Volume Flow</p>
-                <p className="text-xs text-gray-500">MCF/day</p>
+                <p className="text-xs text-gray-500">{flowUnit}</p>
               </div>
               <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-cyan-600" />
@@ -705,9 +757,11 @@ const StationDetail = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {latest?.total_volume_flow?.toFixed(1) || '0.0'}
+                {isEVC
+                  ? (latest?.total_volume_flow_ft3h != null ? latest.total_volume_flow_ft3h.toFixed(1) : '-')
+                  : (latest?.total_volume_flow?.toFixed(1) || '0.0')}
               </span>
-              <span className="text-sm text-gray-500">MCF/day</span>
+              <span className="text-sm text-gray-500">{flowUnit}</span>
             </div>
             {hasAlarm('total_volume_flow') && (
               <div className="mt-3 flex items-center gap-2 text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg">
@@ -891,7 +945,51 @@ const StationDetail = () => {
             </div>
           </div>
 
-          {/* Differential Pressure Chart */}
+          {/* Diff Pressure (FC) or Primary Volume (EVC) Chart */}
+          {isEVC ? (
+            <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Droplets className="w-5 h-5 text-purple-600" />
+                  Primary Volume History
+                </h3>
+                <button
+                  onClick={() => setIsDiffPFullscreen(true)}
+                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                  title="Fullscreen"
+                >
+                  <Maximize2 className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 20)}>
+                  <defs>
+                    <linearGradient id="colorPrimaryVol" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      const diffDays = (new Date(diffPEndDate).getTime() - new Date(diffPStartDate).getTime()) / (1000 * 60 * 60 * 24); return diffDays > 2 ? `${date.getMonth()+1}/${date.getDate()}` : `${date.getHours()}:00`;
+                    }}
+                    stroke="#9ca3af"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: any) => [`${value?.toFixed(1)} ft³`, 'Primary Volume']}
+                  />
+                  <Area type="monotone" dataKey="primary_volume" stroke="#a855f7" strokeWidth={2} fill="url(#colorPrimaryVol)" dot={{ fill: '#a855f7', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
           <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -956,6 +1054,7 @@ const StationDetail = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Volume Chart */}
           <div className="glass rounded-xl p-6" style={{ position: 'relative', overflow: 'visible' }}>
@@ -990,17 +1089,18 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 20), 'volume', 5)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 20), isEVC ? 'volume_ft3' : 'volume', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => {
+                    if (isEVC) return [`${value?.toFixed(1)} ft³`, 'Volume'];
                     const color = getValueColor(value, 'volume');
                     const status = color === '#16a34a' ? 'Normal' : color === '#eab308' ? 'Warning' : 'Danger';
                     return [`${value.toFixed(1)} MCF (${status})`, 'Volume'];
                   }}
                 />
-                <Area type="monotone" dataKey="volume" stroke="#16a34a" strokeWidth={2} fill="url(#colorVolumeGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                <Area type="monotone" dataKey={isEVC ? 'volume_ft3' : 'volume'} stroke="#16a34a" strokeWidth={2} fill="url(#colorVolumeGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -1038,17 +1138,18 @@ const StationDetail = () => {
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 20), 'total_volume_flow', 5)} />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 20), isEVC ? 'total_volume_flow_ft3h' : 'total_volume_flow', 5)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
                   formatter={(value: any) => {
+                    if (isEVC) return [`${value?.toFixed(1)} ft³/h`, 'Flow'];
                     const color = getValueColor(value, 'flow');
                     const status = color === '#16a34a' ? 'Normal' : color === '#eab308' ? 'Warning' : 'Danger';
                     return [`${value.toFixed(1)} MCF/day (${status})`, 'Flow'];
                   }}
                 />
-                <Area type="monotone" dataKey="total_volume_flow" stroke="#16a34a" strokeWidth={2} fill="url(#colorFlowGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                <Area type="monotone" dataKey={isEVC ? 'total_volume_flow_ft3h' : 'total_volume_flow'} stroke="#16a34a" strokeWidth={2} fill="url(#colorFlowGreen)" dot={{ fill: '#16a34a', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -1152,9 +1253,9 @@ const StationDetail = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Static P (PSI)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Max P (PSI)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Min P (PSI)</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Diff P (IWC)</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Volume (MCF)</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Flow (MCF/day)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">{isEVC ? 'Primary Volume (ft³)' : 'Diff P (IWC)'}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">{isEVC ? 'Volume (ft³)' : 'Volume (MCF)'}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">{isEVC ? 'Flow (ft³/h)' : 'Flow (MCF/day)'}</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Battery (V)</th>
                 </tr>
               </thead>
@@ -1188,15 +1289,29 @@ const StationDetail = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`text-sm font-medium ${getDifferentialPressureColor(reading.differential_pressure).text}`}>
-                        {reading.differential_pressure.toFixed(2)}
+                      {isEVC ? (
+                        <span className="text-sm font-medium text-purple-700">
+                          {reading.primary_volume != null ? reading.primary_volume.toFixed(1) : '-'}
+                        </span>
+                      ) : (
+                        <span className={`text-sm font-medium ${getDifferentialPressureColor(reading.differential_pressure).text}`}>
+                          {reading.differential_pressure.toFixed(2)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">
+                        {isEVC
+                          ? (reading.volume_ft3 != null ? reading.volume_ft3.toFixed(1) : '-')
+                          : reading.volume.toFixed(1)}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{reading.volume.toFixed(1)}</span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm font-medium text-cyan-700">{reading.total_volume_flow.toFixed(1)}</span>
+                      <span className="text-sm font-medium text-cyan-700">
+                        {isEVC
+                          ? (reading.total_volume_flow_ft3h != null ? reading.total_volume_flow_ft3h.toFixed(1) : '-')
+                          : reading.total_volume_flow.toFixed(1)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-sm font-medium ${getBatteryColor(reading.battery || 0).text}`}>
@@ -1348,10 +1463,16 @@ const StationDetail = () => {
               Back
             </button>
             <div className="flex items-center gap-2">
-              <Wind className="w-5 h-5 text-blue-500" />
-              <span className="text-sm font-semibold text-gray-800">Differential Pressure History - {deviceData.device_name}</span>
+              {isEVC ? <Droplets className="w-5 h-5 text-purple-500" /> : <Wind className="w-5 h-5 text-blue-500" />}
+              <span className="text-sm font-semibold text-gray-800">
+                {isEVC ? 'Primary Volume History' : 'Differential Pressure History'} - {deviceData.device_name}
+              </span>
             </div>
-            <span className="text-sm font-medium text-blue-600">{latest?.differential_pressure?.toFixed(2)} IWC</span>
+            <span className={`text-sm font-medium ${isEVC ? 'text-purple-600' : 'text-blue-600'}`}>
+              {isEVC
+                ? `${latest?.primary_volume != null ? latest.primary_volume.toFixed(1) : '-'} ft³`
+                : `${latest?.differential_pressure?.toFixed(2)} IWC`}
+            </span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
             <div style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, minHeight: 250 }}>
@@ -1374,20 +1495,22 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 500), 'differential_pressure', 20)}
-                    label={{ value: 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    domain={isEVC ? ['auto', 'auto'] : calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 500), 'differential_pressure', 20)}
+                    label={{ value: isEVC ? 'Primary Volume (ft³)' : 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                     labelFormatter={(value) => new Date(value).toLocaleString()}
-                    formatter={(value: any) => [`${value.toFixed(2)} IWC`, 'Differential Pressure']}
+                    formatter={(value: any) => isEVC
+                      ? [`${value?.toFixed(1)} ft³`, 'Primary Volume']
+                      : [`${value.toFixed(2)} IWC`, 'Differential Pressure']}
                   />
                   <Line
                     type="monotone"
-                    dataKey="differential_pressure"
-                    stroke="#dc2626"
+                    dataKey={isEVC ? 'primary_volume' : 'differential_pressure'}
+                    stroke={isEVC ? '#a855f7' : '#dc2626'}
                     strokeWidth={2}
-                    dot={{ fill: '#dc2626', r: 3 }}
+                    dot={{ fill: isEVC ? '#a855f7' : '#dc2626', r: 3 }}
                     activeDot={{ r: 5 }}
                   />
                 </LineChart>
@@ -1467,7 +1590,11 @@ const StationDetail = () => {
               <Droplets className="w-5 h-5 text-purple-500" />
               <span className="text-sm font-semibold text-gray-800">Volume History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-purple-600">{latest?.volume?.toFixed(1)} MCF</span>
+            <span className="text-sm font-medium text-purple-600">
+              {isEVC
+                ? `${latest?.volume_ft3 != null ? latest.volume_ft3.toFixed(1) : '-'} ft³`
+                : `${latest?.volume?.toFixed(1)} MCF`}
+            </span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
             <div style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, minHeight: 250 }}>
@@ -1490,17 +1617,17 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 500), 'volume', 5)}
-                    label={{ value: 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 500), isEVC ? 'volume_ft3' : 'volume', 5)}
+                    label={{ value: isEVC ? 'Volume (ft³)' : 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
                     labelFormatter={(value) => new Date(value).toLocaleString()}
-                    formatter={(value: any) => [`${value.toFixed(1)} MCF`, 'Volume']}
+                    formatter={(value: any) => isEVC ? [`${value?.toFixed(1)} ft³`, 'Volume'] : [`${value.toFixed(1)} MCF`, 'Volume']}
                   />
                   <Line
                     type="monotone"
-                    dataKey="volume"
+                    dataKey={isEVC ? 'volume_ft3' : 'volume'}
                     stroke="#9333ea"
                     strokeWidth={2}
                     dot={{ fill: '#9333ea', r: 3 }}
@@ -1528,7 +1655,11 @@ const StationDetail = () => {
               <TrendingUp className="w-5 h-5 text-teal-500" />
               <span className="text-sm font-semibold text-gray-800">Flow Rate History - {deviceData.device_name}</span>
             </div>
-            <span className="text-sm font-medium text-teal-600">{latest?.total_volume_flow?.toFixed(1)} MCF/day</span>
+            <span className="text-sm font-medium text-teal-600">
+              {isEVC
+                ? `${latest?.total_volume_flow_ft3h != null ? latest.total_volume_flow_ft3h.toFixed(1) : '-'} ft³/h`
+                : `${latest?.total_volume_flow?.toFixed(1)} MCF/day`}
+            </span>
           </div>
           <div className="flex-1 p-4 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
             <div style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, minHeight: 250 }}>
@@ -1551,8 +1682,8 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 500), 'total_volume_flow', 5)}
-                    label={{ value: 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
+                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 500), isEVC ? 'total_volume_flow_ft3h' : 'total_volume_flow', 5)}
+                    label={{ value: isEVC ? 'Flow Rate (ft³/h)' : 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px' }}
