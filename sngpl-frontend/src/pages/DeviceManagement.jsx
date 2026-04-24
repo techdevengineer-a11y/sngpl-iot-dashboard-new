@@ -4,6 +4,7 @@ import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { Radio, Wifi, WifiOff, AlertTriangle, MapPin, Gauge, Edit3, Save, X, Search, Filter } from 'lucide-react';
+import { getMeterInfo } from '../utils/deviceMetersDefaults';
 
 const DeviceManagement = () => {
   const [devices, setDevices] = useState([]);
@@ -479,14 +480,14 @@ const DeviceManagement = () => {
                           {isEditing ? (
                             <input
                               type="text"
-                              value={deviceMeters[device.client_id]?.meter_type || ''}
+                              value={getMeterInfo(device.client_id, deviceMeters).meter_type}
                               onChange={(e) => saveMeterInfo(device.client_id, 'meter_type', e.target.value)}
-                              placeholder="e.g., Daniel 3410"
+                              placeholder="EVC or FC"
                               className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
-                          ) : deviceMeters[device.client_id]?.meter_type ? (
+                          ) : getMeterInfo(device.client_id, deviceMeters).meter_type ? (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                              {deviceMeters[device.client_id].meter_type}
+                              {getMeterInfo(device.client_id, deviceMeters).meter_type}
                             </span>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
@@ -496,14 +497,14 @@ const DeviceManagement = () => {
                           {isEditing ? (
                             <input
                               type="text"
-                              value={deviceMeters[device.client_id]?.units || ''}
+                              value={getMeterInfo(device.client_id, deviceMeters).units}
                               onChange={(e) => saveMeterInfo(device.client_id, 'units', e.target.value)}
-                              placeholder="e.g., MCF"
+                              placeholder="CF, CM, MCF"
                               className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
-                          ) : deviceMeters[device.client_id]?.units ? (
+                          ) : getMeterInfo(device.client_id, deviceMeters).units ? (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
-                              {deviceMeters[device.client_id].units}
+                              {getMeterInfo(device.client_id, deviceMeters).units}
                             </span>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>

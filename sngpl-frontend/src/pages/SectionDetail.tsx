@@ -4,6 +4,7 @@ import { ArrowLeft, MapPin, Gauge, Thermometer, Activity, Wind, Droplets, WifiOf
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
+import { getMeterInfo } from '../utils/deviceMetersDefaults';
 
 interface DeviceReading {
   timestamp: string;
@@ -641,14 +642,14 @@ const SectionDetail = () => {
                       {/* Meter Type */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
-                          {deviceMeters[device.client_id]?.meter_type || '-'}
+                          {getMeterInfo(device.client_id, deviceMeters).meter_type || '-'}
                         </span>
                       </td>
 
                       {/* Units */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
-                          {deviceMeters[device.client_id]?.units || '-'}
+                          {getMeterInfo(device.client_id, deviceMeters).units || '-'}
                         </span>
                       </td>
 
