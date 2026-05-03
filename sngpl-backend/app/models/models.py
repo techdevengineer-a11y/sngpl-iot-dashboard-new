@@ -59,6 +59,8 @@ class Device(Base):
     # Meter classification — FC (flow computer, MCF) or EVC (electronic volume corrector, ft3/m3)
     meter_type = Column(String, nullable=True, index=True)  # 'FC' | 'EVC'
     units = Column(String, nullable=True)                   # 'MCF' | 'CF' | 'CM'
+    signal_strength = Column(Integer, nullable=True)        # RSSI dBm from latest MQTT msg
+    network_type = Column(String(8), nullable=True)         # '4G' | '3G' | 'LTE' from latest MQTT msg
     is_active = Column(Boolean, default=True, index=True)
     last_seen = Column(DateTime(timezone=True), index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

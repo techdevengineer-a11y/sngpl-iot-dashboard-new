@@ -164,6 +164,11 @@ class StandaloneMQTTListener:
         elif "timestamp" in data:
             converted["Utime"] = data["timestamp"]
 
+        # Preserve connectivity metadata if firmware adds it to RT600 payloads later
+        for k in ("signalStrength", "network", "imei"):
+            if k in data:
+                converted[k] = data[k]
+
         logger.info(f"[RT600] Converted {len(content)} fields for device {converted['did']}")
         print(f"[RT600] Converted to Four-Faith format: {len(content)} parameters")
 
@@ -198,6 +203,11 @@ class StandaloneMQTTListener:
 
         if "time" in data:
             converted["Utime"] = data["time"]
+
+        # Preserve connectivity metadata so process_device_data() can persist it
+        for k in ("signalStrength", "network", "imei"):
+            if k in data:
+                converted[k] = data[k]
 
         logger.info(f"[TELEMETRY] Converted {len(content)} fields for device {device_id}")
         return converted
@@ -292,6 +302,15 @@ class StandaloneMQTTListener:
             # Update last seen
             device.last_seen = datetime.now()
             device.is_active = True
+
+            # Update connectivity metadata if present in payload (top-level fields)
+            if "signalStrength" in data and data["signalStrength"] is not None:
+                try:
+                    device.signal_strength = int(data["signalStrength"])
+                except (ValueError, TypeError):
+                    logger.warning(f"[CONN] Bad signalStrength value for {client_id}: {data['signalStrength']}")
+            if "network" in data and data["network"]:
+                device.network_type = str(data["network"])[:8]
 
             # Parse content array to get sensor values
             content = data.get("content", [])

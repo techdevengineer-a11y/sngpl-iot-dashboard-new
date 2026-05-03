@@ -239,6 +239,8 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
             'longitude': device.longitude,
             'meter_type': device.meter_type,
             'units': device.units,
+            'signal_strength': device.signal_strength,
+            'network_type': device.network_type,
             'is_active': device.is_active,
             'last_seen': device.last_seen.isoformat() if device.last_seen else None,
         }

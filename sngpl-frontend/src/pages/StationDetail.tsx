@@ -14,7 +14,8 @@ import {
   Clock,
   Download,
   Maximize2,
-  Camera
+  Camera,
+  Wifi
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -45,6 +46,8 @@ interface Device {
   location: string;
   meter_type?: string | null;
   units?: string | null;
+  signal_strength?: number | null;
+  network_type?: string | null;
   is_active: boolean;
   last_seen: string | null;
   latest_reading: DeviceReading | null;
@@ -602,7 +605,7 @@ const StationDetail = () => {
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                   {deviceData.device_name || deviceData.client_id}
                 </h1>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 flex-wrap">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-4 h-4" />
                     {deviceData.location}
@@ -611,6 +614,22 @@ const StationDetail = () => {
                     <Clock className="w-4 h-4" />
                     Last seen: {formatTimestamp(deviceData.last_seen)}
                   </span>
+                  {(deviceData.signal_strength != null || deviceData.network_type) && (
+                    <span className="flex items-center gap-1.5">
+                      <Wifi className={`w-4 h-4 ${
+                        deviceData.signal_strength == null ? 'text-gray-400' :
+                        deviceData.signal_strength >= -70 ? 'text-green-600' :
+                        deviceData.signal_strength >= -85 ? 'text-yellow-500' :
+                        deviceData.signal_strength >= -100 ? 'text-orange-500' :
+                        'text-red-600'
+                      }`} />
+                      <span>
+                        {deviceData.signal_strength != null ? `${deviceData.signal_strength} dBm` : ''}
+                        {deviceData.signal_strength != null && deviceData.network_type ? ' · ' : ''}
+                        {deviceData.network_type || ''}
+                      </span>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

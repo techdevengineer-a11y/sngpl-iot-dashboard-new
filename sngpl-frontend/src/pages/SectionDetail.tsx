@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Gauge, Thermometer, Activity, Wind, Droplets, WifiOff, AlertTriangle, Battery, TrendingUp, Download, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, MapPin, Gauge, Thermometer, Activity, Wind, Droplets, WifiOff, Wifi, AlertTriangle, Battery, TrendingUp, Download, Eye, EyeOff } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
@@ -36,6 +36,8 @@ interface Device {
   section_id: number | null;
   meter_type?: string | null;
   units?: string | null;
+  signal_strength?: number | null;
+  network_type?: string | null;
   is_active: boolean;
   last_seen: string | null;
   latest_reading: DeviceReading | null;
@@ -551,6 +553,12 @@ const SectionDetail = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">#</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">{sectionId === 'II' ? 'SMS/Device' : 'Device'}</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <Wifi className="w-3 h-3" />
+                      Signal
+                    </div>
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Meter Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Units</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">
@@ -662,6 +670,35 @@ const SectionDetail = () => {
                           <Activity className="w-3 h-3" />
                           {device.is_active ? 'Online' : 'Offline'}
                         </span>
+                      </td>
+
+                      {/* Signal Strength + Network */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {device.signal_strength != null || device.network_type ? (
+                          <div
+                            className="inline-flex items-center gap-1.5"
+                            title={`${device.signal_strength != null ? `${device.signal_strength} dBm` : 'No signal data'}${device.network_type ? ` · ${device.network_type}` : ''}`}
+                          >
+                            {device.signal_strength != null && (
+                              <Wifi className={`w-4 h-4 ${
+                                device.signal_strength >= -70 ? 'text-green-600' :
+                                device.signal_strength >= -85 ? 'text-yellow-500' :
+                                device.signal_strength >= -100 ? 'text-orange-500' :
+                                'text-red-600'
+                              }`} />
+                            )}
+                            {device.network_type && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">
+                                {device.network_type}
+                              </span>
+                            )}
+                            {device.signal_strength != null && (
+                              <span className="text-xs text-gray-600">{device.signal_strength}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </td>
 
                       {/* Meter Type */}

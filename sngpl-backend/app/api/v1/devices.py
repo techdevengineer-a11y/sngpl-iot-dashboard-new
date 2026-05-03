@@ -83,6 +83,8 @@ class DeviceResponse(BaseModel):
     serial_number: Optional[str] = None
     meter_type: Optional[str] = None   # 'FC' | 'EVC'
     units: Optional[str] = None        # 'MCF' | 'CF' | 'CM'
+    signal_strength: Optional[int] = None  # RSSI dBm from latest MQTT msg
+    network_type: Optional[str] = None     # '4G' | '3G' | 'LTE'
     is_active: bool
     last_seen: Optional[datetime] = None
     latest_reading: Optional[LatestReading] = None
@@ -161,6 +163,8 @@ async def get_devices(db: Session = Depends(get_db)):
             "serial_number": device.serial_number,
             "meter_type": device.meter_type,
             "units": device.units,
+            "signal_strength": device.signal_strength,
+            "network_type": device.network_type,
             "is_active": device.is_active,
             "last_seen": device.last_seen,
             "section_id": section_id,
