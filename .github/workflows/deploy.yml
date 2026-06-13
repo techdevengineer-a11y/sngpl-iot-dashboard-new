@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to Azure VM
 
 on:
   push:
@@ -11,71 +11,12 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Deploy Application
+      - name: Update working tree and deploy
         run: |
-          echo "🚀 Starting deployment..."
-
-          # Backend deployment
-          echo "📦 Deploying backend..."
-
-          # Backup .env file
-          if [ -f /var/www/sngpl-dashboard/backend/.env ]; then
-            cp /var/www/sngpl-dashboard/backend/.env /tmp/backend-env.backup
-            echo "✅ Backed up .env file"
-          fi
-
-          # Copy new backend files (preserve venv and .env)
-          sudo rsync -av --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' $GITHUB_WORKSPACE/sngpl-backend/ /var/www/sngpl-dashboard/backend/
-
-          # Restore .env file
-          if [ -f /tmp/backend-env.backup ]; then
-            sudo cp /tmp/backend-env.backup /var/www/sngpl-dashboard/backend/.env
-            sudo chown ubuntu:ubuntu /var/www/sngpl-dashboard/backend/.env
-            echo "✅ Restored .env file"
-          fi
-
-          # Install Python dependencies
-          cd /var/www/sngpl-dashboard/backend
-          source venv/bin/activate
-          pip install -r requirements.txt --quiet
-          echo "✅ Python dependencies installed"
-
-          # Restart backend services via supervisor
-          sudo supervisorctl restart sngpl-api
-          sudo supervisorctl restart sngpl-mqtt
-          echo "✅ Backend services restarted"
-
-          # Frontend deployment
-          echo "📦 Deploying frontend..."
-
-          # Copy new frontend files
-          sudo rsync -av --exclude='node_modules' --exclude='dist' $GITHUB_WORKSPACE/sngpl-frontend/ /var/www/sngpl-dashboard/frontend/
-
-          # Install dependencies and build
-          cd /var/www/sngpl-dashboard/frontend
-          npm install --silent --legacy-peer-deps
-          npm run build
-          echo "✅ Frontend built successfully"
-
-          # Set permissions
-          sudo chown -R ubuntu:ubuntu /var/www/sngpl-dashboard
-
-          # Reload nginx
-          sudo nginx -t && sudo systemctl reload nginx
-          echo "✅ Nginx reloaded"
-
-          # Cleanup
-          rm -f /tmp/backend-env.backup
-
+          set -e
+          echo "🚀 Deploying to Azure VM..."
+          cd /var/www/sngpl-dashboard
+          git fetch origin main
+          git reset --hard origin/main
+          bash deploy.sh
           echo "🎉 Deployment complete!"
-
-      - name: Deployment Status
-        if: success()
-        run: echo "✅ Successfully deployed to EC2 server!"
-
-      - name: Deployment Failed
-        if: failure()
-        run: echo "❌ Deployment failed! Check the logs above."
