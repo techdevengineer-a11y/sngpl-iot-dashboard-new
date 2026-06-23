@@ -13,7 +13,8 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # admin, user, guest
+    full_name = Column(String)  # display name shown in the UI (falls back to username)
+    role = Column(String, nullable=False)  # admin, user, viewer, guest
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login = Column(DateTime(timezone=True))

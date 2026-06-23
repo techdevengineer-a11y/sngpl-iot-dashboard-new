@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: Optional[str] = None
+    full_name: Optional[str] = None
     role: str
     is_active: bool
     created_at: datetime
@@ -37,7 +38,8 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    role: str = "user"
+    full_name: Optional[str] = None
+    role: str = "viewer"
 
     @field_validator("username")
     @classmethod
@@ -66,6 +68,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
     role: Optional[str] = None
     is_active: Optional[bool] = None
 
@@ -217,6 +220,13 @@ async def create_user(
             detail="Only administrators can create users"
         )
 
+    # Only one admin account is allowed - all created accounts are restricted (view-only)
+    if user_data.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create additional administrator accounts. New accounts are restricted (view-only)."
+        )
+
     # Check if username already exists
     existing_user = db.query(User).filter(User.username == user_data.username).first()
     if existing_user:
@@ -238,6 +248,7 @@ async def create_user(
     new_user = User(
         username=user_data.username,
         email=user_data.email,
+        full_name=user_data.full_name,
         hashed_password=get_password_hash(user_data.password),
         role=user_data.role,
         is_active=True
@@ -306,6 +317,22 @@ async def update_user(
             )
         user.email = user_data.email
 
+    if user_data.full_name is not None:
+        user.full_name = user_data.full_name
+
+    # Role changes are admin-only; promoting another account to admin is never
+    # allowed, and the sole administrator account can never be demoted.
+    if user_data.role is not None and current_user.role == "admin":
+        if user_data.role == "admin" and user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot promote accounts to administrator. Only one admin account is allowed."
+            )
+        if user.role == "admin" and user_data.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot change the administrator's role."
+            )
         user.role = user_data.role
 
     if user_data.is_active is not None and current_user.role == "admin":

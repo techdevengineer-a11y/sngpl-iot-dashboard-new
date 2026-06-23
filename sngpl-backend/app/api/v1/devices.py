@@ -9,7 +9,7 @@ from datetime import datetime
 
 from app.db.database import get_db
 from app.models.models import Device, DeviceReading, User
-from app.api.v1.auth import get_current_user
+from app.api.v1.auth import get_current_user, require_admin
 from app.services.audit_service import audit_service
 
 router = APIRouter()
@@ -211,6 +211,7 @@ async def create_device(
     current_user: User = Depends(get_current_user)
 ):
     """Create new device"""
+    require_admin(current_user)
     # Check if device already exists
     if db.query(Device).filter(Device.client_id == device_data.client_id).first():
         raise HTTPException(status_code=400, detail="Device ID already exists")
@@ -241,6 +242,7 @@ async def update_device(
     current_user: User = Depends(get_current_user)
 ):
     """Update device"""
+    require_admin(current_user)
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -272,6 +274,7 @@ async def update_device_name(
     current_user: User = Depends(get_current_user)
 ):
     """Update only the device name"""
+    require_admin(current_user)
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -332,6 +335,7 @@ async def update_device_meter(
     current_user: User = Depends(get_current_user)
 ):
     """Update a device's meter_type and/or units (authoritative source)."""
+    require_admin(current_user)
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -387,6 +391,7 @@ async def delete_device(
     current_user: User = Depends(get_current_user)
 ):
     """Delete device by client_id"""
+    require_admin(current_user)
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -481,6 +486,7 @@ async def update_serial_number(
     current_user: User = Depends(get_current_user)
 ):
     """Map a modem serial number to a device"""
+    require_admin(current_user)
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")

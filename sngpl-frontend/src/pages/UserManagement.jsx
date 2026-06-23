@@ -55,7 +55,7 @@ const UserManagement = () => {
       email: '',
       password: '',
       full_name: '',
-      role: 'user',
+      role: 'viewer',
       is_active: true
     });
     setShowModal(true);
@@ -375,10 +375,12 @@ const UserManagement = () => {
                   className="enterprise-input"
                   required
                 >
-                  <option value="admin">Admin</option>
-                  <option value="user">User</option>
-                  <option value="viewer">Viewer</option>
+                  <option value="viewer">Viewer (Read-only)</option>
                 </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  New accounts are restricted, view-only users. They cannot access Settings,
+                  Device Management, User Management, or turn alarms on/off.
+                </p>
               </div>
 
               <div className="flex items-center">

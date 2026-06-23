@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 import bcrypt
 from pydantic import BaseModel, field_validator, Field, EmailStr
+from typing import Optional
 import re
 
 from app.db.database import get_db
@@ -71,6 +72,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    full_name: Optional[str] = None
     role: str
     is_active: bool
 
@@ -130,6 +132,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 
+def require_admin(current_user: User) -> User:
+    """Guard helper: only the admin role may perform mutating/management actions.
+
+    Restricted (non-admin) accounts are view-only and must be blocked from any
+    write operation (device management, alarm control, settings, user management).
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can perform this action"
+        )
+    return current_user
+
+
 @router.post("/login", response_model=Token)
 @limiter.limit("5/minute")  # Strict rate limit for login to prevent brute force
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -187,6 +203,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             "id": user.id,
             "username": user.username,
             "email": user.email,
+            "full_name": user.full_name,
             "role": user.role
         }
     }
@@ -205,6 +222,13 @@ async def register(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only administrators can register new users"
+        )
+
+    # Only one admin account is allowed - new accounts are restricted (view-only)
+    if user_data.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create additional administrator accounts."
         )
 
     # Check if user exists

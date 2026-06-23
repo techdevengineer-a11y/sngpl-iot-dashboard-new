@@ -79,8 +79,12 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user]);
 
+  // Only the 'admin' role is privileged. Every other role (viewer/user/guest)
+  // is restricted to view-only access across the app.
+  const isAdmin = user?.role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

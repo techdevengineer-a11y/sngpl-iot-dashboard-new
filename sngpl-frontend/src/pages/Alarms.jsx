@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAlarms, getAlarmsBySection, acknowledgeAlarm, deleteAlarm, deleteAllAlarms, getAlarmMonitoringStatus, toggleAlarmMonitoring } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { Bell, AlertTriangle, CheckCircle, Clock, Activity, Trash2, PlayCircle, StopCircle, Gauge, WifiOff, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Alarms = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [sectionData, setSectionData] = useState([]);
   const [allAlarms, setAllAlarms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -242,6 +244,7 @@ const Alarms = () => {
               <Bell className="w-8 h-8" />
               Alarm Monitoring System
             </h1>
+            {isAdmin && (
             <div className="flex items-center gap-3">
               <button
                 onClick={handleToggleMonitoring}
@@ -273,6 +276,7 @@ const Alarms = () => {
                 </button>
               )}
             </div>
+            )}
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAlarms, acknowledgeAlarm, deleteAlarm } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle, Clock, ArrowLeft, Trash2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { AlertTriangle, CheckCircle, Clock, ArrowLeft, Trash2 } from 'lucide-rea
 const SectionAlarms = () => {
   const { sectionId } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [alarms, setAlarms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -279,6 +281,7 @@ const SectionAlarms = () => {
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
+                          {isAdmin && (
                           <div className="flex items-center justify-center gap-2">
                             {!alarm.is_acknowledged && (
                               <button
@@ -297,6 +300,7 @@ const SectionAlarms = () => {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
+                          )}
                         </td>
                       </tr>
                     );

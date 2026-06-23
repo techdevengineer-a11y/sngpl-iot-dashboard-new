@@ -9,7 +9,7 @@ from datetime import datetime
 
 from app.db.database import get_db
 from app.models.models import Alarm, AlarmThreshold, Device, User
-from app.api.v1.auth import get_current_user
+from app.api.v1.auth import get_current_user, require_admin
 from app.services.audit_service import audit_service
 
 router = APIRouter()
@@ -178,6 +178,7 @@ async def acknowledge_alarm(
     current_user: User = Depends(get_current_user)
 ):
     """Acknowledge an alarm"""
+    require_admin(current_user)
     alarm = db.query(Alarm).filter(Alarm.id == alarm_id).first()
     if not alarm:
         raise HTTPException(status_code=404, detail="Alarm not found")
@@ -209,6 +210,7 @@ async def delete_alarm(
     current_user: User = Depends(get_current_user)
 ):
     """Delete an alarm"""
+    require_admin(current_user)
     alarm = db.query(Alarm).filter(Alarm.id == alarm_id).first()
     if not alarm:
         raise HTTPException(status_code=404, detail="Alarm not found")
@@ -244,6 +246,7 @@ async def delete_all_alarms(
     current_user: User = Depends(get_current_user)
 ):
     """Delete all alarms"""
+    require_admin(current_user)
     # Count alarms before deletion
     alarm_count = db.query(Alarm).count()
 
@@ -287,6 +290,7 @@ async def toggle_alarm_monitoring(
     current_user: User = Depends(get_current_user)
 ):
     """Toggle alarm monitoring on/off (persisted in database)"""
+    require_admin(current_user)
     from app.models.models import SecuritySettings
 
     setting = db.query(SecuritySettings).filter(
@@ -341,6 +345,7 @@ async def create_threshold(
     current_user: User = Depends(get_current_user)
 ):
     """Create alarm threshold"""
+    require_admin(current_user)
     # Check if device exists
     device = db.query(Device).filter(Device.id == threshold_data.device_id).first()
     if not device:
@@ -381,6 +386,7 @@ async def update_threshold(
     current_user: User = Depends(get_current_user)
 ):
     """Update alarm threshold"""
+    require_admin(current_user)
     threshold = db.query(AlarmThreshold).filter(AlarmThreshold.id == threshold_id).first()
     if not threshold:
         raise HTTPException(status_code=404, detail="Threshold not found")
@@ -411,6 +417,7 @@ async def delete_threshold(
     current_user: User = Depends(get_current_user)
 ):
     """Delete alarm threshold"""
+    require_admin(current_user)
     threshold = db.query(AlarmThreshold).filter(AlarmThreshold.id == threshold_id).first()
     if not threshold:
         raise HTTPException(status_code=404, detail="Threshold not found")

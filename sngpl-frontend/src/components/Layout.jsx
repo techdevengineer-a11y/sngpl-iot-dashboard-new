@@ -6,7 +6,7 @@ import { getAlarms } from '../services/api';
 import GlobalSearch from './GlobalSearch';
 
 const Layout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,19 +46,22 @@ const Layout = ({ children }) => {
     };
   }, [mobileMenuOpen]);
 
-  // Sidebar menu items with gradient colors
-  const menuItems = [
+  // Sidebar menu items with gradient colors.
+  // Items flagged `adminOnly` are hidden from restricted (view-only) accounts.
+  const allMenuItems = [
     { path: '/dashboard', label: 'DASHBOARD', icon: '📊', badge: null, gradient: 'from-blue-500 to-cyan-500' },
     { path: '/sections', label: 'SECTIONS', icon: '🏢', badge: null, gradient: 'from-green-500 to-emerald-500' },
     { path: '/alarms', label: 'ALERTS', icon: '🔔', badge: unreadCount, gradient: 'from-red-500 to-orange-500' },
     { path: '/advanced-reports', label: 'ADVANCED REPORTS', icon: '📈', badge: null, gradient: 'from-purple-500 to-pink-500' },
     { path: '/analytics-page', label: 'ANALYTICS', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
-    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500' },
+    { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500', adminOnly: true },
     { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
     { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
     { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
-    { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500' },
+    { path: '/users', label: 'USERS', icon: '👥', badge: null, gradient: 'from-violet-500 to-purple-500', adminOnly: true },
+    { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500', adminOnly: true },
   ];
+  const menuItems = allMenuItems.filter(item => isAdmin || !item.adminOnly);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -257,7 +260,7 @@ const Layout = ({ children }) => {
             {/* User info and logout */}
             <div className="p-3 border-t border-gray-200 mt-2 space-y-2">
               <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-sm font-medium text-gray-900">{user?.username}</div>
+                <div className="text-sm font-medium text-gray-900">{user?.full_name || user?.username}</div>
                 <div className="text-xs text-gray-600 capitalize">{user?.role || 'Administrator'}</div>
               </div>
               <button
@@ -395,7 +398,7 @@ const Layout = ({ children }) => {
           {/* User Info */}
           {!sidebarCollapsed && (
             <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="text-sm font-medium text-gray-900">{user?.username}</div>
+              <div className="text-sm font-medium text-gray-900">{user?.full_name || user?.username}</div>
               <div className="text-xs text-gray-600 capitalize">{user?.role || 'Administrator'}</div>
             </div>
           )}
