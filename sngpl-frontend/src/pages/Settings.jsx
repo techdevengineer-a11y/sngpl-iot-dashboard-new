@@ -113,7 +113,7 @@ const Settings = () => {
     username: '',
     email: '',
     password: '',
-    role: 'user'
+    role: 'viewer'
   });
 
   // Load user data from backend
@@ -165,25 +165,14 @@ const Settings = () => {
   const loadRolesAndPermissions = async () => {
     setLoadingRoles(true);
     try {
-      const [rolesResponse, usersResponse] = await Promise.all([
-        getAllRoles(),
-        listUsers()
-      ]);
-
-      setRoles(rolesResponse.data);
+      const usersResponse = await listUsers();
       setUsers(usersResponse.data);
-
-      // Load current user's permissions
-      if (userData) {
-        const permsResponse = await getUserPermissions(userData.id);
-        setUserPermissions(permsResponse.data);
-      }
     } catch (error) {
-      console.error('Failed to load roles:', error);
+      console.error('Failed to load users:', error);
       if (error.response?.status === 403) {
-        toast.error('You do not have permission to view roles');
+        toast.error('You do not have permission to view users');
       } else {
-        toast.error('Failed to load roles and permissions');
+        toast.error('Failed to load users');
       }
     } finally {
       setLoadingRoles(false);
@@ -301,7 +290,7 @@ const Settings = () => {
         username: '',
         email: '',
         password: '',
-        role: 'user'
+        role: 'viewer'
       });
 
       // Reload users list
@@ -347,16 +336,9 @@ const Settings = () => {
     }
   };
 
-  const handleViewUserDetails = async (user) => {
+  const handleViewUserDetails = (user) => {
     setSelectedUser(user);
-    try {
-      const permsResponse = await getUserPermissions(user.id);
-      setSelectedUserPermissions(permsResponse.data.permissions || []);
-      setShowUserDetailsModal(true);
-    } catch (error) {
-      console.error('Failed to load user permissions:', error);
-      toast.error('Failed to load user permissions');
-    }
+    setShowUserDetailsModal(true);
   };
 
   const handleChangeUserRole = async (userId, newRole) => {
@@ -917,81 +899,37 @@ const Settings = () => {
               ) : (
                 <>
                   <div className="space-y-4">
-                    {roles.map((role) => {
-                      const userCount = users.filter(u => u.role === role.name.toLowerCase()).length;
-                      const roleColors = {
-                        'admin': 'bg-red-500',
-                        'operator': 'bg-blue-500',
-                        'viewer': 'bg-green-500',
-                        'user': 'bg-purple-500'
-                      };
-                      const colorClass = roleColors[role.name.toLowerCase()] || 'bg-gray-500';
-
-                      return (
-                        <div key={role.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    {(() => {
+                      const adminCount = users.filter(u => u.role === 'admin').length;
+                      const viewerCount = users.filter(u => u.role !== 'admin').length;
+                      const cards = [
+                        { name: 'Administrator', dot: 'bg-red-500', count: adminCount,
+                          desc: 'Full access — manages devices, alarms, settings and users. There is only one administrator.' },
+                        { name: 'Viewer (Read-only)', dot: 'bg-green-500', count: viewerCount,
+                          desc: 'Can view dashboards, sections, alarms, analytics and reports, but cannot change anything — no Settings, Device Management, User Management, or alarm on/off.' },
+                      ];
+                      return cards.map((c) => (
+                        <div key={c.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-4">
-                            <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
+                            <div className={`w-3 h-3 rounded-full ${c.dot}`}></div>
                             <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-gray-900">{role.name}</h4>
-                                {role.is_system && (
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                                    System Role
-                                  </span>
-                                )}
-                                {!role.is_active && (
-                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded">
-                                    Inactive
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {role.description || 'No description'}
-                              </p>
+                              <h4 className="font-medium text-gray-900">{c.name}</h4>
+                              <p className="text-sm text-gray-600 mt-1">{c.desc}</p>
                               <p className="text-xs text-gray-500 mt-1">
                                 <Users className="w-3 h-3 inline mr-1" />
-                                {userCount} user{userCount !== 1 ? 's' : ''} assigned
+                                {c.count} user{c.count !== 1 ? 's' : ''}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              onClick={() => toast.info('View role details - coming soon')}
-                            >
-                              View Details
-                            </button>
-                          </div>
                         </div>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
-
-                  {userPermissions && (
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">Your Permissions</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {userPermissions.permissions.slice(0, 6).map((perm, idx) => (
-                          <span key={idx} className="text-xs bg-white px-2 py-1 rounded text-blue-700 border border-blue-200">
-                            {perm}
-                          </span>
-                        ))}
-                        {userPermissions.permissions.length > 6 && (
-                          <span className="text-xs bg-white px-2 py-1 rounded text-blue-700 border border-blue-200">
-                            +{userPermissions.permissions.length - 6} more
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-blue-700 mt-2">
-                        Current Role: <strong>{userPermissions.roles.join(', ')}</strong>
-                      </p>
-                    </div>
-                  )}
 
                   <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-900">
-                      <strong>Status:</strong> Role-Based Access Control (RBAC) is fully integrated with the backend.
-                      Only administrators can create, modify, or delete roles and assign them to users.
+                      <strong>Status:</strong> Only the administrator can create users or change
+                      anything. Every account you create here is a read-only Viewer.
                     </p>
                   </div>
                 </>
@@ -1677,58 +1615,50 @@ const Settings = () => {
 
                 {/* Change Role Section */}
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Change User Role</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {roles.filter(r => r.is_active).map(role => (
-                      <button
-                        key={role.id}
-                        onClick={() => handleChangeUserRole(selectedUser.id, role.name.toLowerCase())}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          selectedUser.role === role.name.toLowerCase()
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            role.name.toLowerCase() === 'admin' ? 'bg-red-100 text-red-700' :
-                            role.name.toLowerCase() === 'user' ? 'bg-purple-100 text-purple-700' :
-                            role.name.toLowerCase() === 'operator' ? 'bg-blue-100 text-blue-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {role.name}
-                          </span>
-                          {selectedUser.role === role.name.toLowerCase() && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-600 text-left">
-                          {role.description || 'No description'}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">User Role</label>
+                  {selectedUser.role === 'admin' ? (
+                    <p className="text-sm text-gray-600">
+                      This is the administrator account. There is only one administrator
+                      and its role cannot be changed.
+                    </p>
+                  ) : (
+                    <button
+                      onClick={() => handleChangeUserRole(selectedUser.id, 'viewer')}
+                      className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                        selectedUser.role === 'viewer'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                          Viewer (Read-only)
+                        </span>
+                        {selectedUser.role === 'viewer' && (
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Can view dashboards but cannot change anything. This is the only
+                        role for non-admin accounts.
+                      </p>
+                    </button>
+                  )}
                 </div>
 
                 {/* Permissions List */}
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Permissions ({selectedUserPermissions.length})
-                  </label>
-                  {selectedUserPermissions.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                      {selectedUserPermissions.map((perm, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg"
-                        >
-                          <Shield className="w-3.5 h-3.5 text-blue-600" />
-                          <span className="text-sm text-blue-900">{perm}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Access</label>
+                  {selectedUser.role === 'admin' ? (
+                    <p className="text-sm text-gray-700">
+                      Full access — can manage devices, alarms, settings and users.
+                    </p>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">No permissions assigned</p>
+                    <p className="text-sm text-gray-700">
+                      Read-only — can view dashboards, sections, alarms, analytics and
+                      reports, but cannot change anything (no Settings, Device Management,
+                      User Management, or alarm on/off).
+                    </p>
                   )}
                 </div>
               </div>
@@ -1808,14 +1738,13 @@ const Settings = () => {
                     onChange={(e) => setNewUserData({...newUserData, role: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {roles.filter(r => r.is_active).map(role => (
-                      <option key={role.id} value={role.name.toLowerCase()}>
-                        {role.name} {role.description ? `- ${role.description}` : ''}
-                      </option>
-                    ))}
+                    <option value="viewer">Viewer (Read-only)</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    The user will be created with this role and its associated permissions
+                    New accounts are restricted, read-only users: they can view the
+                    dashboards but cannot open Settings, Device Management or User
+                    Management, and cannot turn alarms on/off or change any data.
+                    Only the administrator has full access.
                   </p>
                 </div>
               </div>

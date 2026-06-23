@@ -58,7 +58,6 @@ const Layout = ({ children }) => {
     { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
     { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
     { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
-    { path: '/users', label: 'USERS', icon: '👥', badge: null, gradient: 'from-violet-500 to-purple-500', adminOnly: true },
     { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500', adminOnly: true },
   ];
   const menuItems = allMenuItems.filter(item => isAdmin || !item.adminOnly);
