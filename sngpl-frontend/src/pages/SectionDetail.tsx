@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Gauge, Thermometer, Activity, Wind, Droplets, WifiOff, Wifi, AlertTriangle, Battery, TrendingUp, Download, Eye, EyeOff } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -61,6 +61,22 @@ const SectionDetail = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [observedDevices, setObservedDevices] = useState<number[]>([]);
   const [deviceMeters, setDeviceMeters] = useState<Record<string, { meter_type?: string; units?: string }>>({});
+
+  // Top horizontal scrollbar synced with the devices table (slide right to see all columns)
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  const syncFromTop = () => {
+    if (tableScrollRef.current && topScrollRef.current) {
+      tableScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+    }
+  };
+  const syncFromTable = () => {
+    if (tableScrollRef.current && topScrollRef.current) {
+      topScrollRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+    }
+  };
 
   // Load observed devices from localStorage
   useEffect(() => {
@@ -197,6 +213,18 @@ const SectionDetail = () => {
 
     setSectionData(dummySection);
   };
+
+  // Keep the top scrollbar's width matched to the actual table width
+  useEffect(() => {
+    const updateWidth = () => {
+      if (tableScrollRef.current) {
+        setTableScrollWidth(tableScrollRef.current.scrollWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [sectionData, showAlarmsOnly]);
 
   const getStatusColor = (isActive: boolean) => {
     return isActive
@@ -546,7 +574,21 @@ const SectionDetail = () => {
 
         {/* Devices Table */}
         <div className="glass rounded-xl overflow-hidden">
-          <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: 'calc(100vh - 600px)', minHeight: '400px' }}>
+          {/* Top horizontal scrollbar — slide right to see all columns without scrolling to the bottom */}
+          <div
+            ref={topScrollRef}
+            onScroll={syncFromTop}
+            className="overflow-x-auto overflow-y-hidden border-b border-gray-300"
+            style={{ height: '16px' }}
+          >
+            <div style={{ width: tableScrollWidth, height: '1px' }} />
+          </div>
+          <div
+            ref={tableScrollRef}
+            onScroll={syncFromTable}
+            className="overflow-y-auto overflow-x-auto"
+            style={{ maxHeight: 'calc(100vh - 600px)', minHeight: '400px' }}
+          >
             <table className="w-full min-w-[1200px] border-collapse">
               <thead className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
                 <tr>
