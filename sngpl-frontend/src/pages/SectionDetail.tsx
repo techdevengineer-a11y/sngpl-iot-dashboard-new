@@ -586,7 +586,7 @@ const SectionDetail = () => {
           <div
             ref={tableScrollRef}
             onScroll={syncFromTable}
-            className="overflow-y-auto overflow-x-auto"
+            className="overflow-y-auto overflow-x-hidden"
             style={{ maxHeight: 'calc(100vh - 600px)', minHeight: '400px' }}
           >
             <table className="w-full min-w-[1200px] border-collapse">
