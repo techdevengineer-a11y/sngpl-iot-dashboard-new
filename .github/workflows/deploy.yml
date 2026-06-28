@@ -1,4 +1,4 @@
-name: Deploy to Azure VM
+name: Deploy to production server (AWS)
 
 on:
   push:
@@ -8,13 +8,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, X64]   # AWS device-server runner only (Azure VM is ARM64)
 
     steps:
       - name: Update working tree and deploy
         run: |
           set -e
-          echo "🚀 Deploying to Azure VM..."
+          echo "🚀 Deploying to AWS server (3.0.105.206)..."
           cd /var/www/sngpl-dashboard
           git fetch origin main
           git reset --hard origin/main
