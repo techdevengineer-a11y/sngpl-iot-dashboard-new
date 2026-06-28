@@ -72,18 +72,19 @@ def init_timescale():
                 conn.commit()
                 logger.info("✓ TimescaleDB extension enabled")
 
-                # Convert device_reading table to hypertable if not already
+                # Convert device_readings table to hypertable if not already
+                # FIX: table name is "device_readings" (plural), not "device_reading".
                 try:
                     conn.execute(text("""
                         SELECT create_hypertable(
-                            'device_reading',
+                            'device_readings',
                             'timestamp',
                             if_not_exists => TRUE,
                             chunk_time_interval => INTERVAL '1 day'
                         );
                     """))
                     conn.commit()
-                    logger.info("✓ device_reading converted to hypertable")
+                    logger.info("✓ device_readings converted to hypertable")
                     logger.info("✓ TimescaleDB fully initialized - Time-series optimizations active")
                 except Exception as e:
                     if "already a hypertable" not in str(e):
