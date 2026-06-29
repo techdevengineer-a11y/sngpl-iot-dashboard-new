@@ -1101,6 +1101,16 @@
   background: #64748b;
 }
 
+/* Hide a scrollbar while keeping the element scrollable (used so the devices
+   table can be swiped horizontally on touch without showing a second bar). */
+.scrollbar-hide {
+  -ms-overflow-style: none;   /* IE / old Edge */
+  scrollbar-width: none;      /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;              /* Chrome / Safari */
+}
+
 /* Performance utility classes - use sparingly on animated elements only */
 .gpu-accelerated {
   will-change: transform;
