@@ -46,6 +46,46 @@ const Layout = ({ children }) => {
     };
   }, [mobileMenuOpen]);
 
+  // Touch swipe gestures for the mobile menu:
+  //  - swipe right starting near the left edge => open
+  //  - swipe left while the menu is open       => close
+  useEffect(() => {
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onTouchStart = (e) => {
+      if (e.touches.length !== 1) return; // ignore pinch / multi-touch
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      // Only arm an open-swipe near the left edge; when open, arm anywhere.
+      tracking = mobileMenuOpen || startX <= 24;
+    };
+
+    const onTouchEnd = (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      // Require a clearly horizontal gesture (ignore vertical scrolling).
+      if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+      if (dx > 0 && !mobileMenuOpen) {
+        setMobileMenuOpen(true);
+        setShowNotifications(false);
+      } else if (dx < 0 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [mobileMenuOpen]);
+
   // Sidebar menu items with gradient colors.
   // Items flagged `adminOnly` are hidden from restricted (view-only) accounts.
   const allMenuItems = [
