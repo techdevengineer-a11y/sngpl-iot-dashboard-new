@@ -29,6 +29,25 @@ OFFLINE_NOTIFICATION_EMAILS = ["shayankhannn12@gmail.com"]
 
 logger = get_logger("mqtt_listener")
 
+
+def _parse_device_time(value):
+    """Best-effort parse of the device 'Utime' field -> datetime, else None.
+
+    Devices send Utime as "2026/1/12 23:14:13"; epoch seconds and ISO strings
+    are accepted as fallbacks."""
+    if value is None:
+        return None
+    try:
+        if isinstance(value, (int, float)) or str(value).isdigit():
+            return datetime.fromtimestamp(int(value))  # epoch seconds
+        text = str(value).strip()
+        try:
+            return datetime.strptime(text, "%Y/%m/%d %H:%M:%S")
+        except ValueError:
+            return datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
 # Create database engine and session for standalone script (PostgreSQL)
 engine = create_engine(
     settings.DATABASE_URL,
@@ -334,11 +353,11 @@ class StandaloneMQTTListener:
             # T15 = Battery (V), T16 = Max Static Pressure, T17 = Min Static Pressure
             # T18-T114 = New Analytics Parameters
 
-            # Get current timestamp
-            current_timestamp = datetime.now()
+            # Use the device-reported time when present so the duplicate guard is meaningful
+            current_timestamp = _parse_device_time(data.get("Utime")) or datetime.now()
 
             # Check if a reading with same device_id and timestamp already exists (prevent duplicates)
-            existing_reading = db.query(DeviceReading).filter(
+            existing_reading = db.query(DeviceReading.id).filter(
                 DeviceReading.device_id == device.id,
                 DeviceReading.timestamp == current_timestamp
             ).first()

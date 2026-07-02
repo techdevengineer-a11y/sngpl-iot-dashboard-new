@@ -227,8 +227,11 @@ async def create_user(
             detail="Cannot create additional administrator accounts. New accounts are restricted (view-only)."
         )
 
+    # Normalise username so look-alike accounts can't be created (case-insensitive uniqueness)
+    username = user_data.username.strip().lower()
+
     # Check if username already exists
-    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -246,7 +249,7 @@ async def create_user(
 
     # Create new user
     new_user = User(
-        username=user_data.username,
+        username=username,
         email=user_data.email,
         full_name=user_data.full_name,
         hashed_password=get_password_hash(user_data.password),

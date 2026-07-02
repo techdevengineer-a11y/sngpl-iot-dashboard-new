@@ -49,3 +49,11 @@ coverage/
 
 # Vite
 vite.config.js.timestamp-*
+
+# Backup / temp files
+*.backup
+*.bak
+*.orig
+*.original
+*.clean
+temp_*.txt

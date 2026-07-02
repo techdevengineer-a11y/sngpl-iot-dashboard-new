@@ -1,6 +1,5 @@
-"""Role-Based Access Control (RBAC) middleware and decorators"""
+"""Role-Based Access Control (RBAC) middleware and dependencies"""
 
-from functools import wraps
 from typing import List, Optional
 from fastapi import HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -138,68 +137,6 @@ class RBACPermissions:
         required_level = cls.ROLE_HIERARCHY.get(required_role, 999)
 
         return user_level >= required_level
-
-
-def require_role(required_role: str):
-    """
-    Decorator to require a minimum role level for an endpoint
-
-    Usage:
-        @router.get("/admin-only")
-        @require_role("admin")
-        async def admin_endpoint(current_user: User = Depends(get_current_user)):
-            pass
-    """
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, current_user: User = None, **kwargs):
-            if not current_user:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication required"
-                )
-
-            if not RBACPermissions.check_role_level(current_user, required_role):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Requires {required_role} role or higher"
-                )
-
-            return await func(*args, current_user=current_user, **kwargs)
-
-        return wrapper
-    return decorator
-
-
-def require_permission(resource_type: str, action: str):
-    """
-    Decorator to require specific permission for an endpoint
-
-    Usage:
-        @router.post("/devices")
-        @require_permission("device", "create")
-        async def create_device(current_user: User = Depends(get_current_user)):
-            pass
-    """
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, current_user: User = None, **kwargs):
-            if not current_user:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication required"
-                )
-
-            if not RBACPermissions.has_permission(current_user, resource_type, action):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Insufficient permissions: requires {action} on {resource_type}"
-                )
-
-            return await func(*args, current_user=current_user, **kwargs)
-
-        return wrapper
-    return decorator
 
 
 # Dependency functions for FastAPI

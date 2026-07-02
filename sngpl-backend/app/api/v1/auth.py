@@ -149,16 +149,30 @@ def require_admin(current_user: User) -> User:
 @router.post("/login", response_model=Token)
 @limiter.limit("5/minute")  # Strict rate limit for login to prevent brute force
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
+    username = form_data.username.strip().lower()
+    user = db.query(User).filter(User.username == username).first()
+
+    # Account lockout: refuse while a lock is active
+    if user and user.account_locked_until and \
+       user.account_locked_until > datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail="Account temporarily locked due to failed login attempts. Try again later.",
+        )
 
     # Log failed login attempt
     if not user or not verify_password(form_data.password, user.hashed_password):
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.account_locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+            db.commit()
         audit_service.log_from_request(
             db=db,
             request=request,
             action="LOGIN",
             resource_type="user",
-            details={"username": form_data.username, "reason": "Invalid credentials"},
+            details={"username": username, "reason": "Invalid credentials"},
             status="failure"
         )
         raise HTTPException(
@@ -180,7 +194,9 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         )
         raise HTTPException(status_code=400, detail="Inactive user")
 
-    # Update last login timestamp
+    # Success: reset lockout counters and update last login timestamp
+    user.failed_login_attempts = 0
+    user.account_locked_until = None
     user.last_login = datetime.now(timezone.utc)
     db.commit()
 
@@ -231,8 +247,11 @@ async def register(
             detail="Cannot create additional administrator accounts."
         )
 
+    # Normalise username so look-alike accounts can't be created (case-insensitive uniqueness)
+    username = user_data.username.strip().lower()
+
     # Check if user exists
-    if db.query(User).filter(User.username == user_data.username).first():
+    if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
 
     if db.query(User).filter(User.email == user_data.email).first():
@@ -241,7 +260,7 @@ async def register(
     # Create new user
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
-        username=user_data.username,
+        username=username,
         email=user_data.email,
         hashed_password=hashed_password,
         role=user_data.role,
