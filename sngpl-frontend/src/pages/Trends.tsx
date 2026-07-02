@@ -11,10 +11,12 @@ import {
   Battery,
   AlertTriangle,
   MapPin,
-  Clock
+  Clock,
+  Download
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
+import ExportModal from '../components/ExportModal';
 
 interface DeviceReading {
   timestamp: string;
@@ -92,6 +94,7 @@ const Trends = () => {
   // History logs pagination (1000 loaded, 100 per page = 10 pages)
   const [historyPage, setHistoryPage] = useState(1);
   const historyPerPage = 100;
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Custom date range states for each parameter
   const getDefaultStartDate = () => {
@@ -1032,9 +1035,18 @@ const Trends = () => {
         {/* Complete History Logs */}
         <div className="glass rounded-xl overflow-hidden">
           <div className="p-6 border-b border-gray-300">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
-              <p className="text-sm text-gray-600 mt-1">{hourlyData.length} readings — Page {historyPage} of {Math.ceil(hourlyData.length / historyPerPage)}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Complete History Logs</h3>
+                <p className="text-sm text-gray-600 mt-1">{hourlyData.length} readings — Page {historyPage} of {Math.ceil(hourlyData.length / historyPerPage)}</p>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export Data</span>
+              </button>
             </div>
           </div>
           <div className="overflow-auto" style={{ maxHeight: '500px' }}>
@@ -1165,6 +1177,15 @@ const Trends = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        deviceId={deviceId}
+        deviceName={deviceData?.device_name}
+        exportType="device"
+      />
     </Layout>
   );
 };
