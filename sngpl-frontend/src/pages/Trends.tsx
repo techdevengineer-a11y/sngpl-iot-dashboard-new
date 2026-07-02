@@ -466,45 +466,6 @@ const Trends = () => {
     return cleanedData;
   };
 
-  // Custom Date Range Selector Component
-  const CustomDateRangeSelector = ({
-    startDate,
-    endDate,
-    onStartChange,
-    onEndChange
-  }: {
-    startDate: string;
-    endDate: string;
-    onStartChange: (val: string) => void;
-    onEndChange: (val: string) => void;
-  }) => {
-    return (
-      <div className="mb-4">
-        {/* Custom Date/Time Inputs */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Start Date & Time</label>
-            <input
-              type="datetime-local"
-              value={startDate}
-              onChange={(e) => onStartChange(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">End Date & Time</label>
-            <input
-              type="datetime-local"
-              value={endDate}
-              onChange={(e) => onEndChange(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <Layout>
@@ -731,12 +692,6 @@ const Trends = () => {
                 Last Hour Flow Time History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t18StartDate}
-              endDate={t18EndDate}
-              onStartChange={setT18StartDate}
-              onEndChange={setT18EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t18StartDate, t18EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -775,12 +730,6 @@ const Trends = () => {
                 Last Hour Diff Pressure History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t19StartDate}
-              endDate={t19EndDate}
-              onStartChange={setT19StartDate}
-              onEndChange={setT19EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t19StartDate, t19EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -819,12 +768,6 @@ const Trends = () => {
                 Last Hour Static Pressure History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t110StartDate}
-              endDate={t110EndDate}
-              onStartChange={setT110StartDate}
-              onEndChange={setT110EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t110StartDate, t110EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -863,12 +806,6 @@ const Trends = () => {
                 Last Hour Temperature History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t111StartDate}
-              endDate={t111EndDate}
-              onStartChange={setT111StartDate}
-              onEndChange={setT111EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t111StartDate, t111EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -907,12 +844,6 @@ const Trends = () => {
                 Last Hour Volume History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t112StartDate}
-              endDate={t112EndDate}
-              onStartChange={setT112StartDate}
-              onEndChange={setT112EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t112StartDate, t112EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -951,12 +882,6 @@ const Trends = () => {
                 Last Hour Energy History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t113StartDate}
-              endDate={t113EndDate}
-              onStartChange={setT113StartDate}
-              onEndChange={setT113EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t113StartDate, t113EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -995,12 +920,6 @@ const Trends = () => {
                 Specific Gravity History
               </h3>
             </div>
-            <CustomDateRangeSelector
-              startDate={t114StartDate}
-              endDate={t114EndDate}
-              onStartChange={setT114StartDate}
-              onEndChange={setT114EndDate}
-            />
             <ResponsiveContainer width="100%" height={250} minHeight={250}>
               <LineChart data={filterDataByDateRange(t114StartDate, t114EndDate, 20)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
