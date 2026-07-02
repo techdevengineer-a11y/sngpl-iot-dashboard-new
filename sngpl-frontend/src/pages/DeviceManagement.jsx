@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { getDevices } from '../services/api';
+import { getDevices, getDeviceReadingCounts } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import { Radio, Wifi, WifiOff, AlertTriangle, MapPin, Gauge, Edit3, Save, X, Search, Filter } from 'lucide-react';
+import { Radio, Wifi, WifiOff, AlertTriangle, MapPin, Gauge, Edit3, Save, X, Search, Filter, BarChart3 } from 'lucide-react';
 import { getMeterInfo } from '../utils/deviceMetersDefaults';
 
 const DeviceManagement = () => {
   const [devices, setDevices] = useState([]);
+  const [readingCounts, setReadingCounts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState('ALL');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -64,6 +65,7 @@ const DeviceManagement = () => {
 
   useEffect(() => {
     fetchDevices();
+    fetchReadingCounts();
   }, []);
 
   const fetchDevices = async () => {
@@ -75,6 +77,17 @@ const DeviceManagement = () => {
       console.error('Error fetching devices:', error);
       toast.error('Failed to fetch devices');
       setLoading(false);
+    }
+  };
+
+  const fetchReadingCounts = async () => {
+    try {
+      const data = await getDeviceReadingCounts();
+      const byId = {};
+      data.devices.forEach(d => { byId[d.id] = d; });
+      setReadingCounts({ byId, expected24: data.expected_24h, expected30: data.expected_30d });
+    } catch (error) {
+      console.error('Error fetching reading counts:', error);
     }
   };
 
@@ -270,6 +283,31 @@ const DeviceManagement = () => {
     offline: devices.filter(d => getDeviceStatus(d) === 'offline').length,
   };
 
+  // Reading counter badge: received/expected, coloured by completeness, with missed count
+  const renderReadingCounter = (deviceId, windowKey) => {
+    if (!readingCounts) return <span className="text-gray-400 text-sm">…</span>;
+    const rec = readingCounts.byId[deviceId];
+    const expected = windowKey === '24h' ? readingCounts.expected24 : readingCounts.expected30;
+    const count = rec ? (windowKey === '24h' ? rec.count_24h : rec.count_30d) : 0;
+    const missed = Math.max(0, expected - count);
+    const pct = expected > 0 ? count / expected : 0;
+    const cls = pct >= 0.9
+      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      : pct >= 0.5
+        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+    return (
+      <div className="flex flex-col items-start gap-0.5">
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold font-mono ${cls}`}>
+          {count}/{expected}
+        </span>
+        {missed > 0 && (
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">{missed} missed</span>
+        )}
+      </div>
+    );
+  };
+
   const sectionStats = () => {
     const groups = groupedDevices();
     return Object.keys(groups).map(sectionId => ({
@@ -285,58 +323,66 @@ const DeviceManagement = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header with gradient */}
-        <div className="rounded-2xl p-8 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 shadow-xl shadow-blue-500/20">
+        {/* Header */}
+        <div className="glass rounded-xl p-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <Radio className="w-8 h-8 text-white" />
+            <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <Radio className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Device Management</h1>
-              <p className="text-blue-100 mt-1">Edit device names, meter types, units and GPS coordinates</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Management</h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Edit device names, meter types, units and GPS coordinates</p>
             </div>
           </div>
         </div>
 
-        {/* Statistics — vibrant gradient cards */}
+        {/* Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 text-white">
+          <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-xs uppercase tracking-wide font-semibold">Total Devices</p>
-                <p className="text-4xl font-bold mt-2">{stats.total}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Total Devices</p>
+                <p className="text-4xl font-bold mt-2 text-blue-600 dark:text-blue-400">{stats.total}</p>
               </div>
-              <Radio className="w-10 h-10 text-white/40" />
+              <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Radio className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-green-500/20 text-white">
+          <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-100 text-xs uppercase tracking-wide font-semibold">Online</p>
-                <p className="text-4xl font-bold mt-2">{stats.online}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Online</p>
+                <p className="text-4xl font-bold mt-2 text-green-600 dark:text-green-400">{stats.online}</p>
               </div>
-              <Wifi className="w-10 h-10 text-white/40" />
+              <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Wifi className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl p-5 bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/20 text-white">
+          <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-amber-100 text-xs uppercase tracking-wide font-semibold">Warning</p>
-                <p className="text-4xl font-bold mt-2">{stats.warning}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Warning</p>
+                <p className="text-4xl font-bold mt-2 text-amber-600 dark:text-amber-400">{stats.warning}</p>
               </div>
-              <AlertTriangle className="w-10 h-10 text-white/40" />
+              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl p-5 bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/20 text-white">
+          <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-red-100 text-xs uppercase tracking-wide font-semibold">Offline</p>
-                <p className="text-4xl font-bold mt-2">{stats.offline}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Offline</p>
+                <p className="text-4xl font-bold mt-2 text-red-600 dark:text-red-400">{stats.offline}</p>
               </div>
-              <WifiOff className="w-10 h-10 text-white/40" />
+              <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <WifiOff className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -382,12 +428,15 @@ const DeviceManagement = () => {
                 <button
                   key={stat.id}
                   onClick={() => setSelectedSection(stat.id)}
-                  className={`rounded-2xl p-5 text-left bg-gradient-to-br ${sec?.gradient} shadow-lg hover:scale-105 transition-transform text-white`}
+                  className="glass rounded-xl p-5 text-left hover:scale-105 transition-transform"
                 >
-                  <h3 className="text-xs uppercase tracking-wider font-bold opacity-90">Section {stat.id}</h3>
-                  <p className="text-3xl font-bold mt-2">{stat.count}</p>
-                  <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold">
-                    <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${sec?.gradient}`}></div>
+                    <h3 className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">Section {stat.id}</h3>
+                  </div>
+                  <p className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stat.count}</p>
+                  <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-600 dark:text-green-400">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span>{stat.online} online</span>
                   </div>
                 </button>
@@ -451,6 +500,12 @@ const DeviceManagement = () => {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Latitude</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Longitude</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />24H Report</div>
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />30D Report</div>
+                    </th>
                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -567,6 +622,12 @@ const DeviceManagement = () => {
                             {status.toUpperCase()}
                           </span>
                         </td>
+                        <td className="px-6 py-4">
+                          {renderReadingCounter(device.id, '24h')}
+                        </td>
+                        <td className="px-6 py-4">
+                          {renderReadingCounter(device.id, '30d')}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           {isEditing ? (
                             <div className="flex items-center justify-end gap-2">
@@ -607,8 +668,8 @@ const DeviceManagement = () => {
 
       {/* Edit Device Modal (kept for reference but inline editing is primary) */}
       {showEditModal && currentDevice && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Device</h2>
@@ -616,7 +677,7 @@ const DeviceManagement = () => {
               </div>
               <button
                 onClick={() => { setShowEditModal(false); resetForm(); }}
-                className="text-gray-400 hover:text-white text-2xl"
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl"
               >
                 ✕
               </button>
@@ -662,7 +723,7 @@ const DeviceManagement = () => {
                 <button
                   type="button"
                   onClick={() => { setShowEditModal(false); resetForm(); }}
-                  className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all duration-200"
+                  className="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg transition-all duration-200"
                 >
                   Cancel
                 </button>

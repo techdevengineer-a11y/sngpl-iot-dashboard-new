@@ -53,6 +53,11 @@ export const getDeviceStats = async () => {
   return response.data;
 };
 
+export const getDeviceReadingCounts = async () => {
+  const response = await api.get('/device-reports/reading-counts');
+  return response.data;
+};
+
 export const createDevice = async (deviceData) => {
   const response = await api.post('/devices/', deviceData);
   return response.data;

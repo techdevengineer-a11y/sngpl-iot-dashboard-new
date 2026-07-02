@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.core.logging_config import setup_logging, get_logger
 from app.core.rate_limit import limiter
 from app.db.database import engine, Base, init_timescale
-from app.api.v1 import auth, devices, alarms, analytics, notifications, dashboard, users, websocket, reports, audit, retention, backup, stations, roles, odorant
+from app.api.v1 import auth, devices, alarms, analytics, notifications, dashboard, users, websocket, reports, audit, retention, backup, stations, roles, odorant, device_reports
 from app.api import export
 from app.services.websocket_service import manager
 from app.services.cleanup_service import cleanup_service
@@ -146,6 +146,7 @@ app.include_router(odorant.router, prefix=f"{settings.API_V1_PREFIX}/odorant", t
 app.include_router(stations.router, prefix=f"{settings.API_V1_PREFIX}", tags=["sections"])  # Renamed to sections
 app.include_router(roles.router, prefix=f"{settings.API_V1_PREFIX}/roles", tags=["roles"])
 app.include_router(export.router, prefix=f"{settings.API_V1_PREFIX}/export", tags=["export"])
+app.include_router(device_reports.router, prefix=f"{settings.API_V1_PREFIX}/device-reports", tags=["device-reports"])
 app.include_router(websocket.router, tags=["websocket"])
 
 
