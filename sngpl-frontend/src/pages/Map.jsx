@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from 'recharts';
 import { getDevices, getReadings, getDeviceReadings } from '../services/api';
@@ -43,6 +44,8 @@ const Map = () => {
   const [readingsMap, setReadingsMap] = useState({});
   const [flowHistory, setFlowHistory] = useState([]);
   const [flowLoading, setFlowLoading] = useState(false);
+  const [mapSearch, setMapSearch] = useState('');
+  const navigate = useNavigate();
   const [newDevice, setNewDevice] = useState({
     client_id: '',
     device_name: '',
@@ -200,6 +203,30 @@ const Map = () => {
     { name: 'Quetta', lat: 30.1798, lng: 66.9750 },
   ];
 
+  // Station search matches (max 8)
+  const searchMatches = useMemo(() => {
+    const q = mapSearch.trim().toLowerCase();
+    if (!q) return [];
+    return validDevices
+      .filter(d =>
+        (d.client_id || '').toLowerCase().includes(q) ||
+        (d.device_name || '').toLowerCase().includes(q) ||
+        (d.location || '').toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [mapSearch, validDevices]);
+
+  // "2 h ago" style relative time
+  const timeAgo = (dateStr) => {
+    if (!dateStr) return 'never';
+    const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} h ago`;
+    return `${Math.floor(hrs / 24)} d ago`;
+  };
+
   // Get reading for selected device
   const selectedReading = selectedDevice ? readingsMap[selectedDevice.id] : null;
   const selectedStatus = selectedDevice ? deviceStatusMap[selectedDevice.id] || getDeviceStatus(selectedDevice) : null;
@@ -258,21 +285,52 @@ const Map = () => {
 
         {/* Map Container */}
         <div className="glass rounded-xl p-6 relative">
-          <div className="mb-4 flex justify-between items-center">
+          <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
             <h2 className="text-xl font-semibold text-gray-900">Section II Station Locations</h2>
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></div>
-                <span className="text-gray-600">Online</span>
+            <div className="flex items-center gap-4">
+              {/* Station search */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={mapSearch}
+                  onChange={(e) => setMapSearch(e.target.value)}
+                  placeholder="Search station by ID, name or location..."
+                  className="w-72 px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {searchMatches.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-[2000] overflow-hidden">
+                    {searchMatches.map(d => {
+                      const s = deviceStatusMap[d.id] || 'offline';
+                      return (
+                        <button
+                          key={d.id}
+                          onClick={() => { handleDeviceClick(d); setMapSearch(''); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-blue-50 transition-colors"
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                          <span className="font-mono font-semibold text-gray-900">{d.client_id}</span>
+                          <span className="text-gray-500 truncate">{d.device_name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
-                <span className="text-gray-600">Offline</span>
+              {/* Legend */}
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></div>
+                  <span className="text-gray-600">Online</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
+                  <span className="text-gray-600">Offline</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-[calc(100vh-280px)]">
+          <div className="rounded-lg overflow-hidden border border-gray-200 h-[calc(100vh-230px)] min-h-[500px]">
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -344,7 +402,7 @@ const Map = () => {
 
           {/* Slide-in Device Detail Panel */}
           <div
-            className={`absolute top-0 right-0 h-full w-96 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-l border-gray-200 dark:border-gray-700 z-[1000] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+            className={`absolute top-0 right-0 h-full w-96 bg-white border-l border-gray-200 shadow-2xl z-[1000] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
               selectedDevice ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
@@ -353,41 +411,41 @@ const Map = () => {
                 {/* Close button */}
                 <button
                   onClick={() => setSelectedDevice(null)}
-                  className="absolute top-4 right-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none"
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl leading-none"
                 >
                   ✕
                 </button>
 
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 pr-8">{selectedDevice.device_name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{selectedDevice.client_id}</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-1 pr-8">{selectedDevice.device_name}</h3>
+                <p className="text-sm text-gray-600 mb-4">{selectedDevice.client_id}</p>
 
-                {/* Status Badge */}
-                <div className="mb-4">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                    selectedStatus === 'online' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                    selectedStatus === 'warning' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                    selectedStatus === 'offline' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                    'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                {/* Status Badge + last seen */}
+                <div className="mb-4 flex items-center gap-3">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                    selectedStatus === 'online'
+                      ? 'bg-green-100 text-green-700 border border-green-200'
+                      : 'bg-red-100 text-red-700 border border-red-200'
                   }`}>
-                    {(selectedStatus || 'unknown').toUpperCase()}
+                    {(selectedStatus || 'offline').toUpperCase()}
                   </span>
+                  <span className="text-xs text-gray-500">last data {timeAgo(selectedDevice.last_seen)}</span>
                 </div>
 
                 {/* Device Info */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Location</span>
-                    <span className="text-gray-900 dark:text-white text-right">{selectedDevice.location}</span>
+                    <span className="text-gray-600">Location</span>
+                    <span className="text-gray-900 text-right">{selectedDevice.location}</span>
                   </div>
                   {selectedDevice.last_seen && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Last Seen</span>
-                      <span className="text-gray-900 dark:text-white">{new Date(selectedDevice.last_seen).toLocaleString()}</span>
+                      <span className="text-gray-600">Last Seen</span>
+                      <span className="text-gray-900">{new Date(selectedDevice.last_seen).toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Coordinates</span>
-                    <span className="text-gray-900 dark:text-white">
+                    <span className="text-gray-600">Coordinates</span>
+                    <span className="text-gray-900">
                       {selectedDevice.latitude.toFixed(4)}, {selectedDevice.longitude.toFixed(4)}
                     </span>
                   </div>
@@ -441,45 +499,45 @@ const Map = () => {
                   )}
                 </div>
 
-                {/* Sensor Readings */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <h4 className="text-sm font-semibold text-blue-600 mb-3">Latest Sensor Readings</h4>
+                {/* Latest SMS Reading */}
+                <div className="border-t border-gray-200 pt-4">
+                  <h4 className="text-sm font-semibold text-blue-600 mb-3">Latest SMS Reading</h4>
                   {selectedReading ? (
                     <div className="space-y-2">
                       {selectedReading.temperature != null && (
-                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">Temperature</span>
-                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.temperature}°C</span>
+                        <div className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600">Temperature</span>
+                          <span className="text-gray-900 font-medium">{selectedReading.temperature} °F</span>
                         </div>
                       )}
                       {selectedReading.static_pressure != null && (
-                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">Static Pressure</span>
-                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.static_pressure} bar</span>
+                        <div className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600">Static Pressure</span>
+                          <span className="text-gray-900 font-medium">{selectedReading.static_pressure} PSI</span>
                         </div>
                       )}
                       {selectedReading.differential_pressure != null && (
-                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">Diff Pressure</span>
-                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.differential_pressure} bar</span>
+                        <div className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600">Diff Pressure</span>
+                          <span className="text-gray-900 font-medium">{selectedReading.differential_pressure} IWC</span>
                         </div>
                       )}
                       {selectedReading.volume != null && (
-                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">MMCF</span>
-                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.volume.toFixed(3)}</span>
+                        <div className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600">Volume</span>
+                          <span className="text-gray-900 font-medium">{selectedReading.volume.toFixed(3)} MCF</span>
                         </div>
                       )}
                       {selectedReading.total_volume_flow != null && (
-                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">Flow Rate</span>
-                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.total_volume_flow}</span>
+                        <div className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600">Flow Rate</span>
+                          <span className="text-gray-900 font-medium">{selectedReading.total_volume_flow} MCF/day</span>
                         </div>
                       )}
                       {selectedReading.battery != null && (
-                        <div className="flex justify-between text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                          <span className="text-gray-600 dark:text-gray-400">Battery</span>
-                          <span className="text-gray-900 dark:text-white font-medium">{selectedReading.battery}%</span>
+                        <div className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="text-gray-600">Battery</span>
+                          <span className="text-gray-900 font-medium">{selectedReading.battery} V</span>
                         </div>
                       )}
                       <p className="text-xs text-gray-500 mt-2">
@@ -487,9 +545,17 @@ const Map = () => {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">No recent sensor data available</p>
+                    <p className="text-sm text-gray-500 italic">No recent SMS data available</p>
                   )}
                 </div>
+
+                {/* Full station report */}
+                <button
+                  onClick={() => navigate(`/trends/${selectedDevice.client_id}`)}
+                  className="mt-5 w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
+                >
+                  Open Station Report →
+                </button>
               </div>
             )}
           </div>
@@ -499,50 +565,6 @@ const Map = () => {
           </div>
         </div>
 
-        {/* Device List */}
-        <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Section II Stations</h2>
-          {loading ? (
-            <div className="text-center text-gray-600 dark:text-gray-400 py-8">Loading devices...</div>
-          ) : devices.length === 0 ? (
-            <div className="text-center text-gray-600 dark:text-gray-400 py-8">
-              No devices found. Add devices to see them on the map.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {validDevices.map((device) => {
-                const status = deviceStatusMap[device.id] || 'unknown';
-                return (
-                  <div
-                    key={device.id}
-                    onClick={() => handleDeviceClick(device)}
-                    className="p-4 bg-white dark:bg-gray-800/50 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/70 cursor-pointer transition-all duration-200 border border-gray-200 dark:border-gray-700"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{device.device_name}</h3>
-                      <div className={`w-3 h-3 rounded-full ${
-                        status === 'online' ? 'bg-green-500 animate-pulse' :
-                        status === 'warning' ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}></div>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ID: {device.client_id}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">📍 {device.location}</p>
-                    {device.latitude != null && device.longitude != null ? (
-                      <p className="text-xs text-gray-500">
-                        {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-red-400">
-                        ⚠️ No coordinates set
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Add Device Modal */}
