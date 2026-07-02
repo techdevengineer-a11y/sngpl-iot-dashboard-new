@@ -1185,6 +1185,7 @@ const Trends = () => {
         deviceId={deviceId}
         deviceName={deviceData?.device_name}
         exportType="device"
+        dataset="last_hour"
       />
     </Layout>
   );

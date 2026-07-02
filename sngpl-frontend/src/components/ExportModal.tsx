@@ -8,9 +8,11 @@ interface ExportModalProps {
   deviceName?: string;
   sectionId?: string;
   exportType: 'device' | 'section' | 'all';
+  /** Column set for device exports: station history (standard) or Trends last-hour params */
+  dataset?: 'standard' | 'last_hour';
 }
 
-const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportType }: ExportModalProps) => {
+const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportType, dataset = 'standard' }: ExportModalProps) => {
   const [timeRange, setTimeRange] = useState<'7days' | '15days' | '30days' | 'custom'>('7days');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().slice(0, 16));
@@ -55,7 +57,7 @@ const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportT
 
       // Build API URL based on export type
       if (exportType === 'device' && deviceId) {
-        url = `/api/export/device/${deviceId}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&format=${format}`;
+        url = `/api/export/device/${deviceId}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&format=${format}&dataset=${dataset}`;
       } else if (exportType === 'section' && sectionId) {
         url = `/api/export/section/${sectionId}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&format=${format}`;
       } else if (exportType === 'all') {
@@ -248,22 +250,30 @@ const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportT
           {/* Export Info */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Exported Data Includes:</h4>
-            <ul className="text-sm text-gray-700 space-y-1">
-              <li>• Temperature (°F)</li>
-              <li>• Static Pressure (PSI)</li>
-              <li>• Differential Pressure (IWC)</li>
-              <li>• Volume (MCF)</li>
-              <li>• Total Volume Flow (MCF/day)</li>
-              <li>• Battery Voltage (V)</li>
-              <li>• Last Hour Flow Time (s)</li>
-              <li>• Last Hour Diff Pressure (IWC)</li>
-              <li>• Last Hour Static Pressure (PSI)</li>
-              <li>• Last Hour Temperature (°F)</li>
-              <li>• Last Hour Volume (MCF)</li>
-              <li>• Last Hour Energy</li>
-              <li>• Specific Gravity</li>
-              <li>• Timestamps for all readings</li>
-            </ul>
+            {exportType === 'device' && dataset === 'last_hour' ? (
+              <ul className="text-sm text-gray-700 space-y-1">
+                <li>• Last Hour Flow Time (s)</li>
+                <li>• Last Hour Diff Pressure (IWC)</li>
+                <li>• Last Hour Static Pressure (PSI)</li>
+                <li>• Last Hour Temperature (°F)</li>
+                <li>• Last Hour Volume (MCF)</li>
+                <li>• Last Hour Energy</li>
+                <li>• Specific Gravity</li>
+                <li>• Timestamps for all readings</li>
+              </ul>
+            ) : (
+              <ul className="text-sm text-gray-700 space-y-1">
+                <li>• Temperature (°F)</li>
+                <li>• Static Pressure (PSI)</li>
+                <li>• Max Static Pressure (PSI)</li>
+                <li>• Min Static Pressure (PSI)</li>
+                <li>• Differential Pressure (IWC)</li>
+                <li>• Volume (MCF)</li>
+                <li>• Total Volume Flow (MCF/day)</li>
+                <li>• Battery Voltage (V)</li>
+                <li>• Timestamps for all readings</li>
+              </ul>
+            )}
           </div>
 
           {/* Progress Bar */}

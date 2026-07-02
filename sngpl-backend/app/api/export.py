@@ -37,32 +37,42 @@ def _fmt(value) -> str:
     return f"{value:.2f}" if value is not None else ''
 
 
-def create_csv_export(readings: list, device_info: dict) -> str:
+def _device_export_columns(dataset: str):
+    """Column layouts for single-device exports.
+
+    'standard' mirrors the station Complete History Logs table;
+    'last_hour' mirrors the Trends (Advanced Reports) history table.
+    """
+    if dataset == 'last_hour':
+        return [
+            ('Last Hour Flow Time (s)', lambda r: _fmt(r.last_hour_flow_time)),
+            ('Last Hour Diff Pressure (IWC)', lambda r: _fmt(r.last_hour_diff_pressure)),
+            ('Last Hour Static Pressure (PSI)', lambda r: _fmt(r.last_hour_static_pressure)),
+            ('Last Hour Temperature (°F)', lambda r: _fmt(r.last_hour_temperature)),
+            ('Last Hour Volume (MCF)', lambda r: _fmt(r.last_hour_volume)),
+            ('Last Hour Energy', lambda r: _fmt(r.last_hour_energy)),
+            ('Specific Gravity', lambda r: _fmt(r.specific_gravity)),
+        ]
+    return [
+        ('Temperature (°F)', lambda r: _fmt(r.temperature)),
+        ('Static Pressure (PSI)', lambda r: _fmt(r.static_pressure)),
+        ('Max Static Pressure (PSI)', lambda r: _fmt(r.max_static_pressure)),
+        ('Min Static Pressure (PSI)', lambda r: _fmt(r.min_static_pressure)),
+        ('Differential Pressure (IWC)', lambda r: _fmt(r.differential_pressure)),
+        ('Volume (MCF)', lambda r: _fmt(r.volume)),
+        ('Total Volume Flow (MCF/day)', lambda r: _fmt(r.total_volume_flow)),
+        ('Battery (V)', lambda r: _fmt(r.battery)),
+    ]
+
+
+def create_csv_export(readings: list, device_info: dict, dataset: str = 'standard') -> str:
     """Create CSV export from device readings"""
+    columns = _device_export_columns(dataset)
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Write header
-    writer.writerow([
-        'Device ID',
-        'Device Name',
-        'Timestamp',
-        'Temperature (°F)',
-        'Static Pressure (PSI)',
-        'Differential Pressure (IWC)',
-        'Volume (MCF)',
-        'Total Volume Flow (MCF/day)',
-        'Battery (V)',
-        'Last Hour Flow Time (s)',
-        'Last Hour Diff Pressure (IWC)',
-        'Last Hour Static Pressure (PSI)',
-        'Last Hour Temperature (°F)',
-        'Last Hour Volume (MCF)',
-        'Last Hour Energy',
-        'Specific Gravity'
-    ])
+    writer.writerow(['Device ID', 'Device Name', 'Timestamp'] + [header for header, _ in columns])
 
-    # Write data rows
     for reading in readings:
         # Convert timestamp to Pakistan Standard Time (UTC+5)
         pkt_timestamp = convert_to_pkt(reading.timestamp)
@@ -70,26 +80,14 @@ def create_csv_export(readings: list, device_info: dict) -> str:
             device_info.get('client_id', ''),
             device_info.get('device_name', ''),
             pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '',
-            f"{reading.temperature:.2f}",
-            f"{reading.static_pressure:.2f}",
-            f"{reading.differential_pressure:.2f}",
-            f"{reading.volume:.2f}",
-            f"{reading.total_volume_flow:.2f}",
-            f"{(reading.battery or 0):.2f}",
-            _fmt(reading.last_hour_flow_time),
-            _fmt(reading.last_hour_diff_pressure),
-            _fmt(reading.last_hour_static_pressure),
-            _fmt(reading.last_hour_temperature),
-            _fmt(reading.last_hour_volume),
-            _fmt(reading.last_hour_energy),
-            _fmt(reading.specific_gravity)
-        ])
+        ] + [getter(reading) for _, getter in columns])
 
     return output.getvalue()
 
 
-def create_excel_export(readings: list, device_info: dict) -> bytes:
+def create_excel_export(readings: list, device_info: dict, dataset: str = 'standard') -> bytes:
     """Create Excel export from device readings"""
+    columns = _device_export_columns(dataset)
     wb = Workbook()
     ws = wb.active
     ws.title = "Device Readings"
@@ -100,24 +98,7 @@ def create_excel_export(readings: list, device_info: dict) -> bytes:
     header_alignment = Alignment(horizontal="center", vertical="center")
 
     # Write header
-    headers = [
-        'Device ID',
-        'Device Name',
-        'Timestamp',
-        'Temperature (°F)',
-        'Static Pressure (PSI)',
-        'Differential Pressure (IWC)',
-        'Volume (MCF)',
-        'Total Volume Flow (MCF/day)',
-        'Battery (V)',
-        'Last Hour Flow Time (s)',
-        'Last Hour Diff Pressure (IWC)',
-        'Last Hour Static Pressure (PSI)',
-        'Last Hour Temperature (°F)',
-        'Last Hour Volume (MCF)',
-        'Last Hour Energy',
-        'Specific Gravity'
-    ]
+    headers = ['Device ID', 'Device Name', 'Timestamp'] + [header for header, _ in columns]
 
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num, value=header)
@@ -129,22 +110,13 @@ def create_excel_export(readings: list, device_info: dict) -> bytes:
     for row_num, reading in enumerate(readings, 2):
         # Convert timestamp to Pakistan Standard Time (UTC+5)
         pkt_timestamp = convert_to_pkt(reading.timestamp)
-        ws.cell(row=row_num, column=1, value=device_info.get('client_id', ''))
-        ws.cell(row=row_num, column=2, value=device_info.get('device_name', ''))
-        ws.cell(row=row_num, column=3, value=pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '')
-        ws.cell(row=row_num, column=4, value=f"{reading.temperature:.2f}")
-        ws.cell(row=row_num, column=5, value=f"{reading.static_pressure:.2f}")
-        ws.cell(row=row_num, column=6, value=f"{reading.differential_pressure:.2f}")
-        ws.cell(row=row_num, column=7, value=f"{reading.volume:.2f}")
-        ws.cell(row=row_num, column=8, value=f"{reading.total_volume_flow:.2f}")
-        ws.cell(row=row_num, column=9, value=f"{(reading.battery or 0):.2f}")
-        ws.cell(row=row_num, column=10, value=_fmt(reading.last_hour_flow_time))
-        ws.cell(row=row_num, column=11, value=_fmt(reading.last_hour_diff_pressure))
-        ws.cell(row=row_num, column=12, value=_fmt(reading.last_hour_static_pressure))
-        ws.cell(row=row_num, column=13, value=_fmt(reading.last_hour_temperature))
-        ws.cell(row=row_num, column=14, value=_fmt(reading.last_hour_volume))
-        ws.cell(row=row_num, column=15, value=_fmt(reading.last_hour_energy))
-        ws.cell(row=row_num, column=16, value=_fmt(reading.specific_gravity))
+        values = [
+            device_info.get('client_id', ''),
+            device_info.get('device_name', ''),
+            pkt_timestamp.strftime('%Y-%m-%d %H:%M:%S') if pkt_timestamp else '',
+        ] + [getter(reading) for _, getter in columns]
+        for col_num, value in enumerate(values, 1):
+            ws.cell(row=row_num, column=col_num, value=value)
 
     # Auto-adjust column widths
     for column in ws.columns:
@@ -287,6 +259,7 @@ async def export_device_data(
     start: str = Query(..., description="Start datetime in ISO format"),
     end: str = Query(..., description="End datetime in ISO format"),
     format: str = Query("csv", description="Export format: csv or excel"),
+    dataset: str = Query("standard", description="Column set: standard (station history) or last_hour (Trends)"),
     db: Session = Depends(get_db)
 ):
     """Export data for a single device"""
@@ -322,11 +295,11 @@ async def export_device_data(
 
         # Generate export based on format
         if format == "csv":
-            content = create_csv_export(readings, device_info)
+            content = create_csv_export(readings, device_info, dataset)
             filename = f"device_{device_id}_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.csv"
             media_type = "text/csv"
         elif format == "excel":
-            content = create_excel_export(readings, device_info)
+            content = create_excel_export(readings, device_info, dataset)
             filename = f"device_{device_id}_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.xlsx"
             media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         else:
