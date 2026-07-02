@@ -60,6 +60,13 @@ export const getDeviceReadingCounts = async (month) => {
   return response.data;
 };
 
+export const getDeviceMonthlyDetail = async (deviceId, month) => {
+  const response = await api.get(`/device-reports/monthly-detail/${deviceId}`, {
+    params: month ? { month } : {},
+  });
+  return response.data;
+};
+
 export const createDevice = async (deviceData) => {
   const response = await api.post('/devices/', deviceData);
   return response.data;

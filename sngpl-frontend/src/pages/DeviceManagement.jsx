@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { getDevices, getDeviceReadingCounts } from '../services/api';
+import { getDevices, getDeviceReadingCounts, getDeviceMonthlyDetail } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import { Radio, Wifi, WifiOff, AlertTriangle, MapPin, Gauge, Edit3, Save, X, Search, Filter, BarChart3 } from 'lucide-react';
+import { Radio, Wifi, WifiOff, AlertTriangle, MapPin, Gauge, Edit3, Save, X, Search, Filter, BarChart3, Sparkles } from 'lucide-react';
 import { getMeterInfo } from '../utils/deviceMetersDefaults';
 
 const DeviceManagement = () => {
   const [devices, setDevices] = useState([]);
   const [readingCounts, setReadingCounts] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(''); // '' = current month
+  const [monthlyDetail, setMonthlyDetail] = useState(null); // { loading, data }
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState('ALL');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -90,7 +91,7 @@ const DeviceManagement = () => {
       const data = await getDeviceReadingCounts(month);
       const byId = {};
       data.devices.forEach(d => { byId[d.id] = d; });
-      setReadingCounts({ byId, expected24: data.expected_24h, expectedMonth: data.expected_month, month: data.month });
+      setReadingCounts({ byId, expectedToday: data.expected_today, expectedMonth: data.expected_month, month: data.month });
     } catch (error) {
       console.error('Error fetching reading counts:', error);
     }
@@ -310,8 +311,8 @@ const DeviceManagement = () => {
   const renderReadingCounter = (deviceId, windowKey) => {
     if (!readingCounts) return <span className="text-gray-400 text-sm">…</span>;
     const rec = readingCounts.byId[deviceId];
-    const expected = windowKey === '24h' ? readingCounts.expected24 : readingCounts.expectedMonth;
-    const count = rec ? (windowKey === '24h' ? rec.count_24h : rec.count_month) : 0;
+    const expected = windowKey === 'today' ? readingCounts.expectedToday : readingCounts.expectedMonth;
+    const count = rec ? (windowKey === 'today' ? rec.count_today : rec.count_month) : 0;
     const missed = Math.max(0, expected - count);
     const pct = expected > 0 ? count / expected : 0;
     const cls = pct >= 0.9
@@ -329,6 +330,27 @@ const DeviceManagement = () => {
         )}
       </div>
     );
+  };
+
+  const openMonthlyDetail = async (device) => {
+    setMonthlyDetail({ loading: true, data: null });
+    try {
+      const data = await getDeviceMonthlyDetail(device.id, selectedMonth || undefined);
+      setMonthlyDetail({ loading: false, data });
+    } catch (error) {
+      console.error('Error fetching monthly detail:', error);
+      toast.error('Failed to load monthly report');
+      setMonthlyDetail(null);
+    }
+  };
+
+  // Day cell colour for the monthly breakdown grid
+  const dayCellClass = (day) => {
+    if (day.expected === 0) return 'bg-gray-100 text-gray-400';           // future day
+    if (day.count === 0) return 'bg-red-600 text-white';                  // fully missed
+    if (day.count >= day.expected) return 'bg-green-600 text-white';      // complete
+    if (day.count / day.expected >= 0.5) return 'bg-amber-500 text-white'; // partial
+    return 'bg-red-500 text-white';                                       // mostly missed
   };
 
   const sectionStats = () => {
@@ -537,7 +559,7 @@ const DeviceManagement = () => {
                     {selectedSection === 'ONLINE' && (
                       <>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                          <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />24H Report</div>
+                          <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />Today</div>
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                           <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />{selectedMonthLabel}</div>
@@ -663,10 +685,17 @@ const DeviceManagement = () => {
                         {selectedSection === 'ONLINE' && (
                           <>
                             <td className="px-6 py-4">
-                              {renderReadingCounter(device.id, '24h')}
+                              {renderReadingCounter(device.id, 'today')}
                             </td>
                             <td className="px-6 py-4">
-                              {renderReadingCounter(device.id, 'month')}
+                              <button
+                                onClick={() => openMonthlyDetail(device)}
+                                title="View day-by-day monthly report"
+                                className="text-left hover:scale-105 transition-transform"
+                              >
+                                {renderReadingCounter(device.id, 'month')}
+                                <span className="block text-[11px] text-blue-600 font-semibold mt-0.5">View days →</span>
+                              </button>
                             </td>
                           </>
                         )}
@@ -707,6 +736,87 @@ const DeviceManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Monthly reliability report modal */}
+      {monthlyDetail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setMonthlyDetail(null)}>
+          <div
+            className="bg-white rounded-2xl p-6 md:p-8 max-w-2xl w-full border border-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {monthlyDetail.loading ? (
+              <div className="p-12 text-center">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-500/30 border-t-blue-500"></div>
+                <p className="mt-4 text-gray-500">Loading monthly report...</p>
+              </div>
+            ) : monthlyDetail.data && (
+              <>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{monthlyDetail.data.client_id}</h2>
+                    <p className="text-sm text-gray-600">{monthlyDetail.data.device_name} — {monthlyDetail.data.month_label}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className={`text-3xl font-bold ${
+                        monthlyDetail.data.expected_total > 0 && monthlyDetail.data.total / monthlyDetail.data.expected_total >= 0.9
+                          ? 'text-green-600'
+                          : monthlyDetail.data.expected_total > 0 && monthlyDetail.data.total / monthlyDetail.data.expected_total >= 0.5
+                            ? 'text-amber-600' : 'text-red-600'
+                      }`}>
+                        {monthlyDetail.data.expected_total > 0
+                          ? Math.round((monthlyDetail.data.total / monthlyDetail.data.expected_total) * 1000) / 10
+                          : 0}%
+                      </div>
+                      <div className="text-xs text-gray-500 font-semibold uppercase">Reliability</div>
+                    </div>
+                    <button
+                      onClick={() => setMonthlyDetail(null)}
+                      className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {/* Written analysis */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold uppercase tracking-wide text-blue-700">Monthly Report Analysis</span>
+                  </div>
+                  <p className="text-sm text-gray-800 leading-relaxed">{monthlyDetail.data.summary}</p>
+                </div>
+
+                {/* Day-by-day grid */}
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                  Readings per day ({monthlyDetail.data.total}/{monthlyDetail.data.expected_total} total)
+                </p>
+                <div className="grid grid-cols-7 gap-1.5 mb-4">
+                  {monthlyDetail.data.days.map((day) => (
+                    <div
+                      key={day.day}
+                      title={day.expected === 0 ? `Day ${day.day}: upcoming` : `Day ${day.day}: ${day.count}/${day.expected} readings${day.missed > 0 ? `, ${day.missed} missed` : ''}`}
+                      className={`rounded-lg p-2 text-center ${dayCellClass(day)}`}
+                    >
+                      <div className="text-[10px] font-semibold opacity-80">{day.day}</div>
+                      <div className="text-sm font-bold font-mono">{day.expected === 0 ? '—' : day.count}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-600 inline-block"></span>Complete</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500 inline-block"></span>Partial</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-600 inline-block"></span>Missing</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-100 border border-gray-300 inline-block"></span>Upcoming</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Edit Device Modal (kept for reference but inline editing is primary) */}
       {showEditModal && currentDevice && (
