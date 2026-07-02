@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -15,7 +15,8 @@ import {
   Download,
   Maximize2,
   Camera,
-  Wifi
+  Wifi,
+  RotateCcw
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -198,6 +199,36 @@ const StationDetail = () => {
   const [isFlowFullscreen, setIsFlowFullscreen] = useState(false); // Flow Rate
   const [isBatteryFullscreen, setIsBatteryFullscreen] = useState(false); // Battery
 
+  // Charts whose date range was set manually in fullscreen — excluded from
+  // the live end-date auto-update until reset (ref so the interval sees it)
+  const manualRangesRef = useRef<Record<string, boolean>>({});
+
+  // Server-fetched readings for manually selected ranges (may be older than
+  // the latest-1000 window kept in historyData), keyed by chart
+  const [fullscreenRangeData, setFullscreenRangeData] = useState<Record<string, DeviceReading[]>>({});
+  const rangeFetchTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const fetchRangeData = (chartKey: string, startDate: string, endDate: string) => {
+    if (rangeFetchTimers.current[chartKey]) clearTimeout(rangeFetchTimers.current[chartKey]);
+    // Debounce so partial datetime-local edits don't fire a request per keystroke
+    rangeFetchTimers.current[chartKey] = setTimeout(async () => {
+      try {
+        const startIso = new Date(startDate).toISOString();
+        const endIso = new Date(endDate).toISOString();
+        const response = await fetch(`/api/analytics/readings?device_id=${stationId}&page_size=1000&page=1&start_date=${encodeURIComponent(startIso)}&end_date=${encodeURIComponent(endIso)}`);
+        if (response.ok) {
+          const result = await response.json();
+          const readings = (result.data || []).sort((a: any, b: any) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          setFullscreenRangeData(prev => ({ ...prev, [chartKey]: readings }));
+        }
+      } catch (error) {
+        console.error('Error fetching range data:', error);
+      }
+    }, 600);
+  };
+
   useEffect(() => {
     // Initial fetch on mount
     fetchDeviceData();
@@ -210,14 +241,16 @@ const StationDetail = () => {
     }, 30000);
 
     // Auto-update date range end times every 5 seconds to show real-time data
+    // (skipped for charts where the user picked a custom range in fullscreen)
     const dateInterval = setInterval(() => {
       const now = new Date().toISOString().slice(0, 16);
-      setTempEndDate(now);
-      setStaticPEndDate(now);
-      setDiffPEndDate(now);
-      setVolumeEndDate(now);
-      setFlowEndDate(now);
-      setBatteryEndDate(now);
+      const manual = manualRangesRef.current;
+      if (!manual.temp) setTempEndDate(now);
+      if (!manual.staticP) setStaticPEndDate(now);
+      if (!manual.diffP) setDiffPEndDate(now);
+      if (!manual.volume) setVolumeEndDate(now);
+      if (!manual.flow) setFlowEndDate(now);
+      if (!manual.battery) setBatteryEndDate(now);
       setHistoryLogEndDate(now);
     }, 5000);
 
@@ -543,6 +576,101 @@ const StationDetail = () => {
       </div>
     );
   };
+
+  // Data for a fullscreen chart: server-fetched range when the user picked
+  // dates manually, otherwise the live filtered window
+  const getFullscreenChartData = (chartKey: string, startDate: string, endDate: string) => {
+    if (manualRangesRef.current[chartKey] && fullscreenRangeData[chartKey]) {
+      return fullscreenRangeData[chartKey];
+    }
+    return filterDataByDateRange(startDate, endDate, 500);
+  };
+
+  // Closing a fullscreen chart returns it to the live view, since the shared
+  // date state also drives the inline chart, which has no picker of its own
+  const exitFullscreen = (
+    chartKey: string,
+    setOpen: (v: boolean) => void,
+    setStart: (val: string) => void,
+    setEnd: (val: string) => void
+  ) => {
+    setOpen(false);
+    if (manualRangesRef.current[chartKey]) {
+      delete manualRangesRef.current[chartKey];
+      setFullscreenRangeData(prev => {
+        const next = { ...prev };
+        delete next[chartKey];
+        return next;
+      });
+      setStart(getDefaultStartDate());
+      setEnd(getDefaultEndDate());
+    }
+  };
+
+  // Date/time range bar shown inside fullscreen chart modals. Plain render
+  // function (not a component) so the inputs keep focus across re-renders.
+  const renderFullscreenDateBar = (
+    chartKey: string,
+    startDate: string,
+    endDate: string,
+    setStart: (val: string) => void,
+    setEnd: (val: string) => void
+  ) => (
+    <div className="px-4 py-2 flex flex-wrap items-center gap-3 border-b border-gray-200 bg-white shrink-0">
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-medium text-gray-700 whitespace-nowrap">Start Date &amp; Time</label>
+        <input
+          type="datetime-local"
+          value={startDate}
+          max={endDate}
+          onChange={(e) => {
+            manualRangesRef.current[chartKey] = true;
+            setStart(e.target.value);
+            if (e.target.value && endDate) fetchRangeData(chartKey, e.target.value, endDate);
+          }}
+          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-medium text-gray-700 whitespace-nowrap">End Date &amp; Time</label>
+        <input
+          type="datetime-local"
+          value={endDate}
+          min={startDate}
+          onChange={(e) => {
+            manualRangesRef.current[chartKey] = true;
+            setEnd(e.target.value);
+            if (startDate && e.target.value) fetchRangeData(chartKey, startDate, e.target.value);
+          }}
+          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      {manualRangesRef.current[chartKey] ? (
+        <button
+          onClick={() => {
+            delete manualRangesRef.current[chartKey];
+            setFullscreenRangeData(prev => {
+              const next = { ...prev };
+              delete next[chartKey];
+              return next;
+            });
+            setStart(getDefaultStartDate());
+            setEnd(getDefaultEndDate());
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          title="Back to live view (last 24 hours, auto-updating)"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset to Live
+        </button>
+      ) : (
+        <span className="flex items-center gap-1.5 text-xs font-medium text-green-600">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          Live
+        </span>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -1460,7 +1588,7 @@ const StationDetail = () => {
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
           <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
             <button
-              onClick={() => setIsChartFullscreen(false)}
+              onClick={() => exitFullscreen('temp', setIsChartFullscreen, setTempStartDate, setTempEndDate)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1482,10 +1610,11 @@ const StationDetail = () => {
               </button>
             </div>
           </div>
+          {renderFullscreenDateBar('temp', tempStartDate, tempEndDate, setTempStartDate, setTempEndDate)}
           <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(tempStartDate, tempEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, getFullscreenChartData('temp', tempStartDate, tempEndDate).length * 25)}px`, height: '100%', minHeight: 400 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(tempStartDate, tempEndDate, 500)}>
+                <LineChart data={getFullscreenChartData('temp', tempStartDate, tempEndDate)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1503,7 +1632,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(tempStartDate, tempEndDate, 500), 'temperature', 5)}
+                    domain={calculateDomain(getFullscreenChartData('temp', tempStartDate, tempEndDate), 'temperature', 5)}
                     label={{ value: 'Temperature (°F)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1531,7 +1660,7 @@ const StationDetail = () => {
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
           <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
             <button
-              onClick={() => setIsDiffPFullscreen(false)}
+              onClick={() => exitFullscreen('diffP', setIsDiffPFullscreen, setDiffPStartDate, setDiffPEndDate)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1559,10 +1688,11 @@ const StationDetail = () => {
               </button>
             </div>
           </div>
+          {renderFullscreenDateBar('diffP', diffPStartDate, diffPEndDate, setDiffPStartDate, setDiffPEndDate)}
           <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(diffPStartDate, diffPEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, getFullscreenChartData('diffP', diffPStartDate, diffPEndDate).length * 25)}px`, height: '100%', minHeight: 400 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(diffPStartDate, diffPEndDate, 500)}>
+                <LineChart data={getFullscreenChartData('diffP', diffPStartDate, diffPEndDate)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1580,7 +1710,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={isEVC ? ['auto', 'auto'] : calculateDomain(filterDataByDateRange(diffPStartDate, diffPEndDate, 500), 'differential_pressure', 20)}
+                    domain={isEVC ? ['auto', 'auto'] : calculateDomain(getFullscreenChartData('diffP', diffPStartDate, diffPEndDate), 'differential_pressure', 20)}
                     label={{ value: isEVC ? 'Primary Volume (ft³)' : 'Differential Pressure (IWC)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1610,7 +1740,7 @@ const StationDetail = () => {
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
           <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
             <button
-              onClick={() => setIsPressureFullscreen(false)}
+              onClick={() => exitFullscreen('staticP', setIsPressureFullscreen, setStaticPStartDate, setStaticPEndDate)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1632,10 +1762,11 @@ const StationDetail = () => {
               </button>
             </div>
           </div>
+          {renderFullscreenDateBar('staticP', staticPStartDate, staticPEndDate, setStaticPStartDate, setStaticPEndDate)}
           <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(staticPStartDate, staticPEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, getFullscreenChartData('staticP', staticPStartDate, staticPEndDate).length * 25)}px`, height: '100%', minHeight: 400 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(staticPStartDate, staticPEndDate, 500)}>
+                <LineChart data={getFullscreenChartData('staticP', staticPStartDate, staticPEndDate)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1653,7 +1784,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(staticPStartDate, staticPEndDate, 500), 'static_pressure', 5)}
+                    domain={calculateDomain(getFullscreenChartData('staticP', staticPStartDate, staticPEndDate), 'static_pressure', 5)}
                     label={{ value: 'Pressure (PSI)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1675,7 +1806,7 @@ const StationDetail = () => {
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
           <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
             <button
-              onClick={() => setIsVolumeFullscreen(false)}
+              onClick={() => exitFullscreen('volume', setIsVolumeFullscreen, setVolumeStartDate, setVolumeEndDate)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1701,10 +1832,11 @@ const StationDetail = () => {
               </button>
             </div>
           </div>
+          {renderFullscreenDateBar('volume', volumeStartDate, volumeEndDate, setVolumeStartDate, setVolumeEndDate)}
           <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(volumeStartDate, volumeEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, getFullscreenChartData('volume', volumeStartDate, volumeEndDate).length * 25)}px`, height: '100%', minHeight: 400 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(volumeStartDate, volumeEndDate, 500)}>
+                <LineChart data={getFullscreenChartData('volume', volumeStartDate, volumeEndDate)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1722,7 +1854,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(volumeStartDate, volumeEndDate, 500), isEVC ? 'volume_ft3' : 'volume', 5)}
+                    domain={calculateDomain(getFullscreenChartData('volume', volumeStartDate, volumeEndDate), isEVC ? 'volume_ft3' : 'volume', 5)}
                     label={{ value: isEVC ? 'Volume (ft³)' : 'Volume (MCF)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1750,7 +1882,7 @@ const StationDetail = () => {
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
           <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
             <button
-              onClick={() => setIsFlowFullscreen(false)}
+              onClick={() => exitFullscreen('flow', setIsFlowFullscreen, setFlowStartDate, setFlowEndDate)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1776,10 +1908,11 @@ const StationDetail = () => {
               </button>
             </div>
           </div>
+          {renderFullscreenDateBar('flow', flowStartDate, flowEndDate, setFlowStartDate, setFlowEndDate)}
           <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(flowStartDate, flowEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, getFullscreenChartData('flow', flowStartDate, flowEndDate).length * 25)}px`, height: '100%', minHeight: 400 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(flowStartDate, flowEndDate, 500)}>
+                <LineChart data={getFullscreenChartData('flow', flowStartDate, flowEndDate)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1797,7 +1930,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(flowStartDate, flowEndDate, 500), isEVC ? 'total_volume_flow_ft3h' : 'total_volume_flow', 5)}
+                    domain={calculateDomain(getFullscreenChartData('flow', flowStartDate, flowEndDate), isEVC ? 'total_volume_flow_ft3h' : 'total_volume_flow', 5)}
                     label={{ value: isEVC ? 'Flow Rate (ft³/h)' : 'Flow Rate (MCF/day)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
@@ -1825,7 +1958,7 @@ const StationDetail = () => {
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
           <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 shrink-0">
             <button
-              onClick={() => setIsBatteryFullscreen(false)}
+              onClick={() => exitFullscreen('battery', setIsBatteryFullscreen, setBatteryStartDate, setBatteryEndDate)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -1847,10 +1980,11 @@ const StationDetail = () => {
               </button>
             </div>
           </div>
+          {renderFullscreenDateBar('battery', batteryStartDate, batteryEndDate, setBatteryStartDate, setBatteryEndDate)}
           <div className="flex-1 p-4 overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, filterDataByDateRange(batteryStartDate, batteryEndDate, 500).length * 25)}px`, height: '100%', minHeight: 400 }}>
+            <div className="fullscreen-modal-chart" style={{ width: `${Math.max(1600, getFullscreenChartData('battery', batteryStartDate, batteryEndDate).length * 25)}px`, height: '100%', minHeight: 400 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filterDataByDateRange(batteryStartDate, batteryEndDate, 500)}>
+                <LineChart data={getFullscreenChartData('battery', batteryStartDate, batteryEndDate)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="timestamp"
@@ -1868,7 +2002,7 @@ const StationDetail = () => {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '13px' }}
-                    domain={calculateDomain(filterDataByDateRange(batteryStartDate, batteryEndDate, 500), 'battery', 5)}
+                    domain={calculateDomain(getFullscreenChartData('battery', batteryStartDate, batteryEndDate), 'battery', 5)}
                     label={{ value: 'Voltage (V)', angle: -90, position: 'insideLeft', style: { fill: '#374151', fontSize: 14 } }}
                   />
                   <Tooltip
