@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon, useMap } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
+import { MapContainer, TileLayer, Marker, Polygon, useMap, CircleMarker, Polyline, Tooltip } from 'react-leaflet';
 import { getDevices, getReadings } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
@@ -16,51 +15,16 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// SVG antenna icon for device markers
-const createCustomIcon = (status) => {
-  const colors = {
-    online: '#10B981',
-    warning: '#F59E0B',
-    offline: '#EF4444',
-    unknown: '#6B7280'
-  };
-  const color = colors[status] || colors.unknown;
+// Dot colors: green = online (reported within 24h), red = offline
+const STATUS_COLORS = { online: '#22c55e', offline: '#ef4444' };
 
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `
-      <div style="position:relative;width:36px;height:36px;">
-        ${status === 'online' ? `<div style="
-          position:absolute;inset:0;border-radius:50%;
-          border:2px solid ${color};opacity:0.4;
-          animation:marker-ring 2s ease-out infinite;
-        "></div>` : ''}
-        <div style="
-          position:absolute;inset:2px;
-          background:#fff;border-radius:50%;
-          box-shadow:0 2px 8px rgba(0,0,0,0.25);
-          display:flex;align-items:center;justify-content:center;
-        ">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-               stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 20V10"/>
-            <path d="M8 16l4-6 4 6"/>
-            <path d="M6 12a6 6 0 0 1 12 0"/>
-            <path d="M3 8a11 11 0 0 1 18 0"/>
-          </svg>
-        </div>
-      </div>
-      <style>
-        @keyframes marker-ring {
-          0% { transform:scale(1); opacity:0.4; }
-          100% { transform:scale(1.6); opacity:0; }
-        }
-      </style>
-    `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -18]
-  });
+// Connection-line color per section (matches section colors used elsewhere)
+const SECTION_LINE_COLORS = {
+  'I': '#10b981',
+  'II': '#a855f7',
+  'III': '#f97316',
+  'IV': '#ec4899',
+  'V': '#06b6d4'
 };
 
 // Section boundary polygons (approximate pipeline territory outlines)
@@ -144,15 +108,11 @@ const Map = () => {
     }
   };
 
+  // Devices report ~hourly, so "online" means it sent data within the last 24 hours
   const getDeviceStatus = (device) => {
-    if (!device.last_seen) return 'unknown';
-    const lastSeen = new Date(device.last_seen);
-    const now = new Date();
-    const diffMinutes = (now - lastSeen) / 1000 / 60;
-
-    if (diffMinutes < 5) return 'online';
-    if (diffMinutes < 30) return 'warning';
-    return 'offline';
+    if (!device.last_seen) return 'offline';
+    const diffHours = (new Date() - new Date(device.last_seen)) / 1000 / 60 / 60;
+    return diffHours < 24 ? 'online' : 'offline';
   };
 
   // Extract section from client_id (e.g., "SMS-I-002" -> "I")
@@ -186,15 +146,37 @@ const Map = () => {
 
   // Memoized stats
   const statusStats = useMemo(() => {
-    const stats = { online: 0, warning: 0, offline: 0, total: validDevices.length };
+    const stats = { online: 0, offline: 0, total: validDevices.length };
     for (const d of validDevices) {
-      const s = deviceStatusMap[d.id];
-      if (s === 'online') stats.online++;
-      else if (s === 'warning') stats.warning++;
-      else if (s === 'offline') stats.offline++;
+      if (deviceStatusMap[d.id] === 'online') stats.online++;
+      else stats.offline++;
     }
     return stats;
   }, [validDevices, deviceStatusMap]);
+
+  // Connection web: one polyline per section linking its devices in pipeline order (by client_id number)
+  const connectionLines = useMemo(() => {
+    const bySection = {};
+    for (const d of validDevices) {
+      const section = extractSection(d.client_id);
+      if (!section) continue;
+      (bySection[section] = bySection[section] || []).push(d);
+    }
+    return Object.entries(bySection)
+      .map(([section, devs]) => {
+        const sorted = [...devs].sort((a, b) => {
+          const na = parseInt((a.client_id || '').split('-').pop(), 10) || 0;
+          const nb = parseInt((b.client_id || '').split('-').pop(), 10) || 0;
+          return na - nb;
+        });
+        return {
+          section,
+          color: SECTION_LINE_COLORS[section] || '#3b82f6',
+          positions: sorted.map(d => [d.latitude, d.longitude])
+        };
+      })
+      .filter(line => line.positions.length >= 2);
+  }, [validDevices]);
 
   const handleMapClick = (e) => {
     const { lat, lng } = e.latlng;
@@ -294,7 +276,7 @@ const Map = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -308,7 +290,7 @@ const Map = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Online</p>
-                <p className="text-3xl font-bold text-green-400 mt-1">{statusStats.online}</p>
+                <p className="text-3xl font-bold text-green-500 mt-1">{statusStats.online}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-green-500 animate-pulse"></div>
             </div>
@@ -316,17 +298,8 @@ const Map = () => {
           <div className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Warning</p>
-                <p className="text-3xl font-bold text-yellow-400 mt-1">{statusStats.warning}</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-yellow-500"></div>
-            </div>
-          </div>
-          <div className="glass rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Offline</p>
-                <p className="text-3xl font-bold text-red-400 mt-1">{statusStats.offline}</p>
+                <p className="text-3xl font-bold text-red-500 mt-1">{statusStats.offline}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-red-500"></div>
             </div>
@@ -339,16 +312,16 @@ const Map = () => {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Pakistan Device Locations</h2>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></div>
                 <span className="text-gray-600 dark:text-gray-400">Online</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                <span className="text-gray-600 dark:text-gray-400">Warning</span>
+                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
+                <span className="text-gray-600 dark:text-gray-400">Offline</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-gray-600 dark:text-gray-400">Offline</span>
+                <div className="w-6 h-1 rounded bg-blue-500"></div>
+                <span className="text-gray-600 dark:text-gray-400">Section connection</span>
               </div>
             </div>
           </div>
@@ -401,19 +374,43 @@ const Map = () => {
                 />
               )}
 
-              {/* Device Markers with Clustering */}
-              <MarkerClusterGroup chunkedLoading>
-                {validDevices.map((device) => (
-                  <Marker
+              {/* Connection web: section pipelines linking the devices */}
+              {connectionLines.map((line) => (
+                <Polyline
+                  key={`line-${line.section}`}
+                  positions={line.positions}
+                  pathOptions={{ color: line.color, weight: 2.5, opacity: 0.65 }}
+                />
+              ))}
+
+              {/* Device dots: green = online, red = offline — always visible, no clustering */}
+              {validDevices.map((device) => {
+                const status = deviceStatusMap[device.id] || 'offline';
+                return (
+                  <CircleMarker
                     key={device.id}
-                    position={[device.latitude, device.longitude]}
-                    icon={createCustomIcon(deviceStatusMap[device.id] || 'unknown')}
+                    center={[device.latitude, device.longitude]}
+                    radius={6}
+                    pathOptions={{
+                      color: '#ffffff',
+                      weight: 2,
+                      fillColor: STATUS_COLORS[status],
+                      fillOpacity: 1
+                    }}
                     eventHandlers={{
                       click: () => handleDeviceClick(device)
                     }}
-                  />
-                ))}
-              </MarkerClusterGroup>
+                  >
+                    <Tooltip direction="top" offset={[0, -6]}>
+                      <span className="font-semibold">{device.client_id}</span>
+                      {' — '}
+                      <span style={{ color: STATUS_COLORS[status], fontWeight: 700 }}>
+                        {status.toUpperCase()}
+                      </span>
+                    </Tooltip>
+                  </CircleMarker>
+                );
+              })}
 
               {/* Major Cities (Reference Points) */}
               {majorCities.map((city, index) => (

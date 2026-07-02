@@ -116,7 +116,7 @@ function AppRoutes() {
         <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
         <Route path="/favourites" element={<PrivateRoute><Favourites /></PrivateRoute>} />
         <Route path="/under-observation" element={<PrivateRoute><UnderObservation /></PrivateRoute>} />
-        <Route path="/odorant-drum" element={<PrivateRoute><OdorantDrum /></PrivateRoute>} />
+        <Route path="/odorant-drum" element={<AdminRoute><OdorantDrum /></AdminRoute>} />
         <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
         <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
         <Route path="/offline-tracker" element={<PrivateRoute><OfflineTracker /></PrivateRoute>} />

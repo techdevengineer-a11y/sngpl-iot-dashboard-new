@@ -96,7 +96,7 @@ const Layout = ({ children }) => {
     { path: '/analytics-page', label: 'ANALYTICS', icon: '📊', badge: null, gradient: 'from-cyan-500 to-blue-500' },
     { path: '/device-management', label: 'MANAGE', icon: '⚙️', badge: null, gradient: 'from-indigo-500 to-blue-500', adminOnly: true },
     { path: '/under-observation', label: 'UNDER OBSERVATION', icon: '👁️', badge: null, gradient: 'from-yellow-500 to-orange-500' },
-    { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500' },
+    { path: '/odorant-drum', label: 'ODORANT DRUM', icon: '🛢️', badge: null, gradient: 'from-teal-500 to-cyan-500', adminOnly: true },
     { path: '/map', label: 'MAP', icon: '🗺️', badge: null, gradient: 'from-green-500 to-teal-500' },
     { path: '/settings', label: 'SETTINGS', icon: '⚙️', badge: null, gradient: 'from-gray-500 to-slate-500', adminOnly: true },
   ];
