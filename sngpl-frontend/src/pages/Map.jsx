@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon, useMap, CircleMarker, Polyline, Tooltip } from 'react-leaflet';
-import { getDevices, getReadings } from '../services/api';
+import { MapContainer, TileLayer, Marker, useMap, CircleMarker, Tooltip } from 'react-leaflet';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from 'recharts';
+import { getDevices, getReadings, getDeviceReadings } from '../services/api';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
@@ -18,33 +19,9 @@ L.Icon.Default.mergeOptions({
 // Dot colors: green = online (reported within 24h), red = offline
 const STATUS_COLORS = { online: '#22c55e', offline: '#ef4444' };
 
-// Connection-line color per section (matches section colors used elsewhere)
-const SECTION_LINE_COLORS = {
-  'I': '#10b981',
-  'II': '#a855f7',
-  'III': '#f97316',
-  'IV': '#ec4899',
-  'V': '#06b6d4'
-};
-
-// Section boundary polygons (approximate pipeline territory outlines)
-const sectionBoundaries = {
-  'I': [
-    [29.0, 70.0], [29.0, 73.0], [30.8, 73.0], [31.0, 72.0], [30.8, 70.5], [29.5, 70.0]
-  ],
-  'II': [
-    [30.8, 72.0], [30.8, 73.8], [32.2, 73.8], [32.2, 72.0]
-  ],
-  'III': [
-    [32.8, 72.0], [32.8, 74.0], [34.2, 74.0], [34.2, 72.0]
-  ],
-  'IV': [
-    [31.0, 73.5], [31.0, 75.0], [32.8, 75.0], [32.8, 73.5]
-  ],
-  'V': [
-    [33.5, 70.5], [33.5, 72.5], [35.0, 72.5], [35.0, 70.5]
-  ]
-};
+// The map shows Section II only (Faisalabad/Sargodha)
+const SECTION_II_CENTER = [31.4504, 73.1350];
+const SECTION_II_ZOOM = 8;
 
 // Component to recenter map when devices change
 function MapRecenter({ center, zoom }) {
@@ -59,12 +36,13 @@ const Map = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDevice, setSelectedDevice] = useState(null);
-  const [mapCenter, setMapCenter] = useState([30.3753, 69.3451]);
-  const [mapZoom, setMapZoom] = useState(6);
+  const [mapCenter, setMapCenter] = useState(SECTION_II_CENTER);
+  const [mapZoom, setMapZoom] = useState(SECTION_II_ZOOM);
   const [showAddModal, setShowAddModal] = useState(false);
   const [clickedLocation, setClickedLocation] = useState(null);
-  const [selectedSection, setSelectedSection] = useState('ALL');
   const [readingsMap, setReadingsMap] = useState({});
+  const [flowHistory, setFlowHistory] = useState([]);
+  const [flowLoading, setFlowLoading] = useState(false);
   const [newDevice, setNewDevice] = useState({
     client_id: '',
     device_name: '',
@@ -122,18 +100,15 @@ const Map = () => {
     return match ? match[1] : null;
   };
 
-  // Memoized valid devices
+  // Memoized valid devices — Section II only
   const validDevices = useMemo(() => {
     return devices.filter(d => {
+      if (extractSection(d.client_id) !== 'II') return false;
       if (d.latitude == null || d.longitude == null) return false;
       if (d.latitude === 0 && d.longitude === 0) return false;
-      if (selectedSection !== 'ALL') {
-        const deviceSection = extractSection(d.client_id);
-        if (deviceSection !== selectedSection) return false;
-      }
       return true;
     });
-  }, [devices, selectedSection]);
+  }, [devices]);
 
   // Memoized status map
   const deviceStatusMap = useMemo(() => {
@@ -154,29 +129,6 @@ const Map = () => {
     return stats;
   }, [validDevices, deviceStatusMap]);
 
-  // Connection web: one polyline per section linking its devices in pipeline order (by client_id number)
-  const connectionLines = useMemo(() => {
-    const bySection = {};
-    for (const d of validDevices) {
-      const section = extractSection(d.client_id);
-      if (!section) continue;
-      (bySection[section] = bySection[section] || []).push(d);
-    }
-    return Object.entries(bySection)
-      .map(([section, devs]) => {
-        const sorted = [...devs].sort((a, b) => {
-          const na = parseInt((a.client_id || '').split('-').pop(), 10) || 0;
-          const nb = parseInt((b.client_id || '').split('-').pop(), 10) || 0;
-          return na - nb;
-        });
-        return {
-          section,
-          color: SECTION_LINE_COLORS[section] || '#3b82f6',
-          positions: sorted.map(d => [d.latitude, d.longitude])
-        };
-      })
-      .filter(line => line.positions.length >= 2);
-  }, [validDevices]);
 
   const handleMapClick = (e) => {
     const { lat, lng } = e.latlng;
@@ -210,11 +162,30 @@ const Map = () => {
     }
   };
 
-  const handleDeviceClick = (device) => {
-    if (device.latitude != null && device.longitude != null) {
-      setSelectedDevice(device);
-      setMapCenter([device.latitude, device.longitude]);
-      setMapZoom(10);
+  const handleDeviceClick = async (device) => {
+    if (device.latitude == null || device.longitude == null) return;
+    setSelectedDevice(device);
+    setMapCenter([device.latitude, device.longitude]);
+    setMapZoom(10);
+
+    // Load the station's recent flow history for the panel graph
+    setFlowLoading(true);
+    setFlowHistory([]);
+    try {
+      const readings = await getDeviceReadings(device.client_id, 24);
+      const list = Array.isArray(readings) ? readings : (readings?.data || []);
+      const chartData = list
+        .slice()
+        .reverse() // oldest -> newest for the chart
+        .map(r => ({
+          timestamp: r.timestamp,
+          flow: Number(r.total_volume_flow) || 0
+        }));
+      setFlowHistory(chartData);
+    } catch (err) {
+      console.error('Error fetching flow history:', err);
+    } finally {
+      setFlowLoading(false);
     }
   };
 
@@ -229,26 +200,6 @@ const Map = () => {
     { name: 'Quetta', lat: 30.1798, lng: 66.9750 },
   ];
 
-  // Section definitions
-  const sections = [
-    { id: 'ALL', name: 'All Sections', center: [30.3753, 69.3451], zoom: 6 },
-    { id: 'I', name: 'Section I - Multan/BWP/Sahiwal', center: [30.1575, 71.5249], zoom: 8 },
-    { id: 'II', name: 'Section II - Faisalabad/Sargodha', center: [31.4504, 73.1350], zoom: 8 },
-    { id: 'III', name: 'Section III - Islamabad/Rawalpindi', center: [33.6844, 73.0479], zoom: 8 },
-    { id: 'IV', name: 'Section IV - Lahore/Gujranwala', center: [31.5204, 74.3587], zoom: 8 },
-    { id: 'V', name: 'Section V - Peshawar/Mardan', center: [34.0151, 71.5249], zoom: 8 },
-  ];
-
-  const handleSectionChange = (sectionId) => {
-    setSelectedSection(sectionId);
-    setSelectedDevice(null);
-    const section = sections.find(s => s.id === sectionId);
-    if (section) {
-      setMapCenter(section.center);
-      setMapZoom(section.zoom);
-    }
-  };
-
   // Get reading for selected device
   const selectedReading = selectedDevice ? readingsMap[selectedDevice.id] : null;
   const selectedStatus = selectedDevice ? deviceStatusMap[selectedDevice.id] || getDeviceStatus(selectedDevice) : null;
@@ -257,22 +208,21 @@ const Map = () => {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="glass rounded-xl p-6 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Map</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Interactive map of IoT device locations across Pakistan</p>
+            <h1 className="text-3xl font-bold text-gray-900">Section II Device Map</h1>
+            <p className="text-gray-600 mt-1">Live station map — Faisalabad / Sargodha. Green = online, red = offline. Click a dot for its flow graph.</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => {
-                setMapCenter([30.3753, 69.3451]);
-                setMapZoom(6);
-              }}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all duration-200"
-            >
-              Reset View
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setMapCenter(SECTION_II_CENTER);
+              setMapZoom(SECTION_II_ZOOM);
+              setSelectedDevice(null);
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200"
+          >
+            Reset View
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -309,40 +259,16 @@ const Map = () => {
         {/* Map Container */}
         <div className="glass rounded-xl p-6 relative">
           <div className="mb-4 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Pakistan Device Locations</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Section II Station Locations</h2>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></div>
-                <span className="text-gray-600 dark:text-gray-400">Online</span>
+                <span className="text-gray-600">Online</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
-                <span className="text-gray-600 dark:text-gray-400">Offline</span>
+                <span className="text-gray-600">Offline</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-1 rounded bg-blue-500"></div>
-                <span className="text-gray-600 dark:text-gray-400">Section connection</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Section Filter Buttons */}
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Filter by Section:</p>
-            <div className="flex flex-wrap gap-2">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => handleSectionChange(section.id)}
-                  className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                    selectedSection === section.id
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {section.name}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -355,33 +281,11 @@ const Map = () => {
             >
               <MapRecenter center={mapCenter} zoom={mapZoom} />
 
+              {/* Bright, clean basemap */}
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
               />
-
-              {/* Section boundary polygon */}
-              {selectedSection !== 'ALL' && sectionBoundaries[selectedSection] && (
-                <Polygon
-                  positions={sectionBoundaries[selectedSection]}
-                  pathOptions={{
-                    color: '#3B82F6',
-                    weight: 2,
-                    opacity: 0.4,
-                    fillColor: '#3B82F6',
-                    fillOpacity: 0.08,
-                  }}
-                />
-              )}
-
-              {/* Connection web: section pipelines linking the devices */}
-              {connectionLines.map((line) => (
-                <Polyline
-                  key={`line-${line.section}`}
-                  positions={line.positions}
-                  pathOptions={{ color: line.color, weight: 2.5, opacity: 0.65 }}
-                />
-              ))}
 
               {/* Device dots: green = online, red = offline — always visible, no clustering */}
               {validDevices.map((device) => {
@@ -489,9 +393,57 @@ const Map = () => {
                   </div>
                 </div>
 
+                {/* Flow Graph */}
+                <div className="border-t border-gray-200 pt-4 mb-6">
+                  <h4 className="text-sm font-semibold text-blue-600 mb-3">Flow Graph — last {flowHistory.length || 24} readings</h4>
+                  {flowLoading ? (
+                    <div className="h-[180px] flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : flowHistory.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <AreaChart data={flowHistory} margin={{ top: 5, right: 5, bottom: 0, left: -15 }}>
+                        <defs>
+                          <linearGradient id="flowGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="timestamp"
+                          tickFormatter={(value) => {
+                            const d = new Date(value);
+                            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                          }}
+                          stroke="#9ca3af"
+                          style={{ fontSize: '10px' }}
+                        />
+                        <YAxis stroke="#9ca3af" style={{ fontSize: '10px' }} />
+                        <ChartTooltip
+                          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
+                          labelFormatter={(value) => new Date(value).toLocaleString()}
+                          formatter={(value) => [`${value} MCF/day`, 'Flow']}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="flow"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          fill="url(#flowGradient)"
+                          dot={{ fill: '#3b82f6', r: 2 }}
+                          activeDot={{ r: 5, fill: '#3b82f6' }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No flow data available for this station</p>
+                  )}
+                </div>
+
                 {/* Sensor Readings */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <h4 className="text-sm font-semibold text-blue-400 mb-3">Latest Sensor Readings</h4>
+                  <h4 className="text-sm font-semibold text-blue-600 mb-3">Latest Sensor Readings</h4>
                   {selectedReading ? (
                     <div className="space-y-2">
                       {selectedReading.temperature != null && (
@@ -542,14 +494,14 @@ const Map = () => {
             )}
           </div>
 
-          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
-            Click on map markers to view device details • {devices.filter(d => d.latitude != null && d.longitude != null).length} devices on map • {devices.length} total devices
+          <div className="mt-4 text-sm text-gray-600 text-center">
+            Click a dot to view the station's flow graph • {validDevices.length} Section II stations on map
           </div>
         </div>
 
         {/* Device List */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Device List</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Section II Stations</h2>
           {loading ? (
             <div className="text-center text-gray-600 dark:text-gray-400 py-8">Loading devices...</div>
           ) : devices.length === 0 ? (
