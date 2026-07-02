@@ -29,7 +29,7 @@ interface DeviceReading {
   total_volume_flow: number;
   battery?: number;
   // T18-T114 Analytics Parameters
-  last_hour_flow_time?: number;      // T18: hours
+  last_hour_flow_time?: number;      // T18: seconds (0-3600 within the hour)
   last_hour_diff_pressure?: number;  // T19: IWC
   last_hour_static_pressure?: number; // T110: PSI
   last_hour_temperature?: number;     // T111: °F
@@ -594,7 +594,7 @@ const Trends = () => {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-sm text-gray-600">Last Hour Flow Time</p>
-                <p className="text-xs text-gray-500">hours</p>
+                <p className="text-xs text-gray-500">seconds</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-blue-600" />
@@ -604,7 +604,7 @@ const Trends = () => {
               <span className="text-4xl font-bold text-gray-900">
                 {latest?.last_hour_flow_time ?? '0'}
               </span>
-              <span className="text-sm text-gray-500">hrs</span>
+              <span className="text-sm text-gray-500">s</span>
             </div>
           </motion.div>
 
@@ -753,7 +753,7 @@ const Trends = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: any) => [`${value ?? '0'} hours`, 'Flow Time']}
+                  formatter={(value: any) => [`${value ?? '0'} s`, 'Last Hour Flow Time']}
                 />
                 <Line
                   type="monotone"
@@ -1055,7 +1055,7 @@ const Trends = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">#</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Timestamp</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Hour Flow Time (hrs)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Hour Flow Time (s)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Hour Diff Pressure (IWC)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Hour Static Pressure (PSI)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider whitespace-nowrap">Last Hour Temperature (°F)</th>

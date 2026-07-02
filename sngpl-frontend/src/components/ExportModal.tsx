@@ -255,7 +255,7 @@ const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportT
               <li>• Volume (MCF)</li>
               <li>• Total Volume Flow (MCF/day)</li>
               <li>• Battery Voltage (V)</li>
-              <li>• Last Hour Flow Time (hrs)</li>
+              <li>• Last Hour Flow Time (s)</li>
               <li>• Last Hour Diff Pressure (IWC)</li>
               <li>• Last Hour Static Pressure (PSI)</li>
               <li>• Last Hour Temperature (°F)</li>

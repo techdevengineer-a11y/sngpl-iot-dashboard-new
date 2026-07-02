@@ -770,7 +770,7 @@ const AdvancedReports = () => {
       // Row 2: Empty row
       // Row 3: Column headers
       const headers = [
-        'Sr. No.', 'Date', 'Time', 'Last Hour Flow Time (hrs)', 'Last Hour Diff Pressure (IWC)',
+        'Sr. No.', 'Date', 'Time', 'Last Hour Flow Time (s)', 'Last Hour Diff Pressure (IWC)',
         'Last Hour Static Pressure (PSI)', 'Last Hour Temperature (°F)', 'Last Hour Volume (MCF)',
         'Last Hour Energy', 'Specific Gravity'
       ];
