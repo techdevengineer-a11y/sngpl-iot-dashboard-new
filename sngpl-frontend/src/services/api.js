@@ -53,8 +53,10 @@ export const getDeviceStats = async () => {
   return response.data;
 };
 
-export const getDeviceReadingCounts = async () => {
-  const response = await api.get('/device-reports/reading-counts');
+export const getDeviceReadingCounts = async (month) => {
+  const response = await api.get('/device-reports/reading-counts', {
+    params: month ? { month } : {},
+  });
   return response.data;
 };
 

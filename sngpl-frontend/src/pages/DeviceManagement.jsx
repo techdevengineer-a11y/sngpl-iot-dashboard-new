@@ -9,6 +9,7 @@ import { getMeterInfo } from '../utils/deviceMetersDefaults';
 const DeviceManagement = () => {
   const [devices, setDevices] = useState([]);
   const [readingCounts, setReadingCounts] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(''); // '' = current month
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState('ALL');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -66,8 +67,11 @@ const DeviceManagement = () => {
 
   useEffect(() => {
     fetchDevices();
-    fetchReadingCounts();
   }, []);
+
+  useEffect(() => {
+    fetchReadingCounts(selectedMonth);
+  }, [selectedMonth]);
 
   const fetchDevices = async () => {
     try {
@@ -81,16 +85,31 @@ const DeviceManagement = () => {
     }
   };
 
-  const fetchReadingCounts = async () => {
+  const fetchReadingCounts = async (month) => {
     try {
-      const data = await getDeviceReadingCounts();
+      const data = await getDeviceReadingCounts(month);
       const byId = {};
       data.devices.forEach(d => { byId[d.id] = d; });
-      setReadingCounts({ byId, expected24: data.expected_24h, expected30: data.expected_30d });
+      setReadingCounts({ byId, expected24: data.expected_24h, expectedMonth: data.expected_month, month: data.month });
     } catch (error) {
       console.error('Error fetching reading counts:', error);
     }
   };
+
+  // Last 12 months for the month report selector
+  const monthOptions = (() => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+      const label = dt.toLocaleString('en', { month: 'long', year: 'numeric' });
+      options.push({ value, label });
+    }
+    return options;
+  })();
+
+  const selectedMonthLabel = (monthOptions.find(o => o.value === (selectedMonth || monthOptions[0].value)) || monthOptions[0]).label;
 
   // Extract section from client_id (e.g., "SMS-I-002" -> "I")
   const extractSection = (clientId) => {
@@ -135,14 +154,15 @@ const DeviceManagement = () => {
     return list;
   };
 
+  // Devices report ~hourly, so "online" means it sent data within the last 24 hours
   const getDeviceStatus = (device) => {
     if (!device.last_seen) return 'offline';
     const lastSeen = new Date(device.last_seen);
     const now = new Date();
-    const diffMinutes = (now - lastSeen) / 1000 / 60;
+    const diffHours = (now - lastSeen) / 1000 / 60 / 60;
 
-    if (diffMinutes < 5) return 'online';
-    if (diffMinutes < 30) return 'warning';
+    if (diffHours < 24) return 'online';
+    if (diffHours < 72) return 'warning';
     return 'offline';
   };
 
@@ -290,8 +310,8 @@ const DeviceManagement = () => {
   const renderReadingCounter = (deviceId, windowKey) => {
     if (!readingCounts) return <span className="text-gray-400 text-sm">…</span>;
     const rec = readingCounts.byId[deviceId];
-    const expected = windowKey === '24h' ? readingCounts.expected24 : readingCounts.expected30;
-    const count = rec ? (windowKey === '24h' ? rec.count_24h : rec.count_30d) : 0;
+    const expected = windowKey === '24h' ? readingCounts.expected24 : readingCounts.expectedMonth;
+    const count = rec ? (windowKey === '24h' ? rec.count_24h : rec.count_month) : 0;
     const missed = Math.max(0, expected - count);
     const pct = expected > 0 ? count / expected : 0;
     const cls = pct >= 0.9
@@ -458,15 +478,28 @@ const DeviceManagement = () => {
                   Showing {filteredDevices.length} {filteredDevices.length === 1 ? 'device' : 'devices'}
                 </p>
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name, ID, or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-full md:w-80 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                {selectedSection === 'ONLINE' && (
+                  <select
+                    value={selectedMonth || monthOptions[0].value}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {monthOptions.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                )}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, ID, or location..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2.5 w-full md:w-80 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -501,12 +534,16 @@ const DeviceManagement = () => {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Latitude</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Longitude</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />24H Report</div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />30D Report</div>
-                    </th>
+                    {selectedSection === 'ONLINE' && (
+                      <>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                          <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />24H Report</div>
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                          <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />{selectedMonthLabel}</div>
+                        </th>
+                      </>
+                    )}
                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -623,12 +660,16 @@ const DeviceManagement = () => {
                             {status.toUpperCase()}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          {renderReadingCounter(device.id, '24h')}
-                        </td>
-                        <td className="px-6 py-4">
-                          {renderReadingCounter(device.id, '30d')}
-                        </td>
+                        {selectedSection === 'ONLINE' && (
+                          <>
+                            <td className="px-6 py-4">
+                              {renderReadingCounter(device.id, '24h')}
+                            </td>
+                            <td className="px-6 py-4">
+                              {renderReadingCounter(device.id, 'month')}
+                            </td>
+                          </>
+                        )}
                         <td className="px-6 py-4 text-right">
                           {isEditing ? (
                             <div className="flex items-center justify-end gap-2">
