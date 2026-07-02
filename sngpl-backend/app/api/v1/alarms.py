@@ -10,6 +10,7 @@ from datetime import datetime
 from app.db.database import get_db
 from app.models.models import Alarm, AlarmThreshold, Device, User
 from app.api.v1.auth import get_current_user, require_admin
+from app.core.scoping import scope_device_query, allowed_regions
 from app.services.audit_service import audit_service
 
 router = APIRouter()
@@ -60,6 +61,8 @@ async def get_alarms(
 ):
     """Get all alarms with optional filters"""
     query = db.query(Alarm)
+    if allowed_regions(current_user, db) is not None:
+        query = scope_device_query(query.join(Device, Alarm.device_id == Device.id), current_user, db)
 
     if acknowledged is not None:
         query = query.filter(Alarm.is_acknowledged == acknowledged)
@@ -74,9 +77,17 @@ async def get_alarms(
 @router.get("/stats")
 async def get_alarm_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get alarm statistics"""
-    total_alarms = db.query(Alarm).count()
-    active_alarms = db.query(Alarm).filter(Alarm.is_acknowledged == False).count()
-    critical_alarms = db.query(Alarm).filter(
+    restricted = allowed_regions(current_user, db) is not None
+
+    def _aq():
+        q = db.query(Alarm)
+        if restricted:
+            q = scope_device_query(q.join(Device, Alarm.device_id == Device.id), current_user, db)
+        return q
+
+    total_alarms = _aq().count()
+    active_alarms = _aq().filter(Alarm.is_acknowledged == False).count()
+    critical_alarms = _aq().filter(
         Alarm.is_acknowledged == False,
         Alarm.severity == "critical"
     ).count()
@@ -102,9 +113,10 @@ async def get_alarms_by_section(db: Session = Depends(get_db), current_user: Use
     }
 
     for section_id, info in section_info.items():
-        # Get all devices in this section
-        devices = db.query(Device).filter(
-            Device.client_id.like(f'SMS-{section_id}-%')
+        # Get all devices in this section (restricted to the user's regions)
+        devices = scope_device_query(
+            db.query(Device).filter(Device.client_id.like(f'SMS-{section_id}-%')),
+            current_user, db
         ).all()
 
         device_ids = [d.id for d in devices]

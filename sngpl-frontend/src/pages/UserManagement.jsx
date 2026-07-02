@@ -22,8 +22,11 @@ const UserManagement = () => {
     password: '',
     full_name: '',
     role: 'user',
-    is_active: true
+    is_active: true,
+    regions: []
   });
+  const [regionCounts, setRegionCounts] = useState({}); // region name -> device count
+  const [newRegion, setNewRegion] = useState('');
 
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -33,7 +36,42 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchRegionCounts();
   }, []);
+
+  // Count devices per admin-defined region (for the region picker)
+  const fetchRegionCounts = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/devices/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const counts = {};
+      response.data.forEach(d => {
+        const r = (d.region || '').trim();
+        if (r) counts[r] = (counts[r] || 0) + 1;
+      });
+      setRegionCounts(counts);
+    } catch (error) {
+      console.error('Error fetching device regions:', error);
+    }
+  };
+
+  const toggleRegion = (region) => {
+    setFormData(prev => ({
+      ...prev,
+      regions: prev.regions.includes(region)
+        ? prev.regions.filter(r => r !== region)
+        : [...prev.regions, region]
+    }));
+  };
+
+  const addNewRegion = () => {
+    const r = newRegion.trim();
+    if (r && !formData.regions.some(x => x.toLowerCase() === r.toLowerCase())) {
+      setFormData(prev => ({ ...prev, regions: [...prev.regions, r] }));
+    }
+    setNewRegion('');
+  };
 
   const fetchUsers = async () => {
     try {
@@ -56,8 +94,10 @@ const UserManagement = () => {
       password: '',
       full_name: '',
       role: 'viewer',
-      is_active: true
+      is_active: true,
+      regions: []
     });
+    setNewRegion('');
     setShowModal(true);
   };
 
@@ -69,8 +109,10 @@ const UserManagement = () => {
       email: user.email,
       full_name: user.full_name || '',
       role: user.role,
-      is_active: user.is_active
+      is_active: user.is_active,
+      regions: user.regions || []
     });
+    setNewRegion('');
     setShowModal(true);
   };
 
@@ -102,7 +144,8 @@ const UserManagement = () => {
           email: formData.email,
           full_name: formData.full_name,
           role: formData.role,
-          is_active: formData.is_active
+          is_active: formData.is_active,
+          regions: formData.regions
         };
         await axios.put(`${API_URL}/users/${selectedUser.id}`, updateData, {
           headers: { Authorization: `Bearer ${token}` }
@@ -228,6 +271,7 @@ const UserManagement = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regions</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -256,6 +300,19 @@ const UserManagement = () => {
                   <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getRoleBadgeColor(user.role)}`}>
                     {user.role.toUpperCase()}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  {user.role === 'admin' || !user.regions || user.regions.length === 0 ? (
+                    <span className="text-xs text-gray-500">All devices</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {user.regions.map(region => (
+                        <span key={region} className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                          {region}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {user.is_active ? (
@@ -382,6 +439,53 @@ const UserManagement = () => {
                   Device Management, User Management, or turn alarms on/off.
                 </p>
               </div>
+
+              {formData.role !== 'admin' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Device Regions</label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Choose which regions this viewer can see. Leave empty to show ALL devices.
+                    Assign devices to regions on the Manage page (Region column).
+                  </p>
+                  {Object.keys(regionCounts).length > 0 && (
+                    <div className="max-h-36 overflow-y-auto border border-gray-200 rounded-lg p-2 mb-2 space-y-1">
+                      {Object.entries(regionCounts).sort((a, b) => a[0].localeCompare(b[0])).map(([region, count]) => (
+                        <label key={region} className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={formData.regions.some(r => r.toLowerCase() === region.toLowerCase())}
+                            onChange={() => toggleRegion(region)}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                          />
+                          <span className="flex-1">{region}</span>
+                          <span className="text-xs font-semibold text-gray-500">{count} device{count === 1 ? '' : 's'}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newRegion}
+                      onChange={(e) => setNewRegion(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNewRegion(); } }}
+                      placeholder="New region name..."
+                      className="enterprise-input flex-1"
+                    />
+                    <button type="button" onClick={addNewRegion} className="enterprise-button-secondary px-4">Add</button>
+                  </div>
+                  {formData.regions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {formData.regions.map(region => (
+                        <span key={region} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                          {region}
+                          <button type="button" onClick={() => toggleRegion(region)} className="hover:text-blue-950 font-bold">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center">
                 <input

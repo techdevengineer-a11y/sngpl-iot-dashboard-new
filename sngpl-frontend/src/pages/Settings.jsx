@@ -3,7 +3,7 @@ import { Settings as SettingsIcon, User, Bell, Shield, Lock, Database, Eye, Glob
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { getCurrentUser, updateUser, changePassword, getAllRoles, listUsers, getUserPermissions, createUser, deleteUser, getAuditLogs, getSerialMappings, updateSerialNumber } from '../services/api';
+import { getCurrentUser, updateUser, changePassword, getAllRoles, listUsers, getUserPermissions, createUser, deleteUser, getAuditLogs, getSerialMappings, updateSerialNumber, getDevices, assignRegionDevices } from '../services/api';
 
 const Settings = () => {
   const { user: authUser } = useAuth();
@@ -113,8 +113,24 @@ const Settings = () => {
     username: '',
     email: '',
     password: '',
-    role: 'viewer'
+    role: 'viewer',
+    regions: []
   });
+
+  // Device regions (RBAC viewer scoping) state
+  const [allDevices, setAllDevices] = useState([]);
+  const [regionModal, setRegionModal] = useState(null); // { name, isNew, selected: [ids], search }
+  const [savingRegion, setSavingRegion] = useState(false);
+
+  // Group devices by their assigned region
+  const regionGroups = (() => {
+    const groups = {};
+    allDevices.forEach(d => {
+      const r = (d.region || '').trim();
+      if (r) (groups[r] = groups[r] || []).push(d);
+    });
+    return groups;
+  })();
 
   // Load user data from backend
   useEffect(() => {
@@ -167,6 +183,12 @@ const Settings = () => {
     try {
       const usersResponse = await listUsers();
       setUsers(usersResponse.data);
+      try {
+        const devices = await getDevices();
+        setAllDevices(devices);
+      } catch (e) {
+        console.error('Failed to load devices for regions:', e);
+      }
     } catch (error) {
       console.error('Failed to load users:', error);
       if (error.response?.status === 403) {
@@ -281,7 +303,8 @@ const Settings = () => {
         username: newUserData.username,
         email: newUserData.email,
         password: newUserData.password,
-        role: newUserData.role
+        role: newUserData.role,
+        regions: newUserData.regions
       });
 
       toast.success(`User "${newUserData.username}" created successfully with role "${newUserData.role}"`);
@@ -290,7 +313,8 @@ const Settings = () => {
         username: '',
         email: '',
         password: '',
-        role: 'viewer'
+        role: 'viewer',
+        regions: []
       });
 
       // Reload users list
@@ -318,6 +342,52 @@ const Settings = () => {
       } else {
         toast.error('Failed to create user');
       }
+    }
+  };
+
+  // ---- Device regions (RBAC viewer scoping) ----
+  const openRegionModal = (name = null) => {
+    if (name) {
+      setRegionModal({ name, isNew: false, selected: (regionGroups[name] || []).map(d => d.id), search: '' });
+    } else {
+      setRegionModal({ name: '', isNew: true, selected: [], search: '' });
+    }
+  };
+
+  const toggleRegionDevice = (id) => {
+    setRegionModal(prev => ({
+      ...prev,
+      selected: prev.selected.includes(id) ? prev.selected.filter(x => x !== id) : [...prev.selected, id]
+    }));
+  };
+
+  const handleSaveRegion = async () => {
+    const name = regionModal.name.trim();
+    if (!name) {
+      toast.error('Region name is required');
+      return;
+    }
+    setSavingRegion(true);
+    try {
+      await assignRegionDevices(name, regionModal.selected);
+      toast.success(`Region "${name}" now contains ${regionModal.selected.length} device(s)`);
+      setRegionModal(null);
+      setAllDevices(await getDevices());
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save region');
+    } finally {
+      setSavingRegion(false);
+    }
+  };
+
+  const handleDeleteRegion = async (name) => {
+    if (!window.confirm(`Delete region "${name}"? Its devices will no longer belong to any region.`)) return;
+    try {
+      await assignRegionDevices(name, []);
+      toast.success(`Region "${name}" deleted`);
+      setAllDevices(await getDevices());
+    } catch (error) {
+      toast.error('Failed to delete region');
     }
   };
 
@@ -933,6 +1003,71 @@ const Settings = () => {
                     </p>
                   </div>
                 </>
+              )}
+            </div>
+
+            {/* Device Regions — RBAC viewer scoping */}
+            <div className="glass rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-indigo-600" />
+                  Device Regions (Viewer Access)
+                </h3>
+                <button
+                  onClick={() => openRegionModal()}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Region
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Divide your devices into regions, then assign regions to viewer accounts (in Create User
+                or on the Users page). A viewer with regions sees ONLY those devices everywhere —
+                dashboard, sections, alarms and reports. A viewer with no regions sees all devices.
+              </p>
+
+              {Object.keys(regionGroups).length === 0 ? (
+                <div className="p-6 text-center bg-gray-50 rounded-lg">
+                  <p className="text-gray-500 text-sm">No regions defined yet. Create one and choose which devices it contains.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {Object.entries(regionGroups).sort((a, b) => a[0].localeCompare(b[0])).map(([name, devs]) => {
+                    const assignedUsers = users.filter(u => (u.regions || []).some(r => r.toLowerCase() === name.toLowerCase()));
+                    return (
+                      <div key={name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">{name}</span>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+                              {devs.length} device{devs.length === 1 ? '' : 's'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {assignedUsers.length > 0
+                              ? `Assigned to: ${assignedUsers.map(u => u.username).join(', ')}`
+                              : 'Not assigned to any user yet'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openRegionModal(name)}
+                            className="px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            Edit Devices
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRegion(name)}
+                            className="px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
@@ -1747,6 +1882,37 @@ const Settings = () => {
                     Only the administrator has full access.
                   </p>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Device Regions</label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Pick which regions this viewer can see. Leave empty for ALL devices.
+                    Define regions in the "Device Regions" panel below.
+                  </p>
+                  {Object.keys(regionGroups).length === 0 ? (
+                    <p className="text-xs text-gray-400 italic">No regions defined yet.</p>
+                  ) : (
+                    <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                      {Object.entries(regionGroups).sort((a, b) => a[0].localeCompare(b[0])).map(([name, devs]) => (
+                        <label key={name} className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={newUserData.regions.some(r => r.toLowerCase() === name.toLowerCase())}
+                            onChange={() => setNewUserData(prev => ({
+                              ...prev,
+                              regions: prev.regions.some(r => r.toLowerCase() === name.toLowerCase())
+                                ? prev.regions.filter(r => r.toLowerCase() !== name.toLowerCase())
+                                : [...prev.regions, name]
+                            }))}
+                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                          />
+                          <span className="flex-1">{name}</span>
+                          <span className="text-xs font-semibold text-gray-500">{devs.length} device{devs.length === 1 ? '' : 's'}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-3 mt-6">
@@ -1761,6 +1927,105 @@ const Settings = () => {
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
                   Create User
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Region Editor Modal (RBAC device scoping) */}
+        {regionModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {regionModal.isNew ? 'New Region' : `Region: ${regionModal.name}`}
+                </h3>
+                <button onClick={() => setRegionModal(null)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {regionModal.isNew && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Region Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={regionModal.name}
+                    onChange={(e) => setRegionModal({ ...regionModal, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. Multan Zone"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Devices in this region
+                </label>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+                  {regionModal.selected.length} selected
+                </span>
+              </div>
+              <input
+                type="text"
+                value={regionModal.search}
+                onChange={(e) => setRegionModal({ ...regionModal, search: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2"
+                placeholder="Search devices by ID, name or location..."
+              />
+              <div className="border border-gray-200 rounded-lg max-h-72 overflow-y-auto divide-y divide-gray-100">
+                {allDevices
+                  .filter(d => {
+                    const q = regionModal.search.trim().toLowerCase();
+                    if (!q) return true;
+                    return (d.client_id || '').toLowerCase().includes(q)
+                      || (d.device_name || '').toLowerCase().includes(q)
+                      || (d.location || '').toLowerCase().includes(q);
+                  })
+                  .map(d => {
+                    const otherRegion = (d.region || '').trim();
+                    const inThisRegion = regionModal.selected.includes(d.id);
+                    const belongsElsewhere = otherRegion && otherRegion.toLowerCase() !== regionModal.name.trim().toLowerCase();
+                    return (
+                      <label key={d.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="checkbox"
+                          checked={inThisRegion}
+                          onChange={() => toggleRegionDevice(d.id)}
+                          className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                        />
+                        <span className="font-mono text-gray-900">{d.client_id}</span>
+                        <span className="text-gray-500 flex-1 truncate">{d.location || d.device_name}</span>
+                        {belongsElsewhere && !inThisRegion && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700" title={`Currently in region ${otherRegion}; selecting it moves it here`}>
+                            {otherRegion}
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                A device belongs to one region at a time — selecting a device that is already in another
+                region moves it into this one.
+              </p>
+
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setRegionModal(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveRegion}
+                  disabled={savingRegion}
+                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                >
+                  {savingRegion ? 'Saving...' : 'Save Region'}
                 </button>
               </div>
             </div>

@@ -12,6 +12,7 @@ import io
 from app.db.database import get_db
 from app.models.models import DeviceReading, Device, User
 from app.api.v1.auth import get_current_user
+from app.core.scoping import scope_device_query, allowed_regions, device_in_scope
 
 router = APIRouter()
 
@@ -96,11 +97,14 @@ async def get_readings(
     end_date: Optional[datetime] = None,
     page: int = Query(1, ge=1, description="Page number (starts at 1)"),
     page_size: int = Query(100, ge=1, le=1000, description="Items per page (max 1000)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Get device readings with pagination and filters - Public endpoint. Can filter by device_id, client_id, or section_id"""
+    """Get device readings with pagination and filters (region-scoped). Can filter by device_id, client_id, or section_id"""
     from app.models.models import Device
     query = db.query(DeviceReading)
+    if allowed_regions(current_user, db) is not None:
+        query = scope_device_query(query.join(Device, DeviceReading.device_id == Device.id), current_user, db)
 
     # Apply filters - support device_id, client_id, or section_id
     if device_id:
@@ -157,6 +161,9 @@ async def get_device_recent_readings(
     current_user: User = Depends(get_current_user)
 ):
     """Get recent readings for a specific device"""
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if device and not device_in_scope(device, current_user, db):
+        raise HTTPException(status_code=404, detail="Device not found")
     readings = db.query(DeviceReading).filter(
         DeviceReading.device_id == device_id
     ).order_by(DeviceReading.timestamp.desc()).limit(limit).all()
@@ -175,6 +182,8 @@ async def export_readings_csv(
 ):
     """Export readings to CSV"""
     query = db.query(DeviceReading)
+    if allowed_regions(current_user, db) is not None:
+        query = scope_device_query(query.join(Device, DeviceReading.device_id == Device.id), current_user, db)
 
     if device_id:
         query = query.filter(DeviceReading.device_id == device_id)
@@ -231,6 +240,8 @@ async def get_analytics_summary(
     start_date = datetime.now() - timedelta(days=days)
 
     query = db.query(DeviceReading).filter(DeviceReading.timestamp >= start_date)
+    if allowed_regions(current_user, db) is not None:
+        query = scope_device_query(query.join(Device, DeviceReading.device_id == Device.id), current_user, db)
 
     if device_id:
         query = query.filter(DeviceReading.device_id == device_id)

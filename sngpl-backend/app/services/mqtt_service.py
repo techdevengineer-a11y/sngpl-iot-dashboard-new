@@ -199,7 +199,7 @@ class MQTTService:
             logger.info(f"Saved reading for device {client_id} (temp={reading.temperature}, pressure={reading.static_pressure})")
 
             # Broadcast to WebSocket clients
-            self.broadcast_update(client_id, device.id, reading, alarms_created)
+            self.broadcast_update(client_id, device.id, reading, alarms_created, region=device.region)
 
         except Exception as e:
             logger.error(f"Error saving device data for {client_id}: {e}", exc_info=True)
@@ -358,8 +358,10 @@ class MQTTService:
         """Check if connected to MQTT broker"""
         return self.connected
 
-    def broadcast_update(self, client_id: str, device_id: int, reading: DeviceReading, alarms: list):
-        """Broadcast device update to WebSocket clients and send email notifications"""
+    def broadcast_update(self, client_id: str, device_id: int, reading: DeviceReading, alarms: list, region: str = None):
+        """Broadcast device update to WebSocket clients and send email notifications.
+
+        `region` scopes delivery: only clients allowed to see this device's region receive it."""
         try:
             from app.services.websocket_service import manager
             import os
@@ -369,6 +371,7 @@ class MQTTService:
                 "type": "device_update",
                 "client_id": client_id,
                 "device_id": device_id,
+                "region": region,
                 "data": {
                     "temperature": reading.temperature,
                     "static_pressure": reading.static_pressure,
@@ -384,7 +387,7 @@ class MQTTService:
                 try:
                     # Create new event loop for async broadcast
                     loop = asyncio.new_event_loop()
-                    loop.run_until_complete(manager.broadcast(update_message))
+                    loop.run_until_complete(manager.broadcast(update_message, region=region))
                     loop.close()
                 except Exception as e:
                     logger.error(f"Error broadcasting device update: {e}")
@@ -397,6 +400,7 @@ class MQTTService:
                         "type": "alarm",
                         "client_id": client_id,
                         "device_id": device_id,
+                        "region": region,
                         "alarm": {
                             "parameter": alarm.parameter,
                             "value": alarm.value,
@@ -409,7 +413,7 @@ class MQTTService:
                     if manager.active_connections:
                         try:
                             loop = asyncio.new_event_loop()
-                            loop.run_until_complete(manager.broadcast(alarm_message))
+                            loop.run_until_complete(manager.broadcast(alarm_message, region=region))
                             loop.close()
                         except Exception as e:
                             logger.error(f"Error broadcasting alarm: {e}")

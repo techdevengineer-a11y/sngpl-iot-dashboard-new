@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 from app.db.database import get_db
 from app.models.models import Device, DeviceReading, Alarm, User, AlarmThreshold
 from app.api.v1.auth import get_current_user
+from app.core.scoping import scope_device_query, allowed_regions
 from app.core.redis_client import cache_response
 
 router = APIRouter()
@@ -65,7 +66,12 @@ async def get_recent_readings(
     current_user: User = Depends(get_current_user)
 ):
     """Get recent device readings for charts"""
-    readings = db.query(DeviceReading).order_by(desc(DeviceReading.timestamp)).limit(limit).all()
+    readings_q = db.query(DeviceReading)
+    if allowed_regions(current_user, db) is not None:
+        readings_q = scope_device_query(
+            readings_q.join(Device, DeviceReading.device_id == Device.id), current_user, db
+        )
+    readings = readings_q.order_by(desc(DeviceReading.timestamp)).limit(limit).all()
 
     return [{
         "id": r.id,
@@ -87,7 +93,12 @@ async def get_recent_alarms(
     current_user: User = Depends(get_current_user)
 ):
     """Get recent alarms for timeline"""
-    alarms = db.query(Alarm).order_by(desc(Alarm.triggered_at)).limit(limit).all()
+    alarms_q = db.query(Alarm)
+    if allowed_regions(current_user, db) is not None:
+        alarms_q = scope_device_query(
+            alarms_q.join(Device, Alarm.device_id == Device.id), current_user, db
+        )
+    alarms = alarms_q.order_by(desc(Alarm.triggered_at)).limit(limit).all()
 
     return [{
         "id": a.id,
@@ -107,12 +118,20 @@ async def get_system_metrics(
     current_user: User = Depends(get_current_user)
 ):
     """Get system performance metrics"""
+    restricted = allowed_regions(current_user, db) is not None
+
+    def _readings_q():
+        q = db.query(DeviceReading)
+        if restricted:
+            q = scope_device_query(q.join(Device, DeviceReading.device_id == Device.id), current_user, db)
+        return q
+
     # Calculate metrics
-    total_readings = db.query(DeviceReading).count()
+    total_readings = _readings_q().count()
 
     # Readings in last hour
     one_hour_ago = datetime.now() - timedelta(hours=1)
-    recent_readings = db.query(DeviceReading).filter(
+    recent_readings = _readings_q().filter(
         DeviceReading.timestamp >= one_hour_ago
     ).count()
 
@@ -120,11 +139,14 @@ async def get_system_metrics(
     readings_per_minute = recent_readings / 60 if recent_readings > 0 else 0
 
     # Device uptime - calculate based on devices that sent data in last 105 minutes
-    total_devices = db.query(Device).count()
+    total_devices = scope_device_query(db.query(Device), current_user, db).count()
     five_minutes_ago = datetime.now() - timedelta(minutes=105)
-    active_devices = db.query(Device).filter(
-        Device.last_seen != None,
-        Device.last_seen >= five_minutes_ago
+    active_devices = scope_device_query(
+        db.query(Device).filter(
+            Device.last_seen != None,
+            Device.last_seen >= five_minutes_ago
+        ),
+        current_user, db
     ).count()
     uptime_percentage = (active_devices / total_devices * 100) if total_devices > 0 else 0
 
@@ -234,6 +256,9 @@ async def get_status_overview(
     if device_type:
         query = query.filter(Device.device_type == device_type.upper())
 
+    # Restrict to the regions the current user may see
+    query = scope_device_query(query, current_user, db)
+
     # Execute single query (replaces 801 queries!)
     results = query.all()
 
@@ -321,23 +346,32 @@ async def get_dashboard_stats(
     current_user: User = Depends(get_current_user)
 ):
     """Get overall dashboard statistics for main dashboard cards"""
+    restricted = allowed_regions(current_user, db) is not None
+
     # Total devices
-    total_devices = db.query(Device).count()
+    total_devices = scope_device_query(db.query(Device), current_user, db).count()
 
     # Active devices (sent data in last 105 minutes)
     five_min_ago = datetime.now() - timedelta(minutes=105)
-    active_devices = db.query(Device).filter(
-        Device.last_seen.isnot(None),
-        Device.last_seen >= five_min_ago
+    active_devices = scope_device_query(
+        db.query(Device).filter(
+            Device.last_seen.isnot(None),
+            Device.last_seen >= five_min_ago
+        ),
+        current_user, db
     ).count()
 
     # Total readings
-    total_readings = db.query(DeviceReading).count()
+    readings_q = db.query(DeviceReading)
+    if restricted:
+        readings_q = scope_device_query(readings_q.join(Device, DeviceReading.device_id == Device.id), current_user, db)
+    total_readings = readings_q.count()
 
     # Active alarms (not acknowledged)
-    active_alarms = db.query(Alarm).filter(
-        Alarm.is_acknowledged == False
-    ).count()
+    alarms_q = db.query(Alarm).filter(Alarm.is_acknowledged == False)
+    if restricted:
+        alarms_q = scope_device_query(alarms_q.join(Device, Alarm.device_id == Device.id), current_user, db)
+    active_alarms = alarms_q.count()
 
     return {
         "total_devices": total_devices,
