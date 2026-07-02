@@ -215,14 +215,34 @@ const StationDetail = () => {
       try {
         const startIso = new Date(startDate).toISOString();
         const endIso = new Date(endDate).toISOString();
-        const response = await fetch(`/api/analytics/readings?device_id=${stationId}&page_size=1000&page=1&start_date=${encodeURIComponent(startIso)}&end_date=${encodeURIComponent(endIso)}`);
-        if (response.ok) {
-          const result = await response.json();
-          const readings = (result.data || []).sort((a: any, b: any) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
-          setFullscreenRangeData(prev => ({ ...prev, [chartKey]: readings }));
+        const baseUrl = `/api/analytics/readings?device_id=${stationId}&page_size=1000&start_date=${encodeURIComponent(startIso)}&end_date=${encodeURIComponent(endIso)}`;
+        const response = await fetch(`${baseUrl}&page=1`);
+        if (!response.ok) return;
+        const result = await response.json();
+        let readings: any[] = result.data || [];
+
+        // The API caps pages at 1000 rows; fetch the remaining pages so long
+        // ranges on frequently-reporting devices aren't cut off (up to 10k)
+        const totalPages = Math.min(result.total_pages || 1, 10);
+        for (let p = 2; p <= totalPages; p++) {
+          const pageResponse = await fetch(`${baseUrl}&page=${p}`);
+          if (!pageResponse.ok) break;
+          const pageResult = await pageResponse.json();
+          readings = readings.concat(pageResult.data || []);
         }
+
+        readings.sort((a: any, b: any) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        // Downsample evenly so very long ranges stay renderable
+        const maxPoints = 1500;
+        if (readings.length > maxPoints) {
+          const step = Math.ceil(readings.length / maxPoints);
+          readings = readings.filter((_, i) => i % step === 0 || i === readings.length - 1);
+        }
+
+        setFullscreenRangeData(prev => ({ ...prev, [chartKey]: readings }));
       } catch (error) {
         console.error('Error fetching range data:', error);
       }
@@ -667,6 +687,13 @@ const StationDetail = () => {
         <span className="flex items-center gap-1.5 text-xs font-medium text-green-600">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
           Live
+        </span>
+      )}
+      {manualRangesRef.current[chartKey] && fullscreenRangeData[chartKey] && (
+        <span className="text-xs text-gray-500">
+          {fullscreenRangeData[chartKey].length === 0
+            ? 'No data recorded in the selected range'
+            : `${fullscreenRangeData[chartKey].length} readings — earliest: ${new Date(fullscreenRangeData[chartKey][0].timestamp).toLocaleString()}`}
         </span>
       )}
     </div>
