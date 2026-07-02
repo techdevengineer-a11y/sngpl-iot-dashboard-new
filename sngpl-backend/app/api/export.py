@@ -32,6 +32,11 @@ def convert_to_pkt(dt: datetime) -> datetime:
     return dt.astimezone(PKT)
 
 
+def _fmt(value) -> str:
+    """Format a numeric reading value, blank when missing"""
+    return f"{value:.2f}" if value is not None else ''
+
+
 def create_csv_export(readings: list, device_info: dict) -> str:
     """Create CSV export from device readings"""
     output = io.StringIO()
@@ -47,7 +52,14 @@ def create_csv_export(readings: list, device_info: dict) -> str:
         'Differential Pressure (IWC)',
         'Volume (MCF)',
         'Total Volume Flow (MCF/day)',
-        'Battery (%)'
+        'Battery (V)',
+        'Last Hour Flow Time (hrs)',
+        'Last Hour Diff Pressure (IWC)',
+        'Last Hour Static Pressure (PSI)',
+        'Last Hour Temperature (°F)',
+        'Last Hour Volume (MCF)',
+        'Last Hour Energy',
+        'Specific Gravity'
     ])
 
     # Write data rows
@@ -63,7 +75,14 @@ def create_csv_export(readings: list, device_info: dict) -> str:
             f"{reading.differential_pressure:.2f}",
             f"{reading.volume:.2f}",
             f"{reading.total_volume_flow:.2f}",
-            f"{(reading.battery or 0):.0f}"
+            f"{(reading.battery or 0):.2f}",
+            _fmt(reading.last_hour_flow_time),
+            _fmt(reading.last_hour_diff_pressure),
+            _fmt(reading.last_hour_static_pressure),
+            _fmt(reading.last_hour_temperature),
+            _fmt(reading.last_hour_volume),
+            _fmt(reading.last_hour_energy),
+            _fmt(reading.specific_gravity)
         ])
 
     return output.getvalue()
@@ -90,7 +109,14 @@ def create_excel_export(readings: list, device_info: dict) -> bytes:
         'Differential Pressure (IWC)',
         'Volume (MCF)',
         'Total Volume Flow (MCF/day)',
-        'Battery (%)'
+        'Battery (V)',
+        'Last Hour Flow Time (hrs)',
+        'Last Hour Diff Pressure (IWC)',
+        'Last Hour Static Pressure (PSI)',
+        'Last Hour Temperature (°F)',
+        'Last Hour Volume (MCF)',
+        'Last Hour Energy',
+        'Specific Gravity'
     ]
 
     for col_num, header in enumerate(headers, 1):
@@ -111,7 +137,14 @@ def create_excel_export(readings: list, device_info: dict) -> bytes:
         ws.cell(row=row_num, column=6, value=f"{reading.differential_pressure:.2f}")
         ws.cell(row=row_num, column=7, value=f"{reading.volume:.2f}")
         ws.cell(row=row_num, column=8, value=f"{reading.total_volume_flow:.2f}")
-        ws.cell(row=row_num, column=9, value=f"{(reading.battery or 0):.0f}")
+        ws.cell(row=row_num, column=9, value=f"{(reading.battery or 0):.2f}")
+        ws.cell(row=row_num, column=10, value=_fmt(reading.last_hour_flow_time))
+        ws.cell(row=row_num, column=11, value=_fmt(reading.last_hour_diff_pressure))
+        ws.cell(row=row_num, column=12, value=_fmt(reading.last_hour_static_pressure))
+        ws.cell(row=row_num, column=13, value=_fmt(reading.last_hour_temperature))
+        ws.cell(row=row_num, column=14, value=_fmt(reading.last_hour_volume))
+        ws.cell(row=row_num, column=15, value=_fmt(reading.last_hour_energy))
+        ws.cell(row=row_num, column=16, value=_fmt(reading.specific_gravity))
 
     # Auto-adjust column widths
     for column in ws.columns:

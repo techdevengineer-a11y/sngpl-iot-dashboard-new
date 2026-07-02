@@ -251,13 +251,17 @@ const ExportModal = ({ isOpen, onClose, deviceId, deviceName, sectionId, exportT
             <ul className="text-sm text-gray-700 space-y-1">
               <li>• Temperature (°F)</li>
               <li>• Static Pressure (PSI)</li>
-              <li>• Max Static Pressure (PSI)</li>
-              <li>• Min Static Pressure (PSI)</li>
               <li>• Differential Pressure (IWC)</li>
               <li>• Volume (MCF)</li>
-              <li>• Volume (MMCF)</li>
-              <li>• Flow Rate (MCF/day)</li>
+              <li>• Total Volume Flow (MCF/day)</li>
               <li>• Battery Voltage (V)</li>
+              <li>• Last Hour Flow Time (hrs)</li>
+              <li>• Last Hour Diff Pressure (IWC)</li>
+              <li>• Last Hour Static Pressure (PSI)</li>
+              <li>• Last Hour Temperature (°F)</li>
+              <li>• Last Hour Volume (MCF)</li>
+              <li>• Last Hour Energy</li>
+              <li>• Specific Gravity</li>
               <li>• Timestamps for all readings</li>
             </ul>
           </div>

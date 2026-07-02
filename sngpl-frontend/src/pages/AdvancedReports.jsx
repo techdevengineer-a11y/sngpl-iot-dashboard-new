@@ -770,9 +770,9 @@ const AdvancedReports = () => {
       // Row 2: Empty row
       // Row 3: Column headers
       const headers = [
-        'Sr. No.', 'Date', 'Time', 'Flow Time (s)', 'Diff Pressure (IWC)',
-        'Static Pressure (PSI)', 'Temperature (°F)', 'Volume (MCF)',
-        'Energy', 'Specific Gravity'
+        'Sr. No.', 'Date', 'Time', 'Last Hour Flow Time (hrs)', 'Last Hour Diff Pressure (IWC)',
+        'Last Hour Static Pressure (PSI)', 'Last Hour Temperature (°F)', 'Last Hour Volume (MCF)',
+        'Last Hour Energy', 'Specific Gravity'
       ];
       headers.forEach((header, idx) => {
         const col = idx < 26 ? String.fromCharCode(65 + idx) : 'A' + String.fromCharCode(65 + idx - 26);
@@ -883,13 +883,13 @@ const AdvancedReports = () => {
         { wch: 22 },  // Sr. No. / Adjustment labels
         { wch: 25 },  // Date / Adjustment values
         { wch: 8 },   // Time
-        { wch: 14 },  // Flow Time
-        { wch: 18 },  // Diff Pressure
-        { wch: 18 },  // Static Pressure
-        { wch: 16 },  // Temperature
-        { wch: 14 },  // Volume
-        { wch: 10 },  // Energy
-        { wch: 14 },  // Specific Gravity
+        { wch: 25 },  // Last Hour Flow Time
+        { wch: 30 },  // Last Hour Diff Pressure
+        { wch: 31 },  // Last Hour Static Pressure
+        { wch: 27 },  // Last Hour Temperature
+        { wch: 24 },  // Last Hour Volume
+        { wch: 17 },  // Last Hour Energy
+        { wch: 16 },  // Specific Gravity
       ];
 
       // Set row heights
