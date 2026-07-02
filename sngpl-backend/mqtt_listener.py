@@ -29,25 +29,6 @@ OFFLINE_NOTIFICATION_EMAILS = ["shayankhannn12@gmail.com"]
 
 logger = get_logger("mqtt_listener")
 
-
-def _parse_device_time(value):
-    """Best-effort parse of the device 'Utime' field -> datetime, else None.
-
-    Devices send Utime as "2026/1/12 23:14:13"; epoch seconds and ISO strings
-    are accepted as fallbacks."""
-    if value is None:
-        return None
-    try:
-        if isinstance(value, (int, float)) or str(value).isdigit():
-            return datetime.fromtimestamp(int(value))  # epoch seconds
-        text = str(value).strip()
-        try:
-            return datetime.strptime(text, "%Y/%m/%d %H:%M:%S")
-        except ValueError:
-            return datetime.fromisoformat(text.replace("Z", "+00:00"))
-    except Exception:
-        return None
-
 # Create database engine and session for standalone script (PostgreSQL)
 engine = create_engine(
     settings.DATABASE_URL,
@@ -73,6 +54,10 @@ class StandaloneMQTTListener:
         self.connected = False
         self.offline_check_thread = None
         self.running = False
+        # device.id -> last seen raw Utime string; devices re-send the same message
+        # with an identical Utime, so this catches duplicates without trusting
+        # device clocks (which are unsynced/mislabelled and can't be stored)
+        self.last_utime_by_device = {}
         logger.info("Standalone MQTT Listener initialized")
         logger.info(f"Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
         logger.info(f"Topic: {settings.MQTT_TOPIC}")
@@ -353,19 +338,18 @@ class StandaloneMQTTListener:
             # T15 = Battery (V), T16 = Max Static Pressure, T17 = Min Static Pressure
             # T18-T114 = New Analytics Parameters
 
-            # Use the device-reported time when present so the duplicate guard is meaningful
-            current_timestamp = _parse_device_time(data.get("Utime")) or datetime.now()
-
-            # Check if a reading with same device_id and timestamp already exists (prevent duplicates)
-            existing_reading = db.query(DeviceReading.id).filter(
-                DeviceReading.device_id == device.id,
-                DeviceReading.timestamp == current_timestamp
-            ).first()
-
-            if existing_reading:
-                logger.warning(f"[DUPLICATE PREVENTED] Reading for device {client_id} at {current_timestamp} already exists, skipping")
-                print(f"⚠️  [DUPLICATE] Skipped duplicate reading for {client_id} at {current_timestamp}")
+            # Duplicate guard: devices re-send the same message with an identical Utime.
+            # Compare the raw Utime string per device; readings keep server time because
+            # device clocks are unsynced (some report local time with a bogus Z suffix).
+            utime = data.get("Utime")
+            if utime is not None and self.last_utime_by_device.get(device.id) == utime:
+                db.commit()  # persist the last_seen/connectivity updates above
+                logger.warning(f"[DUPLICATE PREVENTED] Reading for device {client_id} with Utime {utime} already processed, skipping")
+                print(f"⚠️  [DUPLICATE] Skipped duplicate reading for {client_id} (Utime {utime})")
                 return
+
+            # Get current timestamp
+            current_timestamp = datetime.now()
 
             # E-prefix (EVC) addresses share shared-column values with T-prefix fallback.
             # MCF fields (T13/T14/T112) only populate from T-prefix; EVC values go to *_ft3 columns.
@@ -410,6 +394,11 @@ class StandaloneMQTTListener:
                 alarms_created = []
 
             db.commit()
+
+            # Remember the Utime only after a successful save so a failed insert
+            # doesn't suppress the device's retry
+            if utime is not None:
+                self.last_utime_by_device[device.id] = utime
 
             # Print to console and log (show ft3 fields when EVC payload supplied them)
             is_evc = reading.volume_ft3 is not None or reading.primary_volume is not None
