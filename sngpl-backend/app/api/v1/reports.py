@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from app.db.database import get_db
 from app.models.models import User, Device, Alarm
 from app.api.v1.auth import get_current_user
-from app.core.scoping import scope_device_query, allowed_regions
 from app.services.export_service import export_service
 from app.core.logging_config import get_logger
 
@@ -35,7 +34,7 @@ async def export_devices_pdf(
         if is_active is not None:
             query = query.filter(Device.is_active == is_active)
 
-        devices = scope_device_query(query, current_user, db).all()
+        devices = query.all()
 
         # Generate PDF
         pdf_buffer = export_service.generate_devices_pdf(devices, db)
@@ -74,7 +73,7 @@ async def export_devices_excel(
         if is_active is not None:
             query = query.filter(Device.is_active == is_active)
 
-        devices = scope_device_query(query, current_user, db).all()
+        devices = query.all()
 
         # Generate Excel
         excel_buffer = export_service.generate_devices_excel(devices, db)
@@ -107,8 +106,6 @@ async def export_alarms_pdf(
     try:
         # Build query
         query = db.query(Alarm)
-        if allowed_regions(current_user, db) is not None:
-            query = scope_device_query(query.join(Device, Alarm.device_id == Device.id), current_user, db)
 
         # Filter by date range
         cutoff_date = datetime.now() - timedelta(days=days)
@@ -153,8 +150,6 @@ async def export_alarms_excel(
     try:
         # Build query
         query = db.query(Alarm)
-        if allowed_regions(current_user, db) is not None:
-            query = scope_device_query(query.join(Device, Alarm.device_id == Device.id), current_user, db)
 
         # Filter by date range
         cutoff_date = datetime.now() - timedelta(days=days)

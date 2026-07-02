@@ -54,7 +54,6 @@ class Device(Base):
     device_name = Column(String, index=True)
     device_type = Column(String, nullable=False, default="SMS", index=True)  # SMS (default), EVC, or FC
     location = Column(String, index=True)
-    region = Column(String, index=True, nullable=True)  # admin-defined free-text region used for per-user access scoping
     latitude = Column(Float)
     longitude = Column(Float)
     serial_number = Column(String, unique=True, index=True, nullable=True)
@@ -344,24 +343,3 @@ class RolePermission(Base):
     # Relationships
     role = relationship("Role", backref="permissions")
     permission = relationship("Permission", backref="roles")
-
-
-class UserRegion(Base):
-    """Regions a user is scoped to. A user with NO rows here is unrestricted (sees all devices).
-
-    `region` is free text that admins type on devices and assign to accounts; matching is done
-    trimmed + case-insensitively (see app/core/scoping.py)."""
-    __tablename__ = "user_regions"
-    __table_args__ = (
-        Index("ix_user_regions_user", "user_id"),
-        Index("ix_user_regions_unique", "user_id", "region", unique=True),
-    )
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    region = Column(String, nullable=False)
-    assigned_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    assigned_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    user = relationship("User", foreign_keys=[user_id], backref="region_assignments")
-    assigned_by_user = relationship("User", foreign_keys=[assigned_by])

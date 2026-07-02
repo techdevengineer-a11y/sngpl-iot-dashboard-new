@@ -17,25 +17,8 @@ async def websocket_endpoint(websocket: WebSocket):
     - Real-time device readings
     - Alarm notifications
     - Device status changes
-
-    Pass ?token=<JWT> to receive only updates for the regions the user is allowed to see.
-    Without a valid token the connection is unrestricted (back-compat).
     """
-    regions = None
-    token = websocket.query_params.get("token")
-    if token:
-        from app.db.database import SessionLocal
-        from app.api.v1.auth import get_user_from_token
-        from app.core.scoping import allowed_regions
-        db = SessionLocal()
-        try:
-            user = get_user_from_token(token, db)
-            if user is not None:
-                regions = allowed_regions(user, db)
-        finally:
-            db.close()
-
-    await manager.connect(websocket, regions)
+    await manager.connect(websocket)
     logger.info(f"WebSocket client connected. Total connections: {len(manager.active_connections)}")
 
     try:

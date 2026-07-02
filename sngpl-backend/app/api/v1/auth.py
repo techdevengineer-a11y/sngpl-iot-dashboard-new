@@ -112,18 +112,6 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-def get_user_from_token(token: str, db: Session):
-    """Decode a JWT and return the User, or None if invalid. For non-dependency contexts (e.g. WebSocket)."""
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username = payload.get("sub")
-        if not username:
-            return None
-    except JWTError:
-        return None
-    return db.query(User).filter(User.username == username).first()
-
-
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -7,45 +7,12 @@ from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime, timedelta, timezone
 
 from app.db.database import get_db
-from app.models.models import User, UserRegion
+from app.models.models import User
 from app.api.v1.auth import get_current_user, get_password_hash, verify_password
 from app.services.audit_service import audit_service
 from app.core.password_validator import PasswordValidator
 
 router = APIRouter()
-
-
-def _clean_regions(regions: Optional[List[str]]) -> List[str]:
-    """Trim, drop blanks, de-duplicate (case-insensitive) while preserving the typed casing."""
-    out: List[str] = []
-    seen = set()
-    for r in regions or []:
-        r = (r or "").strip()
-        if r and r.lower() not in seen:
-            seen.add(r.lower())
-            out.append(r)
-    return out
-
-
-def _set_user_regions(db: Session, user: User, regions: List[str], assigned_by: Optional[int]):
-    """Replace a user's region assignments."""
-    db.query(UserRegion).filter(UserRegion.user_id == user.id).delete()
-    for r in _clean_regions(regions):
-        db.add(UserRegion(user_id=user.id, region=r, assigned_by=assigned_by))
-
-
-def _user_out(user: User) -> "UserResponse":
-    """Build a UserResponse including the user's assigned regions."""
-    return UserResponse(
-        id=user.id,
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        role=user.role,
-        is_active=user.is_active,
-        created_at=user.created_at,
-        regions=[ur.region for ur in getattr(user, "region_assignments", [])],
-    )
 
 # In-memory storage for failed login attempts (use Redis in production for distributed systems)
 failed_password_attempts: Dict[int, Dict] = {}
@@ -62,7 +29,6 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
-    regions: List[str] = []
 
     class Config:
         from_attributes = True
@@ -74,7 +40,6 @@ class UserCreate(BaseModel):
     password: str
     full_name: Optional[str] = None
     role: str = "viewer"
-    regions: List[str] = []
 
     @field_validator("username")
     @classmethod
@@ -106,7 +71,6 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     role: Optional[str] = None
     is_active: Optional[bool] = None
-    regions: Optional[List[str]] = None  # when provided, replaces the user's region assignments
 
     @field_validator("role")
     @classmethod
@@ -216,7 +180,7 @@ async def list_users(
         query = query.filter(User.role == role)
 
     users = query.offset(skip).limit(limit).all()
-    return [_user_out(u) for u in users]
+    return users
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -239,7 +203,7 @@ async def get_user(
             detail="User not found"
         )
 
-    return _user_out(user)
+    return user
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -297,22 +261,16 @@ async def create_user(
     db.commit()
     db.refresh(new_user)
 
-    # Assign regions (scopes which devices the account can see)
-    _set_user_regions(db, new_user, user_data.regions, current_user.id)
-    db.commit()
-    db.refresh(new_user)
-
     # Audit log
     audit_service.log_from_request(
         db=db, request=request,
         action="CREATE", resource_type="user",
         user=current_user, resource_id=new_user.id,
-        details={"username": new_user.username, "role": new_user.role,
-                 "regions": _clean_regions(user_data.regions)},
+        details={"username": new_user.username, "role": new_user.role},
         status="success"
     )
 
-    return _user_out(new_user)
+    return new_user
 
 
 @router.put("/{user_id}", response_model=UserResponse)
@@ -382,15 +340,6 @@ async def update_user(
 
     if user_data.is_active is not None and current_user.role == "admin":
         user.is_active = user_data.is_active
-
-    # Region assignments are admin-only; when provided they replace the existing set
-    if user_data.regions is not None:
-        if current_user.role != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only administrators can change region assignments"
-            )
-        _set_user_regions(db, user, user_data.regions, current_user.id)
 
     db.commit()
     db.refresh(user)

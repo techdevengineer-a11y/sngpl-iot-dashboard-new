@@ -7,9 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, case, and_, literal
 from typing import List, Dict, Any
 from app.db.database import get_db
-from app.models.models import Device, DeviceReading, User
-from app.api.v1.auth import get_current_user
-from app.core.scoping import scope_device_query
+from app.models.models import Device, DeviceReading
 from datetime import datetime, timedelta, timezone
 from app.core.redis_client import cache_response
 
@@ -18,7 +16,7 @@ router = APIRouter(prefix="/sections", tags=["sections"])
 
 @router.get("/stats")
 @cache_response("sections:stats", ttl=60)
-async def get_section_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def get_section_stats(db: Session = Depends(get_db)):
     """
     Get statistics for all sections (Sections I-V) and overall total
     Returns cumulative volume flow for each section
@@ -74,8 +72,8 @@ async def get_section_stats(db: Session = Depends(get_db), current_user: User = 
             )
         )
         .filter(Device.client_id.like('SMS-%'))
-    )
-    sms_stats = scope_device_query(sms_stats, current_user, db).group_by('section_id').all()
+        .group_by('section_id')
+    ).all()
 
     # Query for non-SMS devices (OTHER)
     other_stats = (
@@ -96,8 +94,7 @@ async def get_section_stats(db: Session = Depends(get_db), current_user: User = 
             )
         )
         .filter(~Device.client_id.like('SMS-%'))
-    )
-    other_stats = scope_device_query(other_stats, current_user, db).first()
+    ).first()
 
     # Build sections list
     sections = []
@@ -172,19 +169,19 @@ async def get_section_stats(db: Session = Depends(get_db), current_user: User = 
 
 @router.get("/{section_id}/devices")
 @cache_response("sections:devices", ttl=60)
-async def get_section_devices(section_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def get_section_devices(section_id: str, db: Session = Depends(get_db)):
     """
     Get all devices for a specific section
     Section ID should be: I, II, III, IV, V, OTHER, or ALL
     """
     if section_id == 'ALL':
         # Get all devices (SMS and non-SMS like modem2)
-        devices_q = db.query(Device)
+        devices = db.query(Device).all()
     elif section_id == 'OTHER':
         # Get only non-SMS devices (like modem1, modem2, etc.)
-        devices_q = db.query(Device).filter(
+        devices = db.query(Device).filter(
             ~Device.client_id.like('SMS-%')
-        )
+        ).all()
     else:
         # Validate section ID
         if section_id not in ['I', 'II', 'III', 'IV', 'V']:
@@ -195,13 +192,10 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db), cu
         arabic_num = section_map.get(section_id, section_id)
 
         # Get devices for specific section (support both SMS-I-XXX and SMS-1-XXX formats)
-        devices_q = db.query(Device).filter(
+        devices = db.query(Device).filter(
             (Device.client_id.like(f'SMS-{section_id}-%')) |
             (Device.client_id.like(f'SMS-{arabic_num}-%'))
-        )
-
-    # Restrict to the regions the current user may see
-    devices = scope_device_query(devices_q, current_user, db).all()
+        ).all()
 
     # Get device IDs for batch query
     device_ids = [d.id for d in devices]
@@ -308,7 +302,7 @@ async def get_section_devices(section_id: str, db: Session = Depends(get_db), cu
 
 @router.get("/{section_id}/summary")
 @cache_response("sections:summary", ttl=60)
-async def get_section_summary(section_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def get_section_summary(section_id: str, db: Session = Depends(get_db)):
     """
     Get detailed summary for a specific section including all measurement parameters
     """
@@ -317,12 +311,11 @@ async def get_section_summary(section_id: str, db: Session = Depends(get_db), cu
 
     # Get devices for this section
     if section_id == 'ALL':
-        devices_q = db.query(Device).filter(Device.client_id.like('SMS-%'))
+        devices = db.query(Device).filter(Device.client_id.like('SMS-%')).all()
     else:
-        devices_q = db.query(Device).filter(
+        devices = db.query(Device).filter(
             Device.client_id.like(f'SMS-{section_id}-%')
-        )
-    devices = scope_device_query(devices_q, current_user, db).all()
+        ).all()
 
     if not devices:
         raise HTTPException(status_code=404, detail="No devices found for this section")

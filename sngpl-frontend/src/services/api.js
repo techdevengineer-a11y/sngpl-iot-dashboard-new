@@ -60,9 +60,6 @@ export const getDeviceReadingCounts = async (month) => {
   return response.data;
 };
 
-export const assignRegionDevices = (region, deviceIds) =>
-  api.put('/devices/regions/assign', { region, device_ids: deviceIds });
-
 export const getDeviceMonthlyDetail = async (deviceId, month) => {
   const response = await api.get(`/device-reports/monthly-detail/${deviceId}`, {
     params: month ? { month } : {},

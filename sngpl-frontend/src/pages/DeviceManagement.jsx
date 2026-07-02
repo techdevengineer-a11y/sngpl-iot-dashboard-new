@@ -258,8 +258,7 @@ const DeviceManagement = () => {
         device_type: deviceType,
         location: device.location.trim(),
         latitude: lat,
-        longitude: lng,
-        region: (device.region || '').trim() || null
+        longitude: lng
       });
       toast.success('Device updated successfully!');
       setEditingDevice(null);

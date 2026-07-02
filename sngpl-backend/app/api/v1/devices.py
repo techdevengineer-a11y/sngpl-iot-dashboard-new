@@ -10,7 +10,6 @@ from datetime import datetime
 from app.db.database import get_db
 from app.models.models import Device, DeviceReading, User
 from app.api.v1.auth import get_current_user, require_admin
-from app.core.scoping import scope_device_query, device_in_scope, allowed_regions
 from app.services.audit_service import audit_service
 
 router = APIRouter()
@@ -21,18 +20,8 @@ class DeviceCreate(BaseModel):
     device_name: str = Field(..., min_length=1, max_length=200, description="Device name")
     device_type: str = Field(default="EVC", description="Device type: EVC or FC")
     location: str = Field(..., min_length=1, max_length=500, description="Device location")
-    region: Optional[str] = Field(None, max_length=200, description="Admin-defined region used for access scoping")
     latitude: float = Field(..., ge=-90, le=90, description="Latitude coordinate")
     longitude: float = Field(..., ge=-180, le=180, description="Longitude coordinate")
-
-    @field_validator("region")
-    @classmethod
-    def validate_region(cls, v: Optional[str]) -> Optional[str]:
-        """Trim region; treat blank as no region."""
-        if v is None:
-            return None
-        v = v.strip()
-        return v or None
 
     @field_validator("client_id")
     @classmethod
@@ -89,7 +78,6 @@ class DeviceResponse(BaseModel):
     device_name: str
     device_type: str
     location: str
-    region: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     serial_number: Optional[str] = None
@@ -118,27 +106,17 @@ async def get_device_stats(db: Session = Depends(get_db), current_user: User = D
     """Get device statistics - active means device sent data in last 5 minutes"""
     from datetime import datetime, timedelta
 
-    total_devices = scope_device_query(db.query(Device), current_user, db).count()
+    total_devices = db.query(Device).count()
 
     # Calculate active devices: those that sent data in last 105 minutes (1 hour 45 min)
     five_minutes_ago = datetime.now() - timedelta(minutes=105)
-    active_devices = scope_device_query(
-        db.query(Device).filter(
-            Device.last_seen != None,
-            Device.last_seen >= five_minutes_ago
-        ),
-        current_user, db
+    active_devices = db.query(Device).filter(
+        Device.last_seen != None,
+        Device.last_seen >= five_minutes_ago
     ).count()
 
     inactive_devices = total_devices - active_devices
-    # Readings restricted to the devices the user can see
-    if allowed_regions(current_user, db) is None:
-        total_readings = db.query(DeviceReading).count()
-    else:
-        total_readings = scope_device_query(
-            db.query(DeviceReading).join(Device, DeviceReading.device_id == Device.id),
-            current_user, db
-        ).count()
+    total_readings = db.query(DeviceReading).count()
 
     return {
         "total_devices": total_devices,
@@ -149,9 +127,9 @@ async def get_device_stats(db: Session = Depends(get_db), current_user: User = D
 
 
 @router.get("/", response_model=List[DeviceResponse])
-async def get_devices(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Get devices visible to the current user (region-scoped) with latest reading including battery"""
-    devices = scope_device_query(db.query(Device), current_user, db).all()
+async def get_devices(db: Session = Depends(get_db)):
+    """Get all devices - Public endpoint with latest reading including battery"""
+    devices = db.query(Device).all()
 
     # Get latest reading for ALL devices in a single query using a subquery
     latest_reading_ids = db.query(
@@ -180,7 +158,6 @@ async def get_devices(db: Session = Depends(get_db), current_user: User = Depend
             "device_name": device.device_name,
             "device_type": device.device_type,
             "location": device.location,
-            "region": device.region,
             "latitude": device.latitude,
             "longitude": device.longitude,
             "serial_number": device.serial_number,
@@ -217,26 +194,11 @@ async def get_devices(db: Session = Depends(get_db), current_user: User = Depend
     return result
 
 
-@router.get("/regions", response_model=List[str])
-async def list_regions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Distinct device region names (autocomplete suggestions for admin forms). Admin only."""
-    require_admin(current_user)
-    rows = (
-        db.query(distinct(Device.region))
-        .filter(Device.region.isnot(None), func.trim(Device.region) != "")
-        .order_by(Device.region)
-        .all()
-    )
-    return [r[0] for r in rows]
-
-
 @router.get("/{client_id}", response_model=DeviceResponse)
 async def get_device(client_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get single device"""
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
-    if not device_in_scope(device, current_user, db):
         raise HTTPException(status_code=404, detail="Device not found")
     return device
 
@@ -458,8 +420,6 @@ async def get_device_readings(client_id: str, limit: int = 100, db: Session = De
     device = db.query(Device).filter(Device.client_id == client_id).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
-    if not device_in_scope(device, current_user, db):
-        raise HTTPException(status_code=404, detail="Device not found")
 
     readings = db.query(DeviceReading).filter(DeviceReading.device_id == device.id).order_by(DeviceReading.timestamp.desc()).limit(limit).all()
 
@@ -498,7 +458,7 @@ class SerialMappingUpdate(BaseModel):
 @router.get("/serial-mappings/all", response_model=List[SerialMappingResponse])
 async def get_serial_mappings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get all devices with their serial number mappings"""
-    devices = scope_device_query(db.query(Device), current_user, db).order_by(Device.client_id).all()
+    devices = db.query(Device).order_by(Device.client_id).all()
     result = []
     for device in devices:
         section_id = None
@@ -555,56 +515,3 @@ async def update_serial_number(
     )
 
     return {"message": f"Serial number {'mapped' if mapping.serial_number else 'removed'} successfully", "client_id": client_id, "serial_number": mapping.serial_number}
-
-
-class RegionAssignment(BaseModel):
-    """RBAC: define which devices a region contains (exact membership)."""
-    region: str = Field(..., min_length=1, max_length=200, description="Region name")
-    device_ids: List[int] = Field(default_factory=list, description="Devices this region contains; empty deletes the region")
-
-
-@router.put("/regions/assign")
-async def assign_region_devices(
-    payload: RegionAssignment,
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Make `region` contain exactly `device_ids` devices (admin only).
-
-    Devices previously in the region but not listed are cleared, so an empty
-    list removes the region entirely. A device belongs to one region at a time.
-    """
-    require_admin(current_user)
-    region = payload.region.strip()
-    if not region:
-        raise HTTPException(status_code=400, detail="Region name cannot be empty")
-
-    keep = set(payload.device_ids)
-
-    removed = 0
-    current_members = db.query(Device).filter(
-        func.lower(func.trim(Device.region)) == region.lower()
-    ).all()
-    for device in current_members:
-        if device.id not in keep:
-            device.region = None
-            removed += 1
-
-    assigned = 0
-    if keep:
-        for device in db.query(Device).filter(Device.id.in_(keep)).all():
-            device.region = region
-            assigned += 1
-
-    db.commit()
-
-    audit_service.log_from_request(
-        db=db, request=request,
-        action="UPDATE", resource_type="device",
-        user=current_user,
-        details={"field": "region", "region": region, "assigned": assigned, "removed": removed},
-        status="success"
-    )
-
-    return {"region": region, "assigned": assigned, "removed": removed}
