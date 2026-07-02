@@ -61,6 +61,7 @@ const DeviceManagement = () => {
     { id: 'III', name: 'Section III - Islamabad/Rawalpindi', shortName: 'Section III', gradient: 'from-orange-500 to-amber-500', ring: 'ring-orange-500/30' },
     { id: 'IV', name: 'Section IV - Lahore/Gujranwala', shortName: 'Section IV', gradient: 'from-pink-500 to-rose-500', ring: 'ring-pink-500/30' },
     { id: 'V', name: 'Section V - Peshawar/Mardan', shortName: 'Section V', gradient: 'from-cyan-500 to-sky-500', ring: 'ring-cyan-500/30' },
+    { id: 'ONLINE', name: 'Online Devices', shortName: 'Online', gradient: 'from-green-500 to-emerald-500', ring: 'ring-green-500/30' },
   ];
 
   useEffect(() => {
@@ -120,7 +121,9 @@ const DeviceManagement = () => {
 
   // Get devices for selected section (with search filter)
   const getDevicesForSection = () => {
-    let list = selectedSection === 'ALL' ? devices : (groupedDevices()[selectedSection] || []);
+    let list = selectedSection === 'ALL' ? devices
+      : selectedSection === 'ONLINE' ? devices.filter(d => getDeviceStatus(d) === 'online')
+      : (groupedDevices()[selectedSection] || []);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(d =>
@@ -292,17 +295,17 @@ const DeviceManagement = () => {
     const missed = Math.max(0, expected - count);
     const pct = expected > 0 ? count / expected : 0;
     const cls = pct >= 0.9
-      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      ? 'bg-green-600 text-white'
       : pct >= 0.5
-        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+        ? 'bg-amber-500 text-white'
+        : 'bg-red-600 text-white';
     return (
       <div className="flex flex-col items-start gap-0.5">
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold font-mono ${cls}`}>
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold font-mono shadow-sm ${cls}`}>
           {count}/{expected}
         </span>
         {missed > 0 && (
-          <span className="text-[11px] text-gray-500 dark:text-gray-400">{missed} missed</span>
+          <span className="text-[11px] font-semibold text-gray-600">{missed} missed</span>
         )}
       </div>
     );
@@ -325,15 +328,11 @@ const DeviceManagement = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="glass rounded-xl p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <Radio className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Management</h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">Edit device names, meter types, units and GPS coordinates</p>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <Radio className="w-8 h-8" />
+            Device Management
+          </h1>
+          <p className="text-gray-600 mt-1">Edit device names, meter types, units and GPS coordinates</p>
         </div>
 
         {/* Statistics */}
@@ -341,23 +340,11 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Total Devices</p>
-                <p className="text-4xl font-bold mt-2 text-blue-600 dark:text-blue-400">{stats.total}</p>
+                <p className="text-gray-500 text-xs uppercase tracking-wide font-semibold">Total Devices</p>
+                <p className="text-4xl font-bold mt-2 text-blue-600">{stats.total}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Radio className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="glass rounded-xl p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Online</p>
-                <p className="text-4xl font-bold mt-2 text-green-600 dark:text-green-400">{stats.online}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Wifi className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Radio className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -365,11 +352,11 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Warning</p>
-                <p className="text-4xl font-bold mt-2 text-amber-600 dark:text-amber-400">{stats.warning}</p>
+                <p className="text-gray-500 text-xs uppercase tracking-wide font-semibold">Online</p>
+                <p className="text-4xl font-bold mt-2 text-green-600">{stats.online}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                <Wifi className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -377,11 +364,23 @@ const DeviceManagement = () => {
           <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide font-semibold">Offline</p>
-                <p className="text-4xl font-bold mt-2 text-red-600 dark:text-red-400">{stats.offline}</p>
+                <p className="text-gray-500 text-xs uppercase tracking-wide font-semibold">Warning</p>
+                <p className="text-4xl font-bold mt-2 text-amber-600">{stats.warning}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <WifiOff className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="glass rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-xs uppercase tracking-wide font-semibold">Offline</p>
+                <p className="text-4xl font-bold mt-2 text-red-600">{stats.offline}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                <WifiOff className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
@@ -391,12 +390,14 @@ const DeviceManagement = () => {
         <div className="glass rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Filter by Section</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Filter by Section</h2>
           </div>
           <div className="flex flex-wrap gap-3">
             {sections.map((section) => {
               const isActive = selectedSection === section.id;
-              const count = section.id === 'ALL' ? devices.length : (groupedDevices()[section.id]?.length || 0);
+              const count = section.id === 'ALL' ? devices.length
+                : section.id === 'ONLINE' ? stats.online
+                : (groupedDevices()[section.id]?.length || 0);
               return (
                 <button
                   key={section.id}
@@ -404,12 +405,12 @@ const DeviceManagement = () => {
                   className={`px-5 py-3 rounded-xl transition-all duration-200 font-semibold text-sm ${
                     isActive
                       ? `bg-gradient-to-r ${section.gradient} text-white shadow-lg ring-2 ${section.ring} scale-105`
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <span>{section.shortName}</span>
                   <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
-                    isActive ? 'bg-white/25' : 'bg-gray-200 dark:bg-gray-700'
+                    isActive ? 'bg-white/25' : 'bg-gray-200'
                   }`}>
                     {count}
                   </span>
@@ -432,10 +433,10 @@ const DeviceManagement = () => {
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${sec?.gradient}`}></div>
-                    <h3 className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">Section {stat.id}</h3>
+                    <h3 className="text-xs uppercase tracking-wider font-bold text-gray-500">Section {stat.id}</h3>
                   </div>
-                  <p className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stat.count}</p>
-                  <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-600 dark:text-green-400">
+                  <p className="text-3xl font-bold mt-2 text-gray-900">{stat.count}</p>
+                  <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-600">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span>{stat.online} online</span>
                   </div>
@@ -447,13 +448,13 @@ const DeviceManagement = () => {
 
         {/* Search + Table */}
         <div className="glass rounded-2xl overflow-hidden shadow-xl">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+          <div className="p-6 border-b border-gray-200 bg-white">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900">
                   {selectedSection === 'ALL' ? 'All Devices' : sections.find(s => s.id === selectedSection)?.name}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   Showing {filteredDevices.length} {filteredDevices.length === 1 ? 'device' : 'devices'}
                 </p>
               </div>
@@ -464,7 +465,7 @@ const DeviceManagement = () => {
                   placeholder="Search by name, ID, or location..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-full md:w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10 pr-4 py-2.5 w-full md:w-80 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -473,54 +474,54 @@ const DeviceManagement = () => {
           {loading ? (
             <div className="p-16 text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500/30 border-t-blue-500"></div>
-              <p className="mt-4 text-gray-500 dark:text-gray-400 font-medium">Loading devices...</p>
+              <p className="mt-4 text-gray-500 font-medium">Loading devices...</p>
             </div>
           ) : filteredDevices.length === 0 ? (
             <div className="p-16 text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
                 <Radio className="w-10 h-10 text-gray-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Devices Found</h3>
-              <p className="text-gray-500 dark:text-gray-400">Try changing the section filter or search query</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Devices Found</h3>
+              <p className="text-gray-500">Try changing the section filter or search query</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
+                <thead className="bg-gray-50 border-b-2 border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Client ID</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Device Name</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Client ID</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Device Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                       <div className="flex items-center gap-1"><Gauge className="w-3.5 h-3.5" />Meter Type</div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Units</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Units</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                       <div className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />Location</div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Latitude</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Longitude</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Latitude</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Longitude</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                       <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />24H Report</div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                       <div className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" />30D Report</div>
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-gray-100">
                   {filteredDevices.map((device, idx) => {
                     const status = getDeviceStatus(device);
                     const isEditing = editingDevice === device.id;
                     const rowBg = isEditing
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : idx % 2 === 0 ? 'bg-white dark:bg-gray-900/30' : 'bg-gray-50/50 dark:bg-gray-800/30';
+                      ? 'bg-blue-50'
+                      : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
 
                     return (
                       <tr
                         key={device.id}
-                        className={`${rowBg} hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}
+                        className={`${rowBg} hover:bg-blue-50 transition-colors`}
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
@@ -528,7 +529,7 @@ const DeviceManagement = () => {
                               status === 'online' ? 'bg-green-500 animate-pulse shadow-lg shadow-green-500/50' :
                               status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
                             }`}></div>
-                            <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{device.client_id}</span>
+                            <span className="font-mono text-sm font-semibold text-gray-900">{device.client_id}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -537,10 +538,10 @@ const DeviceManagement = () => {
                               type="text"
                               value={device.device_name}
                               onChange={(e) => handleDeviceChange(device.id, 'device_name', e.target.value)}
-                              className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                              className="w-full px-3 py-2 bg-white text-gray-900 rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
                           ) : (
-                            <span className="text-gray-900 dark:text-white font-medium">{device.device_name}</span>
+                            <span className="text-gray-900 font-medium">{device.device_name}</span>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -550,10 +551,10 @@ const DeviceManagement = () => {
                               value={getMeterInfo(device.client_id, deviceMeters, device).meter_type}
                               onChange={(e) => saveMeterInfo(device.client_id, 'meter_type', e.target.value)}
                               placeholder="EVC or FC"
-                              className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                              className="w-full px-3 py-2 bg-white text-gray-900 rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
                           ) : getMeterInfo(device.client_id, deviceMeters, device).meter_type ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700">
                               {getMeterInfo(device.client_id, deviceMeters, device).meter_type}
                             </span>
                           ) : (
@@ -567,10 +568,10 @@ const DeviceManagement = () => {
                               value={getMeterInfo(device.client_id, deviceMeters, device).units}
                               onChange={(e) => saveMeterInfo(device.client_id, 'units', e.target.value)}
                               placeholder="CF, CM, MCF"
-                              className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                              className="w-full px-3 py-2 bg-white text-gray-900 rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             />
                           ) : getMeterInfo(device.client_id, deviceMeters, device).units ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-100 text-cyan-700">
                               {getMeterInfo(device.client_id, deviceMeters, device).units}
                             </span>
                           ) : (
@@ -578,7 +579,7 @@ const DeviceManagement = () => {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-gray-700 dark:text-gray-300 text-sm">{device.location || 'N/A'}</span>
+                          <span className="text-gray-700 text-sm">{device.location || 'N/A'}</span>
                         </td>
                         <td className="px-6 py-4">
                           {isEditing ? (
@@ -587,11 +588,11 @@ const DeviceManagement = () => {
                               step="any"
                               value={device.latitude || ''}
                               onChange={(e) => handleDeviceChange(device.id, 'latitude', e.target.value)}
-                              className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                              className="w-full px-3 py-2 bg-white text-gray-900 rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                               placeholder="e.g., 30.1575"
                             />
                           ) : (
-                            <span className="text-gray-700 dark:text-gray-300 text-sm font-mono">
+                            <span className="text-gray-700 text-sm font-mono">
                               {device.latitude ? device.latitude.toFixed(4) : 'N/A'}
                             </span>
                           )}
@@ -603,20 +604,20 @@ const DeviceManagement = () => {
                               step="any"
                               value={device.longitude || ''}
                               onChange={(e) => handleDeviceChange(device.id, 'longitude', e.target.value)}
-                              className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                              className="w-full px-3 py-2 bg-white text-gray-900 rounded-lg border-2 border-blue-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                               placeholder="e.g., 71.5249"
                             />
                           ) : (
-                            <span className="text-gray-700 dark:text-gray-300 text-sm font-mono">
+                            <span className="text-gray-700 text-sm font-mono">
                               {device.longitude ? device.longitude.toFixed(4) : 'N/A'}
                             </span>
                           )}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            status === 'online' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            status === 'warning' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            status === 'online' ? 'bg-green-100 text-green-700' :
+                            status === 'warning' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
                           }`}>
                             {status === 'online' ? <Wifi className="w-3 h-3" /> : status === 'warning' ? <AlertTriangle className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                             {status.toUpperCase()}
@@ -640,7 +641,7 @@ const DeviceManagement = () => {
                               </button>
                               <button
                                 onClick={handleInlineCancel}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-semibold text-sm transition-all"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold text-sm transition-all"
                               >
                                 <X className="w-4 h-4" />
                                 Cancel
@@ -669,15 +670,15 @@ const DeviceManagement = () => {
       {/* Edit Device Modal (kept for reference but inline editing is primary) */}
       {showEditModal && currentDevice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-gray-200 shadow-2xl">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Device</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{currentDevice.client_id}</p>
+                <h2 className="text-2xl font-bold text-gray-900">Edit Device</h2>
+                <p className="text-sm text-gray-600 mt-1">{currentDevice.client_id}</p>
               </div>
               <button
                 onClick={() => { setShowEditModal(false); resetForm(); }}
-                className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl"
+                className="text-gray-400 hover:text-gray-700 text-2xl"
               >
                 ✕
               </button>
@@ -685,36 +686,36 @@ const DeviceManagement = () => {
 
             <form onSubmit={handleEditDevice} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Device Name</label>
+                <label className="block text-sm text-gray-600 mb-2">Device Name</label>
                 <input
                   type="text"
                   value={formData.device_name}
                   onChange={(e) => setFormData({...formData, device_name: e.target.value})}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Latitude</label>
+                <label className="block text-sm text-gray-600 mb-2">Latitude</label>
                 <input
                   type="number"
                   step="any"
                   value={formData.latitude}
                   onChange={(e) => setFormData({...formData, latitude: e.target.value})}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., 30.1575"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Longitude</label>
+                <label className="block text-sm text-gray-600 mb-2">Longitude</label>
                 <input
                   type="number"
                   step="any"
                   value={formData.longitude}
                   onChange={(e) => setFormData({...formData, longitude: e.target.value})}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500"
                   placeholder="e.g., 71.5249"
                 />
               </div>
@@ -723,7 +724,7 @@ const DeviceManagement = () => {
                 <button
                   type="button"
                   onClick={() => { setShowEditModal(false); resetForm(); }}
-                  className="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg transition-all duration-200"
+                  className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-all duration-200"
                 >
                   Cancel
                 </button>
